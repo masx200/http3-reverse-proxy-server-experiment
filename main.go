@@ -275,7 +275,7 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() map[string]func(*http.Request) (*http.Response, error), transportsUpstream map[string]func(*http.Request) (*http.Response, error), upstreamServerOfName map[string]string, maxAge int, setExpires func(int64), setHealthyUpstream func(transportsUpstream map[string]func(*http.Request) (*http.Response, error))) map[string]func(*http.Request) (*http.Response, error) {
 	// 检查当前上游服务器列表是否已过期。
 	if getExpires() > time.Now().Unix() {
-		fmt.Println("不需要进行健康检查")
+		fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().Unix())
 		fmt.Println("healthyUpstream", getHealthyUpstream())
 		return getHealthyUpstream()
 	}
@@ -283,7 +283,7 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 	// 在后台进行健康检查更新。
 	go func() {
 		var healthy = map[string]func(*http.Request) (*http.Response, error){}
-		fmt.Println("需要进行健康检查")
+		fmt.Println("需要进行健康检查", "已经过期的时间毫秒", -getExpires()+time.Now().Unix())
 		//需要并行检查
 		// 遍历所有上游服务器进行健康检查。
 		for key, roundTrip := range transportsUpstream {

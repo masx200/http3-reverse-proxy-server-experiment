@@ -84,7 +84,12 @@ func main() {
 	var upStreamServerSchemeAndHostOfName map[string]Pair[string, string] = map[string]Pair[string, string]{}
 	r := gin.Default()
 	// 定义上游服务器地址
-	var upstreamServers = []string{"https://www.baidu.com/", "https://www.so.com/"}
+	var upstreamServers = []string{"https://quic.nginx.org/", "https://www.baidu.com/", "https://www.so.com/"}
+	//打印上游
+	fmt.Println("Upstream servers:")
+	for _, server := range upstreamServers {
+		fmt.Println(server)
+	}
 	var maxAge = 30 * 1000
 	var expires = int64(0)
 	var upstreamServerOfName = map[string]string{}
@@ -162,12 +167,16 @@ func main() {
 	log.Fatal(x)
 }
 
+// LoadBalanceHandler 是一个用于负载均衡处理的结构体。
 type LoadBalanceHandler struct {
-	engine *gin.Engine
+	engine *gin.Engine // engine 是一个Gin框架的引擎实例，用于处理HTTP请求。
 }
 
+// ServeHTTP 是一个实现http.Handler接口的方法，用于处理HTTP请求。
+// 参数w是用于向客户端发送响应的http.ResponseWriter，
+// 参数req是客户端发来的HTTP请求。
 func (h *LoadBalanceHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	h.engine.Handler().ServeHTTP(w, req)
+	h.engine.Handler().ServeHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
 }
 func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 	// 解析上游服务器URL，确保其路径为根路径或为空
@@ -251,7 +260,7 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 	go func() {
 		var healthy = map[string]func(*http.Request) (*http.Response, error){}
 		fmt.Println("需要进行健康检查")
-
+		//需要并行检查
 		// 遍历所有上游服务器进行健康检查。
 		for key, roundTrip := range transportsUpstream {
 			var upstreamServer = upstreamServerOfName[key]

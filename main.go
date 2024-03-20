@@ -140,7 +140,7 @@ type LoadBalanceHandler struct {
 	getHealthyProxyServers func() map[string]*httputil.ReverseProxy
 }
 
-func (h *LoadBalanceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *LoadBalanceHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 }
 func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {

@@ -19,16 +19,20 @@ import (
 // url: 要检查的服务的URL地址
 // RoundTrip: 用于发送HTTP请求的函数，模拟HTTP客户端的行为
 // 返回值: 返回一个布尔值，表示上游服务的健康状态，true为健康，false为不健康
+
 func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Response, error)) bool {
 
+	// 发送HEAD请求并检查返回的状态码
 	statusCode, err := sendHeadRequestAndCheckStatus(url, RoundTrip)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return false
 	}
 
+	// 打印状态码信息
 	fmt.Printf("health check Status code: %d\n", statusCode)
 
+	// 根据状态码判断上游服务的健康状态
 	if statusCode < 500 {
 		fmt.Println("Status code is less than 500.")
 		return true

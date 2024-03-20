@@ -84,7 +84,7 @@ func main() {
 	var upStreamServerSchemeAndHostOfName map[string]Pair[string, string] = map[string]Pair[string, string]{}
 	r := gin.Default()
 	// 定义上游服务器地址
-	var upstreamServers = []string{"https://desktop-5rh4po7.manx-sun.ts.net:8443/", "http://desktop-5rh4po7.manx-sun.ts.net:8989/"}
+	var upstreamServers = []string{"https://quic.nginx.org/"}
 	var maxAge = 30 * 1000
 	var expires = int64(0)
 

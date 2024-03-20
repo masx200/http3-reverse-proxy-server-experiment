@@ -15,6 +15,10 @@ import (
 	"github.com/quic-go/quic-go/http3"
 )
 
+// checkUpstreamHealth 检查上游服务的健康状态
+// url: 要检查的服务的URL地址
+// RoundTrip: 用于发送HTTP请求的函数，模拟HTTP客户端的行为
+// 返回值: 返回一个布尔值，表示上游服务的健康状态，true为健康，false为不健康
 func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Response, error)) bool {
 
 	statusCode, err := sendHeadRequestAndCheckStatus(url, RoundTrip)
@@ -34,15 +38,22 @@ func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Respon
 	return false
 }
 
+// RoundTripTransport 是一个实现了 http.RoundTripper 接口的类型，
+// 允许自定义HTTP请求的传输行为。
 type RoundTripTransport struct {
-	roundTrip func(*http.Request) (*http.Response, error)
+	roundTrip func(*http.Request) (*http.Response, error) // roundTrip 是一个函数，它执行HTTP请求的传输，并返回响应和可能的错误。
 }
 
-// RoundTrip implements http.RoundTripper.
+// RoundTrip 是 http.RoundTripper 接口要求的方法，用于执行HTTP请求。
+// 它简单地调用了结构体中的 roundTrip 函数，传递给它一个HTTP请求，并返回该请求的响应及可能的错误。
 func (r *RoundTripTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return r.roundTrip(req)
 }
 
+// sendHeadRequestAndCheckStatus 发送一个HEAD请求并检查状态码。
+// url: 请求的目标URL。
+// RoundTrip: 自定义的HTTP.RoundTripper函数，用于发送请求。
+// 返回值: 请求的状态码和可能出现的错误。
 func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*http.Response, error)) (int, error) {
 	client := &http.Client{}
 

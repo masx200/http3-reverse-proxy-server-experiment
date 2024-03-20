@@ -227,32 +227,8 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 	customTransport := &customRoundTripperLoadBalancer{
 		upstreamURL: upstreamURL,
 		getTransportHealthy: func() map[string]func(*http.Request) (*http.Response, error) {
-			if expires > time.Now().Unix() {
-				fmt.Println("不需要进行健康检查")
-				fmt.Println("healthyUpstream", healthyUpstream)
-				return healthyUpstream
-			}
-			go func() {
-				var healthy = map[string]func(*http.Request) (*http.Response, error){}
-				fmt.Println("需要进行健康检查")
-				// 对上游服务器进行健康检查，选择健康的传输方式
-				for key, roundTrip := range transportsUpstream {
-					if checkUpstreamHealth(upstreamServer, roundTrip) {
-						healthy[key] = roundTrip
-						fmt.Println("健康检查成功", key)
-					} else {
-						fmt.Println("健康检查失败", key)
-					}
-				}
-				if len(healthy) == 0 {
-					healthyUpstream = transportsUpstream
-				} else {
-					healthyUpstream = healthy
-					fmt.Println("healthyUpstream", healthyUpstream)
-				}
-				expires = time.Now().Unix() + int64(maxAge)
-			}()
-			return healthyUpstream
+			// 对上游服务器进行健康检查，选择健康的传输方式
+			return refreshHealthyUpStreams(func() int64 { return expires }, healthyUpstream, transportsUpstream, upstreamServer, maxAge, func(i int64) { expires = i })
 		},
 	}
 
@@ -262,6 +238,36 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 	// 设置反向代理的传输器为自定义的负载均衡传输器
 	proxy.Transport = customTransport
 	return proxy, err
+}
+
+func refreshHealthyUpStreams(getExpires func() int64, healthyUpstream map[string]func(*http.Request) (*http.Response, error), transportsUpstream map[string]func(*http.Request) (*http.Response, error), upstreamServer string, maxAge int, setExpires func(int64)) map[string]func(*http.Request) (*http.Response, error) {
+	if getExpires() > time.Now().Unix() {
+		fmt.Println("不需要进行健康检查")
+		fmt.Println("healthyUpstream", healthyUpstream)
+		return healthyUpstream
+	}
+	go func() {
+		var healthy = map[string]func(*http.Request) (*http.Response, error){}
+		fmt.Println("需要进行健康检查")
+
+		for key, roundTrip := range transportsUpstream {
+			if checkUpstreamHealth(upstreamServer, roundTrip) {
+				healthy[key] = roundTrip
+				fmt.Println("健康检查成功", key)
+			} else {
+				fmt.Println("健康检查失败", key)
+			}
+		}
+		if len(healthy) == 0 {
+			healthyUpstream = transportsUpstream
+		} else {
+			healthyUpstream = healthy
+			fmt.Println("healthyUpstream", healthyUpstream)
+		}
+		var expires = time.Now().Unix() + int64(maxAge)
+		setExpires(expires)
+	}()
+	return healthyUpstream
 }
 
 // customRoundTripperLoadBalancer 是一个自定义的负载均衡器，

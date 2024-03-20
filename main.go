@@ -81,7 +81,41 @@ func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*h
 // 主程序入口
 func main() {
 	// 定义上游服务器地址
-	var upstreamServers = []string{"https://www.example.com/", "https://production.hello-word-worker.masx200.workers.dev/", "https://hello-world-deno-deploy.deno.dev/"}
+	var upstreamServers = []string{"https://production.hello-word-worker.masx200.workers.dev/", "https://hello-world-deno-deploy.deno.dev/"}
+
+	var proxyServers []*httputil.ReverseProxy = []*httputil.ReverseProxy{}
+	for _, v := range upstreamServers {
+
+		proxy, err := createReverseProxy(v)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		proxyServers = append(proxyServers, proxy)
+	}
+	// 启动反向代理服务器
+
+	server := &http.Server{
+		Addr: ":18080",
+		Handler: &LoadBalanceHandler{getHealthyProxyServers: func() []*httputil.ReverseProxy {
+
+			return proxyServers
+		}},
+	}
+
+	log.Printf("Starting reverse proxy server on :18080")
+	x := server.ListenAndServeTLS("cert.crt", "key.pem")
+	log.Fatal(x)
+}
+
+type LoadBalanceHandler struct {
+	getHealthyProxyServers func() []*httputil.ReverseProxy
+}
+
+func (h *LoadBalanceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+}
+func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 	// 解析上游服务器URL，确保其路径为根路径或为空
 	upstreamURL, err := url.Parse(upstreamServer)
 	if err != nil {
@@ -150,15 +184,7 @@ func main() {
 
 	// 设置反向代理的传输器为自定义的负载均衡传输器
 	proxy.Transport = customTransport
-
-	// 启动反向代理服务器
-	server := &http.Server{
-		Addr:    ":18080",
-		Handler: proxy,
-	}
-
-	log.Printf("Starting reverse proxy server on :18080")
-	log.Fatal(server.ListenAndServeTLS("cert.crt", "key.pem"))
+	return proxy, err
 }
 
 // customRoundTripperLoadBalancer 是一个自定义的负载均衡器，

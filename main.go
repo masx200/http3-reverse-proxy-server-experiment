@@ -81,8 +81,7 @@ func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*h
 // 主程序入口
 func main() {
 	// 定义上游服务器地址
-	upstreamServer := "https://www.example.com/"
-
+	var upstreamServers = []string{"https://www.example.com/", "https://production.hello-word-worker.masx200.workers.dev/", "https://hello-world-deno-deploy.deno.dev/"}
 	// 解析上游服务器URL，确保其路径为根路径或为空
 	upstreamURL, err := url.Parse(upstreamServer)
 	if err != nil {

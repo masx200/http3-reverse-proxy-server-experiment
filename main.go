@@ -211,24 +211,38 @@ func randomShuffle[T any](arr []T) []T {
 	})
 	return arr
 }
+
+// RandomLoadBalancer 是一个通过随机算法从提供的运输函数列表中选择一个来执行HTTP请求的负载均衡器。
+// 参数：
+// - roundTripper：一个包含多个http.RoundTripper函数的切片，这些函数将被用于发送HTTP请求。
+// - req：指向待发送的HTTP请求的指针。
+// 返回值：
+// - *http.Response：从运输函数中返回的HTTP响应指针，如果所有运输函数都失败，则为nil。
+// - error：如果在发送请求时遇到错误，则返回错误信息；否则为nil。
 func RandomLoadBalancer(roundTripper []func(*http.Request) (*http.Response, error), req *http.Request) (*http.Response, error) {
+	// 打印传入的运输函数列表
 	fmt.Println("RoundTripper:", roundTripper)
 
+	// 使用随机算法对运输函数列表进行洗牌，以实现随机选择运输函数的效果
 	var healthRoundTripper = randomShuffle(roundTripper)
 	var rer error = nil
 
+	// 遍历洗牌后的运输函数列表，尝试发送HTTP请求
 	for _, transport := range healthRoundTripper {
-		var rs, err = transport(req)
+		var rs, err = transport(req) // 执行运输函数
 		if err != nil {
+			// 如果请求发送失败，打印错误信息，并更新错误变量
 			fmt.Println("ERROR:", err)
 			rer = err
 
 		} else {
+			// 如果请求发送成功，打印响应信息，并返回响应和错误
 			PrintResponse(rs)
 			return rs, err
 		}
 
 	}
+	// 如果所有运输函数尝试都失败，返回nil和错误信息
 	return nil, rer
 }
 

@@ -88,6 +88,7 @@ func main() {
 	var httpPort = 18080
 	var upStreamServerSchemeAndHostOfName map[string]Pair[string, string] = map[string]Pair[string, string]{}
 	r := gin.Default()
+	r.Use(Forwarded(), LoopDetect())
 	// 定义上游服务器地址
 	var upstreamServers = []string{"https://quic.nginx.org/", "https://www.baidu.com/", "https://www.so.com/", "https://hello-world-deno-deploy.deno.dev/", "https://production.hello-word-worker.masx200.workers.dev/"}
 	//打印上游
@@ -190,6 +191,35 @@ func main() {
 	log.Printf("Starting http reverse proxy server on :" + strconv.Itoa(httpsPort))
 	x := server.ListenAndServeTLS("cert.crt", "key.pem")
 	log.Fatal(x)
+}
+
+func Forwarded() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var clienthost = c.RemoteIP()
+		var address = c.Request.Host
+		if address == "" {
+			address = c.Request.URL.Host
+		}
+		var proto = "http"
+
+		if c.Request.TLS != nil {
+			proto = "https"
+		}
+		forwarded := fmt.Sprintf(
+			"for=%s;by=%s;host=%s;proto=%s",
+			clienthost,     // 代理自己的标识或IP地址
+			c.Request.Host, // 代理的标识
+			address,        // 原始请求的目标主机名
+			proto,          // 或者 "https" 根据实际协议
+		)
+		c.Request.Header.Add("Forwarded", forwarded)
+		c.Next()
+	}
+}
+func LoopDetect() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+	}
 }
 
 // LoadBalanceHandler 是一个用于负载均衡处理的结构体。

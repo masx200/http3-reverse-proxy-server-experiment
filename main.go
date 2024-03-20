@@ -137,6 +137,8 @@ func main() {
 
 		if err != nil {
 			fmt.Println("ERROR:", err) // 打印错误信息
+			c.AbortWithStatus(http.StatusBadGateway)
+			return
 		} else {
 			PrintResponse(resp) // 打印响应信息
 		}

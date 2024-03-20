@@ -194,6 +194,9 @@ func main() {
 	log.Fatal(x)
 }
 
+// Forwarded 创建并返回一个 gin.HandlerFunc，用于在 HTTP 请求的 Header 中添加 "Forwarded" 信息。
+// 这个信息包含了客户端的 IP 地址、代理的标识、原始请求的目标主机名以及使用的协议（HTTP 或 HTTPS）。
+// 返回值是一个处理 gin.Context 的函数。
 func Forwarded() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var clienthost = c.RemoteIP()
@@ -218,6 +221,12 @@ func Forwarded() gin.HandlerFunc {
 	}
 }
 
+// ForwardedBy 结构体
+//
+// 描述：这个结构体用于表示一个转发标识。
+//
+// 字段：
+// Identifier string - 用于唯一标识转发的字符串。
 type ForwardedBy struct {
 	Identifier string
 }
@@ -276,6 +285,12 @@ func parseForwardedHeader(header string) ([]ForwardedBy, error) {
 
 	return forwardedByList, nil
 }
+
+// LoopDetect 是一个用于检测请求中'Forwarded'头是否存在重复'by'标识符的gin中间件。
+// 如果发现重复的'by'标识符，将返回状态码508并提供错误信息。
+// 如果无法解析'Forwarded'头，将返回状态码400并给出解析错误的具体信息。
+// 返回值为一个gin.HandlerFunc类型的函数，可直接用于gin路由的中间件配置。
+
 func LoopDetect() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var r = c.Request
@@ -310,6 +325,15 @@ type LoadBalanceHandler struct {
 func (h *LoadBalanceHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	h.engine.Handler().ServeHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
 }
+
+// createReverseProxy 创建一个反向代理，根据上游服务器的健康状况动态选择HTTP/3或HTTP/2进行通信。
+//
+// 参数:
+// upstreamServer - 上游服务器的URL字符串。
+//
+// 返回值:
+// *httputil.ReverseProxy - 配置好的反向代理实例。
+// error - 创建过程中遇到的任何错误。
 func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 	// 解析上游服务器URL，确保其路径为根路径或为空
 	upstreamURL, err := url.Parse(upstreamServer)
@@ -479,7 +503,11 @@ func randomShuffle[T any](arr []T) []T {
 		arr[i], arr[j] = arr[j], arr[i]
 	})
 	return arr
-}
+} // mapToArray 将一个映射（map）转换为包含键值对（Pair）的切片（slice）。
+// 参数 m 是一个类型为 map[T]Y 的映射，其中 T 是可比较的类型，Y 是任意类型。
+// 返回值是一个类型为 []Pair[T, Y] 的切片，其中 Pair 是一个包含两个字段 First 和 Second 的结构体。
+// 这个函数主要用于将映射的键值对形式转换为切片形式，方便后续处理。
+
 func mapToArray[T comparable, Y any](m map[T]Y) []Pair[T, Y] {
 	result := make([]Pair[T, Y], 0, len(m))
 	for key := range m {
@@ -587,7 +615,9 @@ func PrintHeader(header http.Header) {
 	fmt.Println("} HTTP Header ")
 }
 
+// Pair是一个泛型结构体，用于存储一对任意类型的值。
+// T和Y是泛型参数，代表First和Second可以是任何类型。
 type Pair[T any, Y any] struct {
-	First  T
-	Second Y
+	First  T // First是结构体中的第一个元素。
+	Second Y // Second是结构体中的第二个元素。
 }

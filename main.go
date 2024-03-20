@@ -93,7 +93,7 @@ func main() {
 	r.Use(func(c *gin.Context) {
 
 		c.Writer.Header().Add("Alt-Svc",
-			"h3=\":443\";ma=86400,h3-29=\":443\";ma=86400,h3-27=\":443\";ma=86400",
+			"h3=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-29=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-27=\":"+fmt.Sprint(httpsPort)+"\";ma=86400",
 		)
 		c.Next()
 	})
@@ -170,14 +170,14 @@ func main() {
 		bufio.NewReader(resp.Body).WriteTo(c.Writer)
 
 	})
+	var hostname = "0.0.0.0"
 	server := &http.Server{
-		Addr: ":" + strconv.Itoa(httpsPort),
+		Addr: hostname + ":" + strconv.Itoa(httpsPort),
 		Handler: &LoadBalanceHandler{
 			engine: r,
 		},
 	}
 
-	var hostname = "0.0.0.0"
 	go func() {
 		listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(httpPort))
 		if err != nil {
@@ -196,9 +196,46 @@ func main() {
 			log.Fatal("Serve: ", err)
 		}
 	}()
-	log.Printf("Starting http reverse proxy server on :" + strconv.Itoa(httpsPort))
-	x := server.ListenAndServeTLS("cert.crt", "key.pem")
-	log.Fatal(x)
+	certFile := "cert.crt"
+	keyFile := "key.pem"
+	go func() {
+		var handlerFunc = func(w http.ResponseWriter, req *http.Request) {
+			r.Handler().ServeHTTP(w, req)
+		}
+
+		bCap := hostname + ":" + fmt.Sprint(httpsPort)
+		handler := &HandlerServeHTTP{
+			serveHTTP: handlerFunc,
+		}
+		server := http3.Server{
+			Handler:    handler,
+			Addr:       bCap,
+			QuicConfig: &quic.Config{
+				// Tracer: qlog.DefaultTracer,
+			},
+		}
+		log.Printf("Starting http3 reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
+
+		var err = server.ListenAndServeTLS(certFile, keyFile)
+		// var err = http3.ListenAndServe(bCap, certFile, keyFile, &HandlerServeHTTP{
+		// 	serveHTTP: handlerFunc,
+		// })
+		if err != nil {
+			log.Fatal("Serve: ", err)
+		}
+	}()
+	log.Printf("Starting https reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
+
+	errx := server.ListenAndServeTLS(certFile, keyFile)
+	log.Fatal(errx)
+}
+
+type HandlerServeHTTP struct {
+	serveHTTP func(w http.ResponseWriter, req *http.Request)
+}
+
+func (h *HandlerServeHTTP) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	h.serveHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
 }
 
 // Forwarded 创建并返回一个 gin.HandlerFunc，用于在 HTTP 请求的 Header 中添加 "Forwarded" 信息。

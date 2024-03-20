@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -81,6 +83,9 @@ func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*h
 
 // 主程序入口
 func main() {
+
+	var httpsPort = 18443
+	var httpPort = 18080
 	var upStreamServerSchemeAndHostOfName map[string]Pair[string, string] = map[string]Pair[string, string]{}
 	r := gin.Default()
 	// 定义上游服务器地址
@@ -156,15 +161,34 @@ func main() {
 
 	})
 	server := &http.Server{
-		Addr: ":18080",
+		Addr: ":" + strconv.Itoa(httpsPort),
 		Handler: &LoadBalanceHandler{
 			engine: r,
 		},
 	}
 
-	log.Printf("Starting reverse proxy server on :18080")
+	log.Printf("Starting http reverse proxy server on :" + strconv.Itoa(httpsPort))
 	x := server.ListenAndServeTLS("cert.crt", "key.pem")
 	log.Fatal(x)
+	var hostname = "0.0.0.0"
+	go func() {
+		listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(httpPort))
+		if err != nil {
+			log.Fatal("ListenAndServe: ", err)
+		}
+		log.Printf("http reverse proxy server started on port %s", listener.Addr())
+
+		// 设置自定义处理器
+		http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+			r.Handler().ServeHTTP(w, req)
+		})
+
+		// 开始服务
+		err = http.Serve(listener, nil)
+		if err != nil {
+			log.Fatal("Serve: ", err)
+		}
+	}()
 }
 
 // LoadBalanceHandler 是一个用于负载均衡处理的结构体。

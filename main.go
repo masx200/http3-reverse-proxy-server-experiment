@@ -95,6 +95,7 @@ func main() {
 	for _, server := range upstreamServers {
 		fmt.Println(server)
 	}
+	//过期时间毫秒
 	var maxAge = 30 * 1000
 	var expires = int64(0)
 	var upstreamServerOfName = map[string]string{}
@@ -235,7 +236,7 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 	for k := range transportsUpstream {
 		upstreamServerOfName[k] = upstreamServer
 	}
-	// 设置健康检查的超时时间
+	// 设置健康检查的超时时间毫秒
 	var maxAge = 30 * 1000
 	var expires = int64(0)
 	var healthyUpstream = transportsUpstream
@@ -267,15 +268,15 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 // - healthyUpstream: 当前已知的健康上游服务器映射。
 // - transportsUpstream: 所有可用的上游服务器传输函数映射。
 // - upstreamServer: 上游服务器地址。
-// - maxAge: 上游服务器列表的有效期（秒）。
+// - maxAge: 上游服务器列表的有效期（毫秒）。
 // - setExpires: 设置上游服务器列表过期时间的函数。
 //
 // 返回值:
 // - 返回更新后的健康上游服务器映射。
 func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() map[string]func(*http.Request) (*http.Response, error), transportsUpstream map[string]func(*http.Request) (*http.Response, error), upstreamServerOfName map[string]string, maxAge int, setExpires func(int64), setHealthyUpstream func(transportsUpstream map[string]func(*http.Request) (*http.Response, error))) map[string]func(*http.Request) (*http.Response, error) {
 	// 检查当前上游服务器列表是否已过期。
-	if getExpires() > time.Now().Unix() {
-		fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().Unix())
+	if getExpires() > time.Now().UnixMilli() {
+		fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
 		fmt.Println("healthyUpstream", getHealthyUpstream())
 		return getHealthyUpstream()
 	}
@@ -283,7 +284,7 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 	// 在后台进行健康检查更新。
 	go func() {
 		var healthy = map[string]func(*http.Request) (*http.Response, error){}
-		fmt.Println("需要进行健康检查", "已经过期的时间毫秒", -getExpires()+time.Now().Unix())
+		fmt.Println("需要进行健康检查", "已经过期的时间毫秒", -getExpires()+time.Now().UnixMilli())
 		//需要并行检查
 		// 遍历所有上游服务器进行健康检查。
 		for key, roundTrip := range transportsUpstream {
@@ -311,7 +312,7 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 		}
 
 		// 设置上游服务器列表的新过期时间。
-		var expires = time.Now().Unix() + int64(maxAge)
+		var expires = time.Now().UnixMilli() + int64(maxAge)
 		setExpires(expires)
 	}()
 

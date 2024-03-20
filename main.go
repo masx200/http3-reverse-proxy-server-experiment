@@ -82,24 +82,52 @@ func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*h
 func main() {
 	// 定义上游服务器地址
 	var upstreamServers = []string{"https://production.hello-word-worker.masx200.workers.dev/", "https://hello-world-deno-deploy.deno.dev/"}
+	var maxAge = 30 * 1000
+	var expires = int64(0)
 
-	var proxyServers []*httputil.ReverseProxy = []*httputil.ReverseProxy{}
-	for _, v := range upstreamServers {
+	var proxyServers map[string]*httputil.ReverseProxy = map[string]*httputil.ReverseProxy{}
 
-		proxy, err := createReverseProxy(v)
+	for _, url := range upstreamServers {
+
+		proxy, err := createReverseProxy(url)
 
 		if err != nil {
 			log.Fatal(err)
 		}
-		proxyServers = append(proxyServers, proxy)
+		proxyServers[url] = proxy
 	}
 	// 启动反向代理服务器
-
+	var healthyUpstream = proxyServers
 	server := &http.Server{
 		Addr: ":18080",
-		Handler: &LoadBalanceHandler{getHealthyProxyServers: func() []*httputil.ReverseProxy {
+		Handler: &LoadBalanceHandler{getHealthyProxyServers: func() map[string]*httputil.ReverseProxy {
+			if expires > time.Now().Unix() {
+				fmt.Println("不需要进行健康检查")
+				fmt.Println("healthyUpstream", healthyUpstream)
+				return healthyUpstream
+			}
+			go func() {
+				var healthy = map[string]*httputil.ReverseProxy{}
+				fmt.Println("需要进行健康检查")
+				// 对上游服务器进行健康检查，选择健康的传输方式
+				for key, roundTrip := range proxyServers {
+					if checkUpstreamHealth(key, func(r *http.Request) (*http.Response, error) {
+						return roundTrip.Transport.RoundTrip(r)
 
-			return proxyServers
+					}) {
+						healthy[key] = roundTrip
+					}
+				}
+				if len(healthy) == 0 {
+					healthyUpstream = proxyServers
+				} else {
+					healthyUpstream = healthy
+					fmt.Println("healthyUpstream", healthyUpstream)
+				}
+				expires = time.Now().Unix() + int64(maxAge)
+			}()
+			return healthyUpstream
+
 		}},
 	}
 
@@ -109,7 +137,7 @@ func main() {
 }
 
 type LoadBalanceHandler struct {
-	getHealthyProxyServers func() []*httputil.ReverseProxy
+	getHealthyProxyServers func() map[string]*httputil.ReverseProxy
 }
 
 func (h *LoadBalanceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -138,10 +166,10 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 	}
 
 	// 定义上游服务器的传输方式，包括HTTP/3和HTTP/2
-	var transportsUpstream = []func(*http.Request) (*http.Response, error){
-		func(req *http.Request) (*http.Response, error) { return http3Client.Transport.RoundTrip(req) },
+	var transportsUpstream = map[string]func(*http.Request) (*http.Response, error){
+		"http3": func(req *http.Request) (*http.Response, error) { return http3Client.Transport.RoundTrip(req) },
 
-		func(req *http.Request) (*http.Response, error) { return http2Client.Transport.RoundTrip(req) },
+		"http2": func(req *http.Request) (*http.Response, error) { return http2Client.Transport.RoundTrip(req) },
 	}
 
 	// 设置健康检查的超时时间
@@ -152,19 +180,19 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 	// 自定义负载均衡的传输器，根据上游服务器的健康状况选择传输方式
 	customTransport := &customRoundTripperLoadBalancer{
 		upstreamURL: upstreamURL,
-		getTransportHealthy: func() []func(*http.Request) (*http.Response, error) {
+		getTransportHealthy: func() map[string]func(*http.Request) (*http.Response, error) {
 			if expires > time.Now().Unix() {
 				fmt.Println("不需要进行健康检查")
 				fmt.Println("healthyUpstream", healthyUpstream)
 				return healthyUpstream
 			}
 			go func() {
-				var healthy = []func(*http.Request) (*http.Response, error){}
+				var healthy = map[string]func(*http.Request) (*http.Response, error){}
 				fmt.Println("需要进行健康检查")
 				// 对上游服务器进行健康检查，选择健康的传输方式
-				for _, roundTrip := range transportsUpstream {
+				for key, roundTrip := range transportsUpstream {
 					if checkUpstreamHealth(upstreamServer, roundTrip) {
-						healthy = append(healthy, roundTrip)
+						healthy[key] = roundTrip
 					}
 				}
 				if len(healthy) == 0 {
@@ -190,8 +218,8 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 // customRoundTripperLoadBalancer 是一个自定义的负载均衡器，
 // 用于在多个上游服务之间进行请求的负载均衡。
 type customRoundTripperLoadBalancer struct {
-	upstreamURL         *url.URL                                             // upstreamURL 指定了上游服务的URL
-	getTransportHealthy func() []func(*http.Request) (*http.Response, error) // getTransportHealthy 函数返回一个健康状态的传输函数列表
+	upstreamURL         *url.URL                                                      // upstreamURL 指定了上游服务的URL
+	getTransportHealthy func() map[string]func(*http.Request) (*http.Response, error) // getTransportHealthy 函数返回一个健康状态的传输函数列表
 }
 
 // RoundTrip 是自定义负载均衡器的.RoundTrip方法，实现了http.RoundTripper接口。
@@ -236,6 +264,13 @@ func randomShuffle[T any](arr []T) []T {
 	})
 	return arr
 }
+func mapToArray[T comparable, Y any](m map[T]Y) []Pair[T, Y] {
+	result := make([]Pair[T, Y], 0, len(m))
+	for key := range m {
+		result = append(result, Pair[T, Y]{First: key, Second: m[key]})
+	}
+	return result
+}
 
 // RandomLoadBalancer 是一个通过随机算法从提供的运输函数列表中选择一个来执行HTTP请求的负载均衡器。
 // 参数：
@@ -244,17 +279,17 @@ func randomShuffle[T any](arr []T) []T {
 // 返回值：
 // - *http.Response：从运输函数中返回的HTTP响应指针，如果所有运输函数都失败，则为nil。
 // - error：如果在发送请求时遇到错误，则返回错误信息；否则为nil。
-func RandomLoadBalancer(roundTripper []func(*http.Request) (*http.Response, error), req *http.Request) (*http.Response, error) {
+func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Response, error), req *http.Request) (*http.Response, error) {
 	// 打印传入的运输函数列表
 	fmt.Println("RoundTripper:", roundTripper)
-
+	var roundTripperArray = mapToArray(roundTripper)
 	// 使用随机算法对运输函数列表进行洗牌，以实现随机选择运输函数的效果
-	var healthRoundTripper = randomShuffle(roundTripper)
+	var healthRoundTripper = randomShuffle(roundTripperArray)
 	var rer error = nil
 
 	// 遍历洗牌后的运输函数列表，尝试发送HTTP请求
 	for _, transport := range healthRoundTripper {
-		var rs, err = transport(req) // 执行运输函数
+		var rs, err = transport.Second(req) // 执行运输函数
 		if err != nil {
 			// 如果请求发送失败，打印错误信息，并更新错误变量
 			fmt.Println("ERROR:", err)
@@ -325,4 +360,9 @@ func PrintHeader(header http.Header) {
 	}
 	// 打印HTTP头部结束标签
 	fmt.Println("} HTTP Header ")
+}
+
+type Pair[T any, Y any] struct {
+	First  T
+	Second Y
 }

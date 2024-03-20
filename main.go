@@ -228,7 +228,9 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 		upstreamURL: upstreamURL,
 		getTransportHealthy: func() map[string]func(*http.Request) (*http.Response, error) {
 			// 对上游服务器进行健康检查，选择健康的传输方式
-			return refreshHealthyUpStreams(func() int64 { return expires }, healthyUpstream, transportsUpstream, upstreamServer, maxAge, func(i int64) { expires = i })
+			return refreshHealthyUpStreams(func() int64 { return expires }, func() map[string]func(*http.Request) (*http.Response, error) { return healthyUpstream }, transportsUpstream, upstreamServer, maxAge, func(i int64) { expires = i }, func(transportsUpstream map[string]func(*http.Request) (*http.Response, error)) {
+				healthyUpstream = transportsUpstream
+			})
 		},
 	}
 
@@ -253,12 +255,12 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 //
 // 返回值:
 // - 返回更新后的健康上游服务器映射。
-func refreshHealthyUpStreams(getExpires func() int64, healthyUpstream map[string]func(*http.Request) (*http.Response, error), transportsUpstream map[string]func(*http.Request) (*http.Response, error), upstreamServer string, maxAge int, setExpires func(int64)) map[string]func(*http.Request) (*http.Response, error) {
+func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() map[string]func(*http.Request) (*http.Response, error), transportsUpstream map[string]func(*http.Request) (*http.Response, error), upstreamServer string, maxAge int, setExpires func(int64), setHealthyUpstream func(transportsUpstream map[string]func(*http.Request) (*http.Response, error))) map[string]func(*http.Request) (*http.Response, error) {
 	// 检查当前上游服务器列表是否已过期。
 	if getExpires() > time.Now().Unix() {
 		fmt.Println("不需要进行健康检查")
-		fmt.Println("healthyUpstream", healthyUpstream)
-		return healthyUpstream
+		fmt.Println("healthyUpstream", getHealthyUpstream())
+		return getHealthyUpstream()
 	}
 
 	// 在后台进行健康检查更新。
@@ -278,10 +280,10 @@ func refreshHealthyUpStreams(getExpires func() int64, healthyUpstream map[string
 
 		// 根据健康检查结果更新健康上游服务器列表。
 		if len(healthy) == 0 {
-			healthyUpstream = transportsUpstream
+			setHealthyUpstream(transportsUpstream)
 		} else {
-			healthyUpstream = healthy
-			fmt.Println("healthyUpstream", healthyUpstream)
+			setHealthyUpstream(healthy)
+			fmt.Println("healthyUpstream", getHealthyUpstream())
 		}
 
 		// 设置上游服务器列表的新过期时间。
@@ -290,7 +292,7 @@ func refreshHealthyUpStreams(getExpires func() int64, healthyUpstream map[string
 	}()
 
 	// 返回当前的健康上游服务器列表。
-	return healthyUpstream
+	return getHealthyUpstream()
 }
 
 // customRoundTripperLoadBalancer 是一个自定义的负载均衡器，

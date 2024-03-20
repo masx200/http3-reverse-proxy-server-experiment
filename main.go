@@ -81,24 +81,32 @@ func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*h
 
 // 主程序入口
 func main() {
+	var upStreamServerSchemeAndHostOfName map[string]Pair[string, string] = map[string]Pair[string, string]{}
 	r := gin.Default()
 	// 定义上游服务器地址
-	var upstreamServers = []string{"https://production.hello-word-worker.masx200.workers.dev/", "https://hello-world-deno-deploy.deno.dev/"}
+	var upstreamServers = []string{"https://desktop-5rh4po7.manx-sun.ts.net:8443/", "http://desktop-5rh4po7.manx-sun.ts.net:8989/"}
 	var maxAge = 30 * 1000
 	var expires = int64(0)
 
 	var proxyServers map[string]func(*http.Request) (*http.Response, error) = map[string]func(*http.Request) (*http.Response, error){}
 
-	for _, url := range upstreamServers {
-
-		proxy, err := createReverseProxy(url)
+	for _, urlString := range upstreamServers {
+		upstreamURL, err := url.Parse(urlString)
+		if err != nil {
+			log.Fatalf("Failed to parse upstream server URL: %v", err)
+		}
+		if upstreamURL.Path != "/" && upstreamURL.Path != "" {
+			log.Fatalf("upstreamServer Path must be / or empty")
+		}
+		proxy, err := createReverseProxy(urlString)
 
 		if err != nil {
 			log.Fatal(err)
 		}
-		proxyServers[url] = func(req *http.Request) (*http.Response, error) {
+		proxyServers[urlString] = func(req *http.Request) (*http.Response, error) {
 			return proxy.Transport.RoundTrip(req)
 		}
+		upStreamServerSchemeAndHostOfName[urlString] = Pair[string, string]{upstreamURL.Scheme, upstreamURL.Host}
 	}
 	// 启动反向代理服务器
 	var healthyUpstream = proxyServers
@@ -143,7 +151,7 @@ func main() {
 		PrintRequest(req) // 打印请求信息
 
 		// 使用随机负载均衡策略选择一个健康状态的传输函数，并执行请求
-		var resp, err = RandomLoadBalancer(getHealthyProxyServers(), req)
+		var resp, err = RandomLoadBalancer(getHealthyProxyServers(), req, upStreamServerSchemeAndHostOfName)
 
 		if err != nil {
 			fmt.Println("ERROR:", err) // 打印错误信息
@@ -273,14 +281,18 @@ type customRoundTripperLoadBalancer struct {
 // *http.Response - 上游服务返回的HTTP响应
 // error - 如果在发送请求过程中出现错误，则返回错误信息
 func (c *customRoundTripperLoadBalancer) RoundTrip(req *http.Request) (*http.Response, error) {
-
+	var roundTripper = c.getTransportHealthy()
+	var upStreamServerSchemeAndHostOfName map[string]Pair[string, string] = map[string]Pair[string, string]{}
+	for k := range roundTripper {
+		upStreamServerSchemeAndHostOfName[k] = Pair[string, string]{c.upstreamURL.Scheme, c.upstreamURL.Host}
+	}
 	// 设置请求的Host为上游服务的Host
 	req.Host = c.upstreamURL.Host
 
 	PrintRequest(req) // 打印请求信息
 
 	// 使用随机负载均衡策略选择一个健康状态的传输函数，并执行请求
-	var rs, err = RandomLoadBalancer(c.getTransportHealthy(), req)
+	var rs, err = RandomLoadBalancer(roundTripper, req, upStreamServerSchemeAndHostOfName)
 
 	if err != nil {
 		fmt.Println("ERROR:", err) // 打印错误信息
@@ -320,9 +332,10 @@ func mapToArray[T comparable, Y any](m map[T]Y) []Pair[T, Y] {
 // 返回值：
 // - *http.Response：从运输函数中返回的HTTP响应指针，如果所有运输函数都失败，则为nil。
 // - error：如果在发送请求时遇到错误，则返回错误信息；否则为nil。
-func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Response, error), req *http.Request) (*http.Response, error) {
+func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Response, error), req *http.Request, upStreamServerSchemeAndHostOfName map[string]Pair[string, string]) (*http.Response, error) {
 	// 打印传入的运输函数列表
 	fmt.Println("RoundTripper:", roundTripper)
+
 	PrintRequest(req)
 	var roundTripperArray = mapToArray(roundTripper)
 	// 使用随机算法对运输函数列表进行洗牌，以实现随机选择运输函数的效果
@@ -331,6 +344,12 @@ func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Respo
 
 	// 遍历洗牌后的运输函数列表，尝试发送HTTP请求
 	for _, transport := range healthRoundTripper {
+		var name = transport.First
+		var Scheme = upStreamServerSchemeAndHostOfName[name].First
+		var Host = upStreamServerSchemeAndHostOfName[name].Second
+		req.URL.Scheme = Scheme
+		req.Host = Host
+		req.URL.Host = Host
 		var rs, err = transport.Second(req) // 执行运输函数
 		if err != nil {
 			// 如果请求发送失败，打印错误信息，并更新错误变量

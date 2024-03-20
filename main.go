@@ -115,6 +115,9 @@ func main() {
 			for key, roundTrip := range proxyServers {
 				if checkUpstreamHealth(key, roundTrip) {
 					healthy[key] = roundTrip
+					fmt.Println("健康检查成功", key)
+				} else {
+					fmt.Println("健康检查失败", key)
 				}
 			}
 			if len(healthy) == 0 {
@@ -130,6 +133,13 @@ func main() {
 	}
 	r.Any("/*path", func(c *gin.Context) {
 		req := c.Request
+		if req.TLS != nil {
+			req.URL.Scheme = "https"
+		} else {
+			req.URL.Scheme = "http"
+		}
+
+		req.URL.Host = req.Host
 		PrintRequest(req) // 打印请求信息
 
 		// 使用随机负载均衡策略选择一个健康状态的传输函数，并执行请求
@@ -221,6 +231,9 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 				for key, roundTrip := range transportsUpstream {
 					if checkUpstreamHealth(upstreamServer, roundTrip) {
 						healthy[key] = roundTrip
+						fmt.Println("健康检查成功", key)
+					} else {
+						fmt.Println("健康检查失败", key)
 					}
 				}
 				if len(healthy) == 0 {
@@ -310,6 +323,7 @@ func mapToArray[T comparable, Y any](m map[T]Y) []Pair[T, Y] {
 func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Response, error), req *http.Request) (*http.Response, error) {
 	// 打印传入的运输函数列表
 	fmt.Println("RoundTripper:", roundTripper)
+	PrintRequest(req)
 	var roundTripperArray = mapToArray(roundTripper)
 	// 使用随机算法对运输函数列表进行洗牌，以实现随机选择运输函数的效果
 	var healthRoundTripper = randomShuffle(roundTripperArray)
@@ -343,6 +357,7 @@ func PrintRequest(req *http.Request) {
 	fmt.Printf("Method: %s\n", req.Method) // 打印请求方法
 	fmt.Printf("URL: %s\n", req.URL)       // 打印请求的URL
 	fmt.Printf("Proto: %s\n", req.Proto)   // 打印请求的协议版本
+	fmt.Printf("host: %s\n", req.Host)
 
 	// 打印请求头信息
 	fmt.Printf("Header: \n")

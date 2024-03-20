@@ -14,6 +14,8 @@ http3反向代理服务器实验
 
 支持http3和http2和http1.1协议
 
+支持了多个上游服务器,支持http和https协议
+
 #### 安装教程
 
 1. xxxx

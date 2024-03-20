@@ -167,9 +167,6 @@ func main() {
 		},
 	}
 
-	log.Printf("Starting http reverse proxy server on :" + strconv.Itoa(httpsPort))
-	x := server.ListenAndServeTLS("cert.crt", "key.pem")
-	log.Fatal(x)
 	var hostname = "0.0.0.0"
 	go func() {
 		listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(httpPort))
@@ -189,6 +186,9 @@ func main() {
 			log.Fatal("Serve: ", err)
 		}
 	}()
+	log.Printf("Starting http reverse proxy server on :" + strconv.Itoa(httpsPort))
+	x := server.ListenAndServeTLS("cert.crt", "key.pem")
+	log.Fatal(x)
 }
 
 // LoadBalanceHandler 是一个用于负载均衡处理的结构体。

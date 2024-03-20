@@ -162,22 +162,36 @@ func main() {
 	log.Fatal(server.ListenAndServeTLS("cert.crt", "key.pem"))
 }
 
+// customRoundTripperLoadBalancer 是一个自定义的负载均衡器，
+// 用于在多个上游服务之间进行请求的负载均衡。
 type customRoundTripperLoadBalancer struct {
-	upstreamURL         *url.URL
-	getTransportHealthy func() []func(*http.Request) (*http.Response, error)
+	upstreamURL         *url.URL                                             // upstreamURL 指定了上游服务的URL
+	getTransportHealthy func() []func(*http.Request) (*http.Response, error) // getTransportHealthy 函数返回一个健康状态的传输函数列表
 }
 
+// RoundTrip 是自定义负载均衡器的.RoundTrip方法，实现了http.RoundTripper接口。
+// 它负责将HTTP请求发送到上游服务，并返回响应。
+//
+// 参数:
+// req *http.Request - 需要发送的HTTP请求
+//
+// 返回值:
+// *http.Response - 上游服务返回的HTTP响应
+// error - 如果在发送请求过程中出现错误，则返回错误信息
 func (c *customRoundTripperLoadBalancer) RoundTrip(req *http.Request) (*http.Response, error) {
 
+	// 设置请求的Host为上游服务的Host
 	req.Host = c.upstreamURL.Host
 
-	PrintRequest(req)
+	PrintRequest(req) // 打印请求信息
+
+	// 使用随机负载均衡策略选择一个健康状态的传输函数，并执行请求
 	var rs, err = RandomLoadBalancer(c.getTransportHealthy(), req)
 
 	if err != nil {
-		fmt.Println("ERROR:", err)
+		fmt.Println("ERROR:", err) // 打印错误信息
 	} else {
-		PrintResponse(rs)
+		PrintResponse(rs) // 打印响应信息
 	}
 	return rs, err
 }

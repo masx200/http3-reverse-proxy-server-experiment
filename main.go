@@ -1,16 +1,17 @@
 package main
 
 import (
+	"bufio"
 	"crypto/tls"
 	"fmt"
 	"log"
-
 	"math/rand"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 )
@@ -80,12 +81,13 @@ func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*h
 
 // 主程序入口
 func main() {
+	r := gin.Default()
 	// 定义上游服务器地址
 	var upstreamServers = []string{"https://production.hello-word-worker.masx200.workers.dev/", "https://hello-world-deno-deploy.deno.dev/"}
 	var maxAge = 30 * 1000
 	var expires = int64(0)
 
-	var proxyServers map[string]*httputil.ReverseProxy = map[string]*httputil.ReverseProxy{}
+	var proxyServers map[string]func(*http.Request) (*http.Response, error) = map[string]func(*http.Request) (*http.Response, error){}
 
 	for _, url := range upstreamServers {
 
@@ -94,41 +96,65 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		proxyServers[url] = proxy
+		proxyServers[url] = func(req *http.Request) (*http.Response, error) {
+			return proxy.Transport.RoundTrip(req)
+		}
 	}
 	// 启动反向代理服务器
 	var healthyUpstream = proxyServers
+	var getHealthyProxyServers = func() map[string]func(*http.Request) (*http.Response, error) {
+		if expires > time.Now().Unix() {
+			fmt.Println("不需要进行健康检查")
+			fmt.Println("healthyUpstream", healthyUpstream)
+			return healthyUpstream
+		}
+		go func() {
+			var healthy = map[string]func(*http.Request) (*http.Response, error){}
+			fmt.Println("需要进行健康检查")
+			// 对上游服务器进行健康检查，选择健康的传输方式
+			for key, roundTrip := range proxyServers {
+				if checkUpstreamHealth(key, roundTrip) {
+					healthy[key] = roundTrip
+				}
+			}
+			if len(healthy) == 0 {
+				healthyUpstream = proxyServers
+			} else {
+				healthyUpstream = healthy
+				fmt.Println("healthyUpstream", healthyUpstream)
+			}
+			expires = time.Now().Unix() + int64(maxAge)
+		}()
+		return healthyUpstream
+
+	}
+	r.Any("/:path", func(c *gin.Context) {
+		req := c.Request
+		PrintRequest(req) // 打印请求信息
+
+		// 使用随机负载均衡策略选择一个健康状态的传输函数，并执行请求
+		var resp, err = RandomLoadBalancer(getHealthyProxyServers(), req)
+
+		if err != nil {
+			fmt.Println("ERROR:", err) // 打印错误信息
+		} else {
+			PrintResponse(resp) // 打印响应信息
+		}
+		for k, vv := range resp.Header {
+			for _, v := range vv {
+				c.Header(k, v)
+			}
+		}
+		c.Status(resp.StatusCode)
+		defer resp.Body.Close()
+		bufio.NewReader(resp.Body).WriteTo(c.Writer)
+
+	})
 	server := &http.Server{
 		Addr: ":18080",
-		Handler: &LoadBalanceHandler{getHealthyProxyServers: func() map[string]*httputil.ReverseProxy {
-			if expires > time.Now().Unix() {
-				fmt.Println("不需要进行健康检查")
-				fmt.Println("healthyUpstream", healthyUpstream)
-				return healthyUpstream
-			}
-			go func() {
-				var healthy = map[string]*httputil.ReverseProxy{}
-				fmt.Println("需要进行健康检查")
-				// 对上游服务器进行健康检查，选择健康的传输方式
-				for key, roundTrip := range proxyServers {
-					if checkUpstreamHealth(key, func(r *http.Request) (*http.Response, error) {
-						return roundTrip.Transport.RoundTrip(r)
-
-					}) {
-						healthy[key] = roundTrip
-					}
-				}
-				if len(healthy) == 0 {
-					healthyUpstream = proxyServers
-				} else {
-					healthyUpstream = healthy
-					fmt.Println("healthyUpstream", healthyUpstream)
-				}
-				expires = time.Now().Unix() + int64(maxAge)
-			}()
-			return healthyUpstream
-
-		}},
+		Handler: &LoadBalanceHandler{
+			engine: r,
+		},
 	}
 
 	log.Printf("Starting reverse proxy server on :18080")
@@ -137,11 +163,11 @@ func main() {
 }
 
 type LoadBalanceHandler struct {
-	getHealthyProxyServers func() map[string]*httputil.ReverseProxy
+	engine *gin.Engine
 }
 
 func (h *LoadBalanceHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-
+	h.engine.Handler().ServeHTTP(w, req)
 }
 func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 	// 解析上游服务器URL，确保其路径为根路径或为空

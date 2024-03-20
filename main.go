@@ -91,10 +91,11 @@ func main() {
 	r := gin.Default()
 	r.Use(Forwarded(), LoopDetect())
 	r.Use(func(c *gin.Context) {
-		c.Next()
+
 		c.Writer.Header().Add("Alt-Svc",
 			"h3=\":443\";ma=86400,h3-29=\":443\";ma=86400,h3-27=\":443\";ma=86400",
 		)
+		c.Next()
 	})
 	// 定义上游服务器地址
 	var upstreamServers = []string{"https://quic.nginx.org/", "https://www.baidu.com/", "https://www.so.com/", "https://hello-world-deno-deploy.deno.dev/", "https://production.hello-word-worker.masx200.workers.dev/"}
@@ -161,7 +162,7 @@ func main() {
 		}
 		for k, vv := range resp.Header {
 			for _, v := range vv {
-				c.Header(k, v)
+				c.Writer.Header().Add(k, v)
 			}
 		}
 		c.Status(resp.StatusCode)

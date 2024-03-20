@@ -128,7 +128,7 @@ func main() {
 		return healthyUpstream
 
 	}
-	r.Any("/:path", func(c *gin.Context) {
+	r.Any("/*path", func(c *gin.Context) {
 		req := c.Request
 		PrintRequest(req) // 打印请求信息
 

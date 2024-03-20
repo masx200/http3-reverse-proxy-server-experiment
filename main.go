@@ -90,6 +90,12 @@ func main() {
 	var upStreamServerSchemeAndHostOfName map[string]Pair[string, string] = map[string]Pair[string, string]{}
 	r := gin.Default()
 	r.Use(Forwarded(), LoopDetect())
+	r.Use(func(c *gin.Context) {
+		c.Next()
+		c.Writer.Header().Add("Alt-Svc",
+			"h3=\":443\";ma=86400,h3-29=\":443\";ma=86400,h3-27=\":443\";ma=86400",
+		)
+	})
 	// 定义上游服务器地址
 	var upstreamServers = []string{"https://quic.nginx.org/", "https://www.baidu.com/", "https://www.so.com/", "https://hello-world-deno-deploy.deno.dev/", "https://production.hello-word-worker.masx200.workers.dev/"}
 	//打印上游

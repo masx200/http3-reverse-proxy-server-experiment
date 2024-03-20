@@ -96,7 +96,12 @@ func main() {
 			"h3=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-29=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-27=\":"+fmt.Sprint(httpsPort)+"\";ma=86400",
 		)
 		c.Next()
-	})
+	},
+		func(ctx *gin.Context) {
+
+			ctx.Writer.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+			ctx.Next()
+		})
 	// 定义上游服务器地址
 	var upstreamServers = []string{"https://quic.nginx.org/", "https://www.baidu.com/", "https://www.so.com/", "https://hello-world-deno-deploy.deno.dev/", "https://production.hello-word-worker.masx200.workers.dev/"}
 	//打印上游

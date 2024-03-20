@@ -263,13 +263,19 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 		//需要并行检查
 		// 遍历所有上游服务器进行健康检查。
 		for key, roundTrip := range transportsUpstream {
-			var upstreamServer = upstreamServerOfName[key]
-			if checkUpstreamHealth(upstreamServer, roundTrip) {
-				healthy[key] = roundTrip
-				fmt.Println("健康检查成功", key, upstreamServer)
-			} else {
-				fmt.Println("健康检查失败", key, upstreamServer)
-			}
+			keyi0 := key
+			roundTripi0 := roundTrip
+			go func() {
+				var upstreamServer = upstreamServerOfName[keyi0]
+				//loop variable roundTrip captured by func literal loop closure
+				if checkUpstreamHealth(upstreamServer, roundTripi0) {
+					healthy[keyi0] = roundTripi0
+					fmt.Println("健康检查成功", keyi0, upstreamServer)
+				} else {
+					fmt.Println("健康检查失败", keyi0, upstreamServer)
+				}
+			}()
+
 		}
 
 		// 根据健康检查结果更新健康上游服务器列表。

@@ -11,6 +11,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -216,8 +217,84 @@ func Forwarded() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+type ForwardedBy struct {
+	Identifier string
+}
+
+// 辅助函数：将ForwardedBy列表转换为集合（set），用于快速判断重复项
+func setFromForwardedBy(forwardedByList []ForwardedBy) map[string]bool {
+	set := make(map[string]bool)
+	for _, fb := range forwardedByList {
+		set[fb.Identifier] = true
+	}
+	return set
+}
+
+// parseForwardedHeader 解析 "Forwarded" HTTP 头部信息，返回一个 ForwardedBy 结构体切片。
+// header: 代表被转发的请求的 "Forwarded" 头部字符串。
+// 返回值: 一个包含所有转发标识的 ForwardedBy 结构体切片，以及可能发生的错误。
+
+func parseForwardedHeader(header string) ([]ForwardedBy, error) {
+	var forwardedByList []ForwardedBy
+	parts := strings.Split(header, ", ")
+
+	for _, part := range parts {
+		for _, param := range strings.Split(part, ";") {
+			param = strings.TrimSpace(param)
+			if !strings.HasPrefix(param, "by=") {
+				continue
+			}
+
+			// 分离 by 参数的值
+			value := strings.TrimPrefix(param, "by=")
+			// host, port, err := net.SplitHostPort(value)
+			// if err != nil {
+			// 如果没有端口信息，host 就是整个值
+			var host = value
+			// port = ""
+			// }
+
+			forwardedBy := ForwardedBy{
+				Identifier: host,
+				// Port:       port,
+			}
+
+			// 检查是否重复
+			// isDuplicate := false
+			// for _, existing := range forwardedByList {
+			// 	if existing.Identifier == forwardedBy.Identifier && existing.Port == forwardedBy.Port {
+			// 		isDuplicate = true
+			// 		break
+			// 	}
+			// }
+			// if !isDuplicate {
+			forwardedByList = append(forwardedByList, forwardedBy)
+			// }
+		}
+	}
+
+	return forwardedByList, nil
+}
 func LoopDetect() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var r = c.Request
+		var w = c.Writer
+		forwardedHeader := strings.Join(r.Header.Values("Forwarded"), ", ")
+		log.Println("forwardedHeader:", forwardedHeader)
+		forwardedByList, err := parseForwardedHeader(forwardedHeader)
+		log.Println("forwardedByList:", forwardedByList)
+		if len(forwardedByList) != len(setFromForwardedBy(forwardedByList)) {
+			w.WriteHeader(508)
+			fmt.Fprintln(w, "Duplicate 'by' identifiers found in 'Forwarded' header.")
+			log.Println("Duplicate 'by' identifiers found in 'Forwarded' header.")
+			return
+		}
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "Error parsing 'Forwarded' header: %v", err)
+			return
+		}
 		c.Next()
 	}
 }

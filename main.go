@@ -73,10 +73,13 @@ func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*h
 	PrintResponse(resp)
 	return resp.StatusCode, nil
 }
-func main() {
 
+// 主程序入口
+func main() {
+	// 定义上游服务器地址
 	upstreamServer := "https://www.example.com/"
 
+	// 解析上游服务器URL，确保其路径为根路径或为空
 	upstreamURL, err := url.Parse(upstreamServer)
 	if err != nil {
 		log.Fatalf("Failed to parse upstream server URL: %v", err)
@@ -85,23 +88,31 @@ func main() {
 		log.Fatalf("upstreamServer Path must be / or empty")
 	}
 
+	// 初始化HTTP/3客户端
 	http3Client := &http.Client{
 		Transport: &http3.RoundTripper{
 			TLSClientConfig: &tls.Config{},
 			QuicConfig:      &quic.Config{},
 		},
 	}
+	// 初始化HTTP/2客户端，使用默认传输
 	http2Client := &http.Client{
 		Transport: http.DefaultTransport,
 	}
+
+	// 定义上游服务器的传输方式，包括HTTP/3和HTTP/2
 	var transportsUpstream = []func(*http.Request) (*http.Response, error){
 		func(req *http.Request) (*http.Response, error) { return http3Client.Transport.RoundTrip(req) },
 
 		func(req *http.Request) (*http.Response, error) { return http2Client.Transport.RoundTrip(req) },
 	}
+
+	// 设置健康检查的超时时间
 	var maxAge = 30 * 1000
 	var expires = int64(0)
 	var healthyUpstream = transportsUpstream
+
+	// 自定义负载均衡的传输器，根据上游服务器的健康状况选择传输方式
 	customTransport := &customRoundTripperLoadBalancer{
 		upstreamURL: upstreamURL,
 		getTransportHealthy: func() []func(*http.Request) (*http.Response, error) {
@@ -113,7 +124,7 @@ func main() {
 			go func() {
 				var healthy = []func(*http.Request) (*http.Response, error){}
 				fmt.Println("需要进行健康检查")
-				//进行健康检查
+				// 对上游服务器进行健康检查，选择健康的传输方式
 				for _, roundTrip := range transportsUpstream {
 					if checkUpstreamHealth(upstreamServer, roundTrip) {
 						healthy = append(healthy, roundTrip)
@@ -131,10 +142,13 @@ func main() {
 		},
 	}
 
+	// 初始化反向代理
 	proxy := httputil.NewSingleHostReverseProxy(upstreamURL)
 
+	// 设置反向代理的传输器为自定义的负载均衡传输器
 	proxy.Transport = customTransport
 
+	// 启动反向代理服务器
 	server := &http.Server{
 		Addr:    ":18080",
 		Handler: proxy,

@@ -28,9 +28,9 @@ func main() {
 	var httpsPort = 18443
 	var httpPort = 18080
 	var upStreamServerSchemeAndHostOfName map[string]Pair[string, string] = map[string]Pair[string, string]{}
-	r := gin.Default()
-	r.Use(Forwarded(), LoopDetect())
-	r.Use(func(c *gin.Context) {
+	engine := gin.Default()
+	engine.Use(Forwarded(), LoopDetect())
+	engine.Use(func(c *gin.Context) {
 
 		c.Writer.Header().Add("Alt-Svc",
 			"h3=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-29=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-27=\":"+fmt.Sprint(httpsPort)+"\";ma=86400",
@@ -84,7 +84,7 @@ func main() {
 		})
 
 	}
-	r.Any("/*path", func(c *gin.Context) {
+	engine.Any("/*path", func(c *gin.Context) {
 		req := c.Request
 		if req.TLS != nil {
 			req.URL.Scheme = "https"
@@ -119,7 +119,7 @@ func main() {
 	server := &http.Server{
 		Addr: hostname + ":" + strconv.Itoa(httpsPort),
 		Handler: &LoadBalanceHandler{
-			engine: r,
+			engine: engine,
 		},
 	}
 
@@ -132,7 +132,7 @@ func main() {
 
 		// 设置自定义处理器
 		http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-			r.Handler().ServeHTTP(w, req)
+			engine.Handler().ServeHTTP(w, req)
 		})
 
 		// 开始服务
@@ -145,7 +145,7 @@ func main() {
 	keyFile := "key.pem"
 	go func() {
 		var handlerFunc = func(w http.ResponseWriter, req *http.Request) {
-			r.Handler().ServeHTTP(w, req)
+			engine.Handler().ServeHTTP(w, req)
 		}
 
 		bCap := hostname + ":" + fmt.Sprint(httpsPort)

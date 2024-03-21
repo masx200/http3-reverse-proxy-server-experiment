@@ -23,7 +23,8 @@ import (
 // 主程序入口
 func main() {
 	// 定义上游服务器地址
-	var upstreamServers = []string{"https://localhost:18443/", "http://localhost:18080/"}
+	/* 测试防环功能 */
+	var upstreamServers = []string{"https://localhost:18443/", "http://localhost:18080/", "https://hello-world-deno-deploy.deno.dev/", "https://production.hello-word-worker.masx200.workers.dev/"}
 	var httpsPort = 18443
 	var httpPort = 18080
 	var upStreamServerSchemeAndHostOfName map[string]Pair[string, string] = map[string]Pair[string, string]{}
@@ -358,6 +359,7 @@ func LoopDetect() gin.HandlerFunc {
 			w.WriteHeader(508)
 			fmt.Fprintln(w, "Duplicate 'by' identifiers found in 'Forwarded' header.")
 			log.Println("Duplicate 'by' identifiers found in 'Forwarded' header.")
+			c.Abort()
 			return
 		}
 		if err != nil {

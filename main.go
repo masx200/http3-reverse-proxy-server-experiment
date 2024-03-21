@@ -378,6 +378,28 @@ type LoadBalanceHandler struct {
 // 参数req是客户端发来的HTTP请求。
 func (h *LoadBalanceHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	h.engine.Handler().ServeHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
+} // ChangeURLScheme 用于更改给定URL的协议。
+//
+// 参数：
+// originalURLStr: 原始URL字符串，需要被更改协议的URL。
+// newScheme: 新的协议名称，例如："https"。
+//
+// 返回值：
+// 返回更改协议后的URL字符串和一个error。
+// 如果解析原始URL或生成新URL时发生错误，将返回一个非空的error。
+
+func ChangeURLScheme(originalURLStr string, newScheme string) (string, error) {
+	// Parse the original URL
+	originalURL, err := url.Parse(originalURLStr)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse the original URL: %v", err)
+	}
+
+	// Modify the scheme
+	originalURL.Scheme = newScheme
+
+	// Return the string representation of the modified URL
+	return originalURL.String(), nil
 }
 
 // createReverseProxy 创建一个反向代理，根据上游服务器的健康状况动态选择HTTP/3或HTTP/2进行通信。
@@ -409,12 +431,30 @@ func createReverseProxy(upstreamServer string, maxAge int64) (*httputil.ReverseP
 	http2Client := &http.Client{
 		Transport: http.DefaultTransport,
 	}
+	http3url, err := ChangeURLScheme(upstreamServer, "http3")
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse upstream server URL: %v", err)
+	}
+	var http12url string
+	if upstreamURL.Scheme == "http" {
+		http12urlll, err := ChangeURLScheme(upstreamServer, "http1")
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse upstream server URL: %v", err)
+		}
+		http12url = http12urlll
+	} else {
+		http12urlll, err := ChangeURLScheme(upstreamServer, "http2")
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse upstream server URL: %v", err)
+		}
+		http12url = http12urlll
+	}
 
 	// 定义上游服务器的传输方式，包括HTTP/3和HTTP/2
 	var transportsUpstream = map[string]func(*http.Request) (*http.Response, error){
-		"http3": func(req *http.Request) (*http.Response, error) { return http3Client.Transport.RoundTrip(req) },
+		http3url: func(req *http.Request) (*http.Response, error) { return http3Client.Transport.RoundTrip(req) },
 
-		"http2": func(req *http.Request) (*http.Response, error) { return http2Client.Transport.RoundTrip(req) },
+		http12url: func(req *http.Request) (*http.Response, error) { return http2Client.Transport.RoundTrip(req) },
 	}
 	var upstreamServerOfName = map[string]string{}
 

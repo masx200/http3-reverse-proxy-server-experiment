@@ -457,7 +457,7 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 	// 检查当前上游服务器列表是否已过期。
 	if getExpires() > time.Now().UnixMilli() {
 		fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
-		fmt.Println("healthyUpstream", getHealthyUpstream())
+		fmt.Println("健康的上游服务器", getHealthyUpstream())
 		return getHealthyUpstream()
 	}
 
@@ -488,7 +488,7 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 			setHealthyUpstream(transportsUpstream)
 		} else {
 			setHealthyUpstream(healthy)
-			fmt.Println("healthyUpstream", getHealthyUpstream())
+			fmt.Println("健康的上游服务器", getHealthyUpstream())
 		}
 
 		// 设置上游服务器列表的新过期时间。

@@ -110,7 +110,7 @@ func main() {
 		fmt.Println(server)
 	}
 	//过期时间毫秒
-	var maxAge = 30 * 1000
+	var maxAge = int64(15 * 1000)
 	var expires = int64(0)
 	var upstreamServerOfName = map[string]string{}
 	var proxyServers map[string]func(*http.Request) (*http.Response, error) = map[string]func(*http.Request) (*http.Response, error){}
@@ -123,7 +123,7 @@ func main() {
 		if upstreamURL.Path != "/" && upstreamURL.Path != "" {
 			log.Fatalf("upstreamServer Path must be / or empty")
 		}
-		proxy, err := createReverseProxy(urlString)
+		proxy, err := createReverseProxy(urlString, int64(maxAge))
 
 		if err != nil {
 			log.Fatal(err)
@@ -383,7 +383,7 @@ func (h *LoadBalanceHandler) ServeHTTP(w http.ResponseWriter, req *http.Request)
 // 返回值:
 // *httputil.ReverseProxy - 配置好的反向代理实例。
 // error - 创建过程中遇到的任何错误。
-func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
+func createReverseProxy(upstreamServer string, maxAge int64) (*httputil.ReverseProxy, error) {
 	// 解析上游服务器URL，确保其路径为根路径或为空
 	upstreamURL, err := url.Parse(upstreamServer)
 	if err != nil {
@@ -417,7 +417,7 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 		upstreamServerOfName[k] = upstreamServer
 	}
 	// 设置健康检查的超时时间毫秒
-	var maxAge = 30 * 1000
+
 	var expires = int64(0)
 	var healthyUpstream = transportsUpstream
 
@@ -453,7 +453,7 @@ func createReverseProxy(upstreamServer string) (*httputil.ReverseProxy, error) {
 //
 // 返回值:
 // - 返回更新后的健康上游服务器映射。
-func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() map[string]func(*http.Request) (*http.Response, error), transportsUpstream map[string]func(*http.Request) (*http.Response, error), upstreamServerOfName map[string]string, maxAge int, setExpires func(int64), setHealthyUpstream func(transportsUpstream map[string]func(*http.Request) (*http.Response, error))) map[string]func(*http.Request) (*http.Response, error) {
+func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() map[string]func(*http.Request) (*http.Response, error), transportsUpstream map[string]func(*http.Request) (*http.Response, error), upstreamServerOfName map[string]string, maxAge int64, setExpires func(int64), setHealthyUpstream func(transportsUpstream map[string]func(*http.Request) (*http.Response, error))) map[string]func(*http.Request) (*http.Response, error) {
 	// 检查当前上游服务器列表是否已过期。
 	if getExpires() > time.Now().UnixMilli() {
 		fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
@@ -467,9 +467,11 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 		fmt.Println("需要进行健康检查", "已经过期的时间毫秒", -getExpires()+time.Now().UnixMilli())
 		//需要并行检查
 		// 遍历所有上游服务器进行健康检查。
+		var promises = make(chan struct{}, len(transportsUpstream))
 		for key, roundTrip := range transportsUpstream {
 			keyi0 := key
 			roundTripi0 := roundTrip
+
 			go func() {
 				var upstreamServer = upstreamServerOfName[keyi0]
 				//loop variable roundTrip captured by func literal loop closure
@@ -479,16 +481,20 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 				} else {
 					fmt.Println("健康检查失败", keyi0, upstreamServer)
 				}
+				promises <- struct{}{}
 			}()
 
 		}
-
+		for range transportsUpstream {
+			<-promises
+		}
 		// 根据健康检查结果更新健康上游服务器列表。
 		if len(healthy) == 0 {
 			setHealthyUpstream(transportsUpstream)
+			fmt.Println("没有健康的上游服务器", getHealthyUpstream())
 		} else {
 			setHealthyUpstream(healthy)
-			fmt.Println("健康的上游服务器", getHealthyUpstream())
+			fmt.Println("找到健康的上游服务器", getHealthyUpstream())
 		}
 
 		// 设置上游服务器列表的新过期时间。

@@ -108,7 +108,7 @@ func main() {
 			ctx.Next()
 		})
 	// 定义上游服务器地址
-	var upstreamServers = []string{"https://quic.nginx.org/", "https://www.baidu.com/", "https://www.so.com/", "https://hello-world-deno-deploy.deno.dev/", "https://production.hello-word-worker.masx200.workers.dev/"}
+	var upstreamServers = []string{"https://quic.nginx.org/", "https://hello-world-deno-deploy.deno.dev/", "https://production.hello-word-worker.masx200.workers.dev/"}
 	//打印上游
 	fmt.Println("Upstream servers:")
 	for _, server := range upstreamServers {
@@ -632,7 +632,7 @@ func mapToArray[T comparable, Y any](m map[T]Y) []Pair[T, Y] {
 // - error：如果在发送请求时遇到错误，则返回错误信息；否则为nil。
 func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Response, error), req *http.Request, upStreamServerSchemeAndHostOfName map[string]Pair[string, string]) (*http.Response, error) {
 	// 打印传入的运输函数列表
-	fmt.Println("RoundTripper:", roundTripper)
+	fmt.Println("接收到的可用上游服务器:", roundTripper)
 
 	PrintRequest(req)
 	var roundTripperArray = mapToArray(roundTripper)

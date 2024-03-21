@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -81,6 +82,10 @@ func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*h
 	PrintResponse(resp)
 	return resp.StatusCode, nil
 }
+
+// refreshHealthyUpStreams加锁操作
+var mutex sync.Mutex
+var mutex2 sync.Mutex
 
 // 主程序入口
 func main() {
@@ -454,6 +459,9 @@ func createReverseProxy(upstreamServer string, maxAge int64) (*httputil.ReverseP
 // 返回值:
 // - 返回更新后的健康上游服务器映射。
 func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() map[string]func(*http.Request) (*http.Response, error), transportsUpstream map[string]func(*http.Request) (*http.Response, error), upstreamServerOfName map[string]string, maxAge int64, setExpires func(int64), setHealthyUpstream func(transportsUpstream map[string]func(*http.Request) (*http.Response, error))) map[string]func(*http.Request) (*http.Response, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	// 检查当前上游服务器列表是否已过期。
 	if getExpires() > time.Now().UnixMilli() {
 		fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
@@ -463,6 +471,10 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 
 	// 在后台进行健康检查更新。
 	go func() {
+
+		mutex2.Lock()
+		defer mutex2.Unlock()
+
 		var healthy = map[string]func(*http.Request) (*http.Response, error){}
 		fmt.Println("需要进行健康检查", "已经过期的时间毫秒", -getExpires()+time.Now().UnixMilli())
 		//需要并行检查

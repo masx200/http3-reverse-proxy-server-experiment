@@ -99,7 +99,7 @@ func main() {
 		var resp, err = RandomLoadBalancer(getHealthyProxyServers(), req, upStreamServerSchemeAndHostOfName)
 
 		if err != nil {
-			fmt.Println("ERROR:", err) // 打印错误信息
+			log.Println("ERROR:", err) // 打印错误信息
 			c.AbortWithStatus(http.StatusBadGateway)
 			return
 		} else {
@@ -197,9 +197,10 @@ func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Respon
 		fmt.Println("Status code is less than 500.")
 		return true, nil
 	} else {
-		fmt.Println("ERROR:" + "Status code is 500 or greater.")
+		fmt.Println("ERROR:"+"Status code is 500 or greater.", statusCode)
+
 	}
-	return false, fmt.Errorf("ERROR:Status code is 500 or greater")
+	return false, fmt.Errorf("ERROR:Status code is 500 or greater" + fmt.Sprint(statusCode))
 }
 
 // RoundTripTransport 是一个实现了 http.RoundTripper 接口的类型，
@@ -417,10 +418,12 @@ func createReverseProxy(upstreamServer string, maxAge int64) (*httputil.ReverseP
 	// 解析上游服务器URL，确保其路径为根路径或为空
 	upstreamURL, err := url.Parse(upstreamServer)
 	if err != nil {
-		log.Fatalf("Failed to parse upstream server URL: %v", err)
+		log.Printf("Failed to parse upstream server URL: %v", err)
+		return nil, err
 	}
 	if upstreamURL.Path != "/" && upstreamURL.Path != "" {
-		log.Fatalf("upstreamServer Path must be / or empty")
+		log.Printf("upstreamServer Path must be / or empty")
+		return nil, err
 	}
 
 	// 初始化HTTP/3客户端
@@ -539,7 +542,7 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 					fmt.Println("健康检查成功", keyi0, upstreamServer)
 				} else {
 
-					fmt.Println("健康检查失败", keyi0, upstreamServer, err)
+					log.Println("健康检查失败", keyi0, upstreamServer, err)
 				}
 				promises <- struct{}{}
 			}()
@@ -659,13 +662,14 @@ func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Respo
 		var rs, err = transport.Second(req) // 执行运输函数
 		if err != nil {
 			// 如果请求发送失败，打印错误信息，并更新错误变量
-			fmt.Println("ERROR:", err)
+			log.Println("ERROR:", err)
 			rer = err
 
 		} else if rs.StatusCode >= 500 {
 			// 如果请求发送成功，打印响应信息，并返回响应和错误
-			fmt.Println("ERROR:", "Status code is 500 or greater.")
-			rer = fmt.Errorf("ERROR:Status code is 500 or greater")
+			log.Println("ERROR:", "Status code is 500 or greater.", rs.StatusCode)
+			PrintResponse(rs)
+			rer = fmt.Errorf("ERROR:Status code is 500 or greater" + fmt.Sprint(rs.StatusCode))
 		} else {
 			// 如果请求发送成功，打印响应信息，并返回响应和错误
 			PrintResponse(rs)

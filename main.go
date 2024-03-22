@@ -22,6 +22,8 @@ import (
 
 // 主程序入口
 func main() {
+	//健康检查过期时间毫秒
+	var maxAge = int64(10 * 1000)
 	// 定义上游服务器地址
 	/* 测试防环功能 */
 	var upstreamServers = []string{"https://production.hello-word-worker-cloudflare.masx200.workers.dev/", "https://hello-world-deno-deploy.deno.dev/"}
@@ -49,8 +51,7 @@ func main() {
 	for _, server := range upstreamServers {
 		fmt.Println(server)
 	}
-	//过期时间毫秒
-	var maxAge = int64(15 * 1000)
+
 	var expires = int64(0)
 	var upstreamServerOfName = map[string]string{}
 	var proxyServers map[string]func(*http.Request) (*http.Response, error) = map[string]func(*http.Request) (*http.Response, error){}

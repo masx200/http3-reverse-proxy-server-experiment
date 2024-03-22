@@ -535,6 +535,9 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 			roundTripi0 := roundTrip
 
 			go func() {
+				defer func() {
+					promises <- struct{}{}
+				}()
 				var upstreamServer = upstreamServerOfName[keyi0]
 				//loop variable roundTrip captured by func literal loop closure
 				if ok, err := checkUpstreamHealth(upstreamServer, roundTripi0); ok {
@@ -544,7 +547,7 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 
 					log.Println("健康检查失败", keyi0, upstreamServer, err)
 				}
-				promises <- struct{}{}
+
 			}()
 
 		}

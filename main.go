@@ -24,7 +24,7 @@ import (
 func main() {
 	// 定义上游服务器地址
 	/* 测试防环功能 */
-	var upstreamServers = []string{"https://localhost:18443/", "http://localhost:18080/", "https://hello-world-deno-deploy.deno.dev/", "https://production.hello-word-worker.masx200.workers.dev/"}
+	var upstreamServers = []string{"https://production.hello-word-worker-cloudflare.masx200.workers.dev/", "https://hello-world-deno-deploy.deno.dev/"}
 	var httpsPort = 18443
 	var httpPort = 18080
 	var upStreamServerSchemeAndHostOfName map[string]Pair[string, string] = map[string]Pair[string, string]{}
@@ -239,7 +239,7 @@ func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*h
 }
 
 // refreshHealthyUpStreams加锁操作
-var mutex sync.Mutex
+// var mutex sync.Mutex
 var mutex2 sync.Mutex
 
 type HandlerServeHTTP struct {
@@ -502,8 +502,8 @@ func createReverseProxy(upstreamServer string, maxAge int64) (*httputil.ReverseP
 // 返回值:
 // - 返回更新后的健康上游服务器映射。
 func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() map[string]func(*http.Request) (*http.Response, error), transportsUpstream map[string]func(*http.Request) (*http.Response, error), upstreamServerOfName map[string]string, maxAge int64, setExpires func(int64), setHealthyUpstream func(transportsUpstream map[string]func(*http.Request) (*http.Response, error))) map[string]func(*http.Request) (*http.Response, error) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	// mutex.Lock()
+	// defer mutex.Unlock()
 
 	// 检查当前上游服务器列表是否已过期。
 	if getExpires() > time.Now().UnixMilli() {

@@ -180,13 +180,13 @@ func main() {
 // RoundTrip: 用于发送HTTP请求的函数，模拟HTTP客户端的行为
 // 返回值: 返回一个布尔值，表示上游服务的健康状态，true为健康，false为不健康
 
-func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Response, error)) bool {
+func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Response, error)) (bool, error) {
 
 	// 发送HEAD请求并检查返回的状态码
 	statusCode, err := sendHeadRequestAndCheckStatus(url, RoundTrip)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
-		return false
+		return false, err
 	}
 
 	// 打印状态码信息
@@ -195,11 +195,11 @@ func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Respon
 	// 根据状态码判断上游服务的健康状态
 	if statusCode < 500 {
 		fmt.Println("Status code is less than 500.")
-		return true
+		return true, nil
 	} else {
-		fmt.Println("Status code is 500 or greater.")
+		fmt.Println("ERROR:" + "Status code is 500 or greater.")
 	}
-	return false
+	return false, fmt.Errorf("ERROR:Status code is 500 or greater")
 }
 
 // RoundTripTransport 是一个实现了 http.RoundTripper 接口的类型，
@@ -534,11 +534,12 @@ func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() 
 			go func() {
 				var upstreamServer = upstreamServerOfName[keyi0]
 				//loop variable roundTrip captured by func literal loop closure
-				if checkUpstreamHealth(upstreamServer, roundTripi0) {
+				if ok, err := checkUpstreamHealth(upstreamServer, roundTripi0); ok {
 					healthy[keyi0] = roundTripi0
 					fmt.Println("健康检查成功", keyi0, upstreamServer)
 				} else {
-					fmt.Println("健康检查失败", keyi0, upstreamServer)
+
+					fmt.Println("健康检查失败", keyi0, upstreamServer, err)
 				}
 				promises <- struct{}{}
 			}()
@@ -661,6 +662,10 @@ func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Respo
 			fmt.Println("ERROR:", err)
 			rer = err
 
+		} else if rs.StatusCode >= 500 {
+			// 如果请求发送成功，打印响应信息，并返回响应和错误
+			fmt.Println("ERROR:", "Status code is 500 or greater.")
+			rer = fmt.Errorf("ERROR:Status code is 500 or greater")
 		} else {
 			// 如果请求发送成功，打印响应信息，并返回响应和错误
 			PrintResponse(rs)

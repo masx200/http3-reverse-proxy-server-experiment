@@ -186,7 +186,7 @@ func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Respon
 	// 发送HEAD请求并检查返回的状态码
 	statusCode, err := sendHeadRequestAndCheckStatus(url, RoundTrip)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		return false, err
 	}
 
@@ -198,7 +198,7 @@ func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Respon
 		fmt.Println("Status code is less than 500.")
 		return true, nil
 	} else {
-		fmt.Println("ERROR:"+"Status code is 500 or greater.", statusCode)
+		log.Println("ERROR:"+"Status code is 500 or greater.", statusCode)
 
 	}
 	return false, fmt.Errorf("ERROR:Status code is 500 or greater" + fmt.Sprint(statusCode))
@@ -600,7 +600,7 @@ func (c *customRoundTripperLoadBalancer) RoundTrip(req *http.Request) (*http.Res
 	var rs, err = RandomLoadBalancer(roundTripper, req, upStreamServerSchemeAndHostOfName)
 
 	if err != nil {
-		fmt.Println("ERROR:", err) // 打印错误信息
+		log.Println("ERROR:", err) // 打印错误信息
 	} else {
 		PrintResponse(rs) // 打印响应信息
 	}

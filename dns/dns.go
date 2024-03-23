@@ -46,7 +46,7 @@ func dohClient(msg *dns.Msg, dohServer string,
 	return resp, nil
 }
 func main() {
-	dohServer := []string{"https://deno-dns-over-https-server-5ehq9rg3chgf.deno.dev/dns-query", "https://nextjs-reverse-proxy-middleware-masx2.netlify.app/token/4yF6nSCifSLs8lfkb4t8OWP69kfpgiun/https/doh-cache-worker-cf.masx200.workers.dev/dns-query", "https://nextjs-reverse-proxy-middleware.onrender.com/token/4yF6nSCifSLs8lfkb4t8OWP69kfpgiun/https/doh-cache-worker-cf.masx200.workers.dev/dns-query"}
+	dohServer := []string{"https://doh.pub/dns-query", "https://doh.360.cn/dns-query", "https://dns.alidns.com/dns-query"}
 	// dohServer := []string{"9.9.9.9:853", "1.1.1.1:853", "8.8.4.4:853", "dot.sb:853"}
 	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev"
 
@@ -73,10 +73,10 @@ func main() {
 					return
 				}
 				if len(resp.Answer) == 0 {
-					log.Println(dohServer + "No AAAA records found")
+					log.Println(dohServer + "-No AAAA records found")
 					return
 				}
-
+				log.Println(dohServer + "-" + resp.String())
 				for _, answer := range resp.Answer {
 					log.Println(answer)
 					if a, ok := answer.(*dns.AAAA); ok {
@@ -98,10 +98,10 @@ func main() {
 				}
 
 				if len(resp.Answer) == 0 {
-					log.Println(dohServer + "No A records found")
+					log.Println(dohServer + "-No A records found")
 					return
 				}
-
+				log.Println(dohServer + "-" + resp.String())
 				for _, answer := range resp.Answer {
 					log.Println(answer)
 					if a, ok := answer.(*dns.A); ok {
@@ -123,10 +123,10 @@ func main() {
 					return
 				}
 				if len(resp.Answer) == 0 {
-					log.Println(dohServer + "No HTTPS records found")
+					log.Println(dohServer + "-No HTTPS records found")
 					return
 				}
-
+				log.Println(dohServer + "-" + resp.String())
 				for _, answer := range resp.Answer {
 					log.Println(answer)
 					if a, ok := answer.(*dns.HTTPS); ok {

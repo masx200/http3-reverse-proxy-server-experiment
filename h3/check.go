@@ -8,8 +8,8 @@ import (
 	"github.com/miekg/dns"
 )
 
-func Check(domain string, port string) (bool, error) {}
-func DNSQueryHTTPS(domain string, DOHServer string, port string) ([]dns.SVCB, error) {
+func Check(domain string, port string, DOHServer string) (bool, error) {}
+func DNSQueryHTTPS(domain string, port string, DOHServer string) ([]dns.SVCB, error) {
 	var msg = new(dns.Msg)
 	var service_domain = domain
 	if port != "443" {

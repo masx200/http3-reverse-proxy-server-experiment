@@ -14,7 +14,6 @@ import (
 // port: 需要检查的端口。
 // DOHServer: DNS-over-HTTPS服务器的地址。
 // 返回值: 支持H3协议返回true，否则返回false。如果出现错误，将返回错误信息。
-
 func CheckHttp3ViaDNS(domain string, port string, DOHServer string) (bool, error) {
 	var records, err = DNSQueryHTTPS(domain, port, DOHServer)
 
@@ -40,11 +39,13 @@ func CheckHttp3ViaDNS(domain string, port string, DOHServer string) (bool, error
 } // ContainsGeneric 函数用于判断一个切片中是否包含某个元素。
 // 该函数支持泛型，可以适用于任意实现了可比较接口（comparable）的类型。
 // 参数：
-//    slice []T - 一个泛型切片，其中 T 必须实现 comparable 接口。
-//    element T - 需要查找的元素，其类型与切片元素类型相同。
+//
+//	slice []T - 一个泛型切片，其中 T 必须实现 comparable 接口。
+//	element T - 需要查找的元素，其类型与切片元素类型相同。
+//
 // 返回值：
-//    bool - 如果切片中包含指定元素，则返回 true；否则返回 false。
-
+//
+//	bool - 如果切片中包含指定元素，则返回 true；否则返回 false。
 func ContainsGeneric[T comparable](slice []T, element T) bool {
 	for _, e := range slice {
 		if e == element {
@@ -107,6 +108,16 @@ func DNSQueryHTTPS(domain string, port string, DOHServer string) ([]dns.SVCB, er
 
 }
 
+// DohClient 是一个通过DOH（DNS over HTTPS）协议与DNS服务器进行通信的函数。
+// 它封装了dns_experiment包中的同名函数，简化了与DNS服务器交互的流程。
+//
+// 参数：
+// msg         - 指向dns.Msg的指针，包含要发送的DNS查询信息。
+// DOHServer   - 字符串类型，表示DOH服务器的URL。
+//
+// 返回值：
+// r           - 指向dns.Msg的指针，包含从DNS服务器接收到的响应信息。
+// err         - 错误类型，如果在与DNS服务器通信过程中发生错误，则返回非nil的错误值。
 func DohClient(msg *dns.Msg, DOHServer string) (r *dns.Msg, err error) {
 	return dns_experiment.DohClient(msg, DOHServer)
 }

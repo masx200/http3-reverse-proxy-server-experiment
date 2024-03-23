@@ -1,12 +1,15 @@
 package h3
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestCheckHttp3ViaDNS(t *testing.T) {
 
 	DOHServer := "https://deno-dns-over-https-server-5ehq9rg3chgf.deno.dev/dns-query"
 
-	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev" //"quic.nginx.org" //
+	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev"
 	port := "443"
 
 	supportsH3, err := CheckHttp3ViaDNS(domain, port, DOHServer)
@@ -17,11 +20,11 @@ func TestCheckHttp3ViaDNS(t *testing.T) {
 	if !supportsH3 {
 		t.Errorf("expected H3 support, but got false")
 	}
+	fmt.Println("H3 support:", supportsH3, domain, port)
 }
 func TestCheckHttp3ViaHttp2(t *testing.T) {
-
-	domain := "quic.nginx.org" //"quic.nginx.org" //
 	port := "443"
+	domain := "quic.nginx.org"
 
 	supportsH3, err := CheckHttp3ViaHttp2(domain, port)
 	if err != nil {
@@ -31,4 +34,5 @@ func TestCheckHttp3ViaHttp2(t *testing.T) {
 	if !supportsH3 {
 		t.Errorf("expected H3 support, but got false")
 	}
+	fmt.Println("H3 support:", supportsH3, domain, port)
 }

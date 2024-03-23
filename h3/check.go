@@ -32,7 +32,7 @@ func getAltSvc(url string) (string, error) {
 	defer resp.Body.Close()
 
 	// 检查状态码是否成功（200 等）
-	if resp.StatusCode < 500 {
+	if resp.StatusCode >= 500 {
 		return "", fmt.Errorf("received non-success status code: %d", resp.StatusCode)
 	}
 
@@ -41,7 +41,7 @@ func getAltSvc(url string) (string, error) {
 	if altSvc == "" {
 		return "Not found", fmt.Errorf("Alt-Svc header not found")
 	}
-
+	log.Println(altSvc)
 	return altSvc, nil
 }
 

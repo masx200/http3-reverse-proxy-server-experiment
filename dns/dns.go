@@ -52,19 +52,38 @@ func main() {
 
 	var chan3 = make(chan struct{}, len(dohServer))
 
-	for _, v := range dohServer {
+	for _, server := range dohServer {
 		go func(dohServer string) {
 			defer func() {
 				chan3 <- struct{}{}
 			}()
 			// client := new(dns.Client)
 			// client.Net = "tcp-tls"
+			var tasks = []func(){func() {
+				var msg = new(dns.Msg)
+				msg.SetQuestion(domain+".", dns.TypeAAAA)
 
-			var chan2 = make(chan struct{}, 3)
-			go func() {
-				defer func() {
-					chan2 <- struct{}{}
-				}()
+				resp, err := dohClient(msg, dohServer)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				if resp.Rcode != dns.RcodeSuccess {
+					log.Println(dns.RcodeToString[resp.Rcode])
+					return
+				}
+				if len(resp.Answer) == 0 {
+					log.Println(dohServer + "No AAAA records found")
+					return
+				}
+
+				for _, answer := range resp.Answer {
+					log.Println(answer)
+					if a, ok := answer.(*dns.AAAA); ok {
+						fmt.Printf(dohServer+"-Aaaa record for %s: %s\n", domain, a.AAAA)
+					}
+				}
+			}, func() {
 				msg := new(dns.Msg)
 				msg.SetQuestion(domain+".", dns.TypeA)
 
@@ -90,41 +109,7 @@ func main() {
 					}
 				}
 
-			}()
-
-			go func() {
-				defer func() {
-					chan2 <- struct{}{}
-				}()
-				var msg = new(dns.Msg)
-				msg.SetQuestion(domain+".", dns.TypeAAAA)
-
-				resp, err := dohClient(msg, dohServer)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				if resp.Rcode != dns.RcodeSuccess {
-					log.Println(dns.RcodeToString[resp.Rcode])
-					return
-				}
-				if len(resp.Answer) == 0 {
-					log.Println(dohServer + "No AAAA records found")
-					return
-				}
-
-				for _, answer := range resp.Answer {
-					log.Println(answer)
-					if a, ok := answer.(*dns.AAAA); ok {
-						fmt.Printf(dohServer+"-Aaaa record for %s: %s\n", domain, a.AAAA)
-					}
-				}
-
-			}()
-			go func() {
-				defer func() {
-					chan2 <- struct{}{}
-				}()
+			}, func() {
 				var msg = new(dns.Msg)
 				msg.SetQuestion(domain+".", dns.TypeHTTPS)
 
@@ -154,12 +139,44 @@ func main() {
 						}
 					}
 				}
-			}()
-			<-chan2
-			<-chan2
-			<-chan2
+			}}
+			var chan2 = make(chan struct{}, len(tasks))
 
-		}(v)
+			for _, task := range tasks {
+				go func(task func()) {
+					defer func() {
+						chan2 <- struct{}{}
+					}()
+					task()
+				}(task)
+			}
+			// go func() {
+			// 	defer func() {
+			// 		chan2 <- struct{}{}
+			// 	}()
+
+			// }()
+
+			// go func() {
+			// 	defer func() {
+			// 		chan2 <- struct{}{}
+			// 	}()
+
+			// }()
+			// go func() {
+			// 	defer func() {
+			// 		chan2 <- struct{}{}
+			// 	}()
+
+			// }()
+
+			for range tasks {
+				<-chan2
+				// <-chan2
+				// <-chan2
+			}
+
+		}(server)
 
 	}
 	for range dohServer {

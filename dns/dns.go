@@ -2,24 +2,63 @@ package main
 
 import (
 	"fmt"
+	"io"
+
 	"log"
+	"net/http"
+	"strings"
 
 	"github.com/miekg/dns"
 )
 
+func dohClient(msg *dns.Msg, dohServer string,
+) (r *dns.Msg, err error) {
+	body, err := msg.Pack()
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	//http request doh
+	res, err := http.Post(dohServer, "application/dns-message", strings.NewReader(string(body)))
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	//res.status check
+	if res.StatusCode != 200 {
+		log.Println("http status code is not 200")
+		return nil, fmt.Errorf("http status code is not 200")
+	}
+	//利用ioutil包读取百度服务器返回的数据
+	data, err := io.ReadAll(res.Body)
+	res.Body.Close() //一定要记得关闭连接
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	// log.Printf("%s", data)
+	resp := &dns.Msg{}
+	err = resp.Unpack(data)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return resp, nil
+}
 func main() {
-	dnsServer := []string{"9.9.9.9:853", "1.1.1.1:853", "8.8.4.4:853", "dot.sb:853"}
+	dohServer := []string{"https://deno-dns-over-https-server-5ehq9rg3chgf.deno.dev/dns-query", "https://nextjs-reverse-proxy-middleware-masx2.netlify.app/token/4yF6nSCifSLs8lfkb4t8OWP69kfpgiun/https/doh-cache-worker-cf.masx200.workers.dev/dns-query", "https://nextjs-reverse-proxy-middleware.onrender.com/token/4yF6nSCifSLs8lfkb4t8OWP69kfpgiun/https/doh-cache-worker-cf.masx200.workers.dev/dns-query"}
+	// dohServer := []string{"9.9.9.9:853", "1.1.1.1:853", "8.8.4.4:853", "dot.sb:853"}
 	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev"
 
-	var chan3 = make(chan struct{}, len(dnsServer))
+	var chan3 = make(chan struct{}, len(dohServer))
 
-	for _, v := range dnsServer {
-		go func(dnsServer string) {
+	for _, v := range dohServer {
+		go func(dohServer string) {
 			defer func() {
 				chan3 <- struct{}{}
 			}()
-			client := new(dns.Client)
-			client.Net = "tcp-tls"
+			// client := new(dns.Client)
+			// client.Net = "tcp-tls"
 
 			var chan2 = make(chan struct{}, 3)
 			go func() {
@@ -29,7 +68,7 @@ func main() {
 				msg := new(dns.Msg)
 				msg.SetQuestion(domain+".", dns.TypeA)
 
-				resp, _, err := client.Exchange(msg, dnsServer)
+				resp, err := dohClient(msg, dohServer)
 				if err != nil {
 					log.Println(err)
 					return
@@ -47,7 +86,7 @@ func main() {
 				for _, answer := range resp.Answer {
 					log.Println(answer)
 					if a, ok := answer.(*dns.A); ok {
-						fmt.Printf(dnsServer+"-A record for %s: %s\n", domain, a.A)
+						fmt.Printf(dohServer+"-A record for %s: %s\n", domain, a.A)
 					}
 				}
 
@@ -60,7 +99,7 @@ func main() {
 				var msg = new(dns.Msg)
 				msg.SetQuestion(domain+".", dns.TypeAAAA)
 
-				var resp, _, err = client.Exchange(msg, dnsServer)
+				resp, err := dohClient(msg, dohServer)
 				if err != nil {
 					log.Println(err)
 					return
@@ -77,7 +116,7 @@ func main() {
 				for _, answer := range resp.Answer {
 					log.Println(answer)
 					if a, ok := answer.(*dns.AAAA); ok {
-						fmt.Printf(dnsServer+"-Aaaa record for %s: %s\n", domain, a.AAAA)
+						fmt.Printf(dohServer+"-Aaaa record for %s: %s\n", domain, a.AAAA)
 					}
 				}
 
@@ -89,9 +128,9 @@ func main() {
 				var msg = new(dns.Msg)
 				msg.SetQuestion(domain+".", dns.TypeHTTPS)
 
-				var resp, _, err = client.Exchange(msg, dnsServer)
+				resp, err := dohClient(msg, dohServer)
 				if err != nil {
-					log.Fatal(err)
+					log.Println(err)
 					return
 				}
 				if resp.Rcode != dns.RcodeSuccess {
@@ -106,7 +145,7 @@ func main() {
 				for _, answer := range resp.Answer {
 					log.Println(answer)
 					if a, ok := answer.(*dns.HTTPS); ok {
-						fmt.Printf(dnsServer+"-https record for %s: \n", domain)
+						fmt.Printf(dohServer+"-https record for %s: \n", domain)
 
 						for _, v := range a.SVCB.Value {
 
@@ -123,7 +162,7 @@ func main() {
 		}(v)
 
 	}
-	for range dnsServer {
+	for range dohServer {
 		<-chan3
 	}
 }

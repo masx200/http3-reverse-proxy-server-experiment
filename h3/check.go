@@ -3,12 +3,57 @@ package h3
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
 	"github.com/miekg/dns"
 )
 
-func CheckH3ViaDNS(domain string, port string, DOHServer string) (bool, error) {}
+// CheckH3ViaDNS 通过DNS查询来检查指定域名和端口是否支持H3协议。
+// domain: 需要检查的域名。
+// port: 需要检查的端口。
+// DOHServer: DNS-over-HTTPS服务器的地址。
+// 返回值: 支持H3协议返回true，否则返回false。如果出现错误，将返回错误信息。
+
+func CheckHttp3ViaDNS(domain string, port string, DOHServer string) (bool, error) {
+	var records, err = DNSQueryHTTPS(domain, port, DOHServer)
+
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+	for _, record := range records {
+
+		if record.Priority != 0 {
+			for _, value := range record.Value {
+				if value.Key().String() == "alpn" {
+					var protocols = strings.Split(value.String(), ",")
+
+					if ContainsGeneric(protocols, "h3") {
+						return true, nil
+					}
+				}
+			}
+		}
+	}
+	return false, fmt.Errorf("no H3 alpn records found")
+} // ContainsGeneric 函数用于判断一个切片中是否包含某个元素。
+// 该函数支持泛型，可以适用于任意实现了可比较接口（comparable）的类型。
+// 参数：
+//    slice []T - 一个泛型切片，其中 T 必须实现 comparable 接口。
+//    element T - 需要查找的元素，其类型与切片元素类型相同。
+// 返回值：
+//    bool - 如果切片中包含指定元素，则返回 true；否则返回 false。
+
+func ContainsGeneric[T comparable](slice []T, element T) bool {
+	for _, e := range slice {
+		if e == element {
+			return true
+		}
+	}
+
+	return false
+}
 
 // DNSQueryHTTPS 执行DNS查询以获取HTTPS服务记录。
 //
@@ -52,6 +97,11 @@ func DNSQueryHTTPS(domain string, port string, DOHServer string) ([]dns.SVCB, er
 			result = append(result, a.SVCB)
 
 		}
+	}
+	if len(result) == 0 {
+		log.Println(DOHServer + "-No HTTPS records found")
+		return nil, fmt.Errorf(
+			"No HTTPS records found" + " " + DOHServer)
 	}
 	return result, nil
 

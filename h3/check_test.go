@@ -3,9 +3,11 @@ package h3
 import "testing"
 
 func TestCheckHttp3ViaDNS(t *testing.T) {
-	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev"
-	port := "443"
+
 	DOHServer := "https://deno-dns-over-https-server-5ehq9rg3chgf.deno.dev/dns-query"
+
+	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev" //"quic.nginx.org" //
+	port := "443"
 
 	supportsH3, err := CheckHttp3ViaDNS(domain, port, DOHServer)
 	if err != nil {

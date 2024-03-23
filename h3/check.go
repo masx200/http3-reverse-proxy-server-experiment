@@ -41,7 +41,7 @@ func getAltSvc(url string) (string, error) {
 	if altSvc == "" {
 		return "Not found", fmt.Errorf("Alt-Svc header not found")
 	}
-	log.Println(altSvc)
+	log.Println("altSvc", altSvc)
 	return altSvc, nil
 }
 

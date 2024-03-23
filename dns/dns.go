@@ -26,8 +26,14 @@ func dohClient(msg *dns.Msg, dohServer string,
 	}
 	//res.status check
 	if res.StatusCode != 200 {
-		log.Println("http status code is not 200")
-		return nil, fmt.Errorf("http status code is not 200")
+		log.Println("http status code is not 200 " + fmt.Sprintf("status code is %d", res.StatusCode))
+		return nil, fmt.Errorf("http status code is not 200" + fmt.Sprintf("status code is %d", res.StatusCode))
+	}
+
+	//check content-type
+	if res.Header.Get("Content-Type") != "application/dns-message" {
+		log.Println("content-type is not application/dns-message " + res.Header.Get("Content-Type"))
+		return nil, fmt.Errorf("content-type is not application/dns-message " + res.Header.Get("Content-Type"))
 	}
 	//利用ioutil包读取百度服务器返回的数据
 	data, err := io.ReadAll(res.Body)

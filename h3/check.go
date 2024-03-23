@@ -3,12 +3,74 @@ package h3
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
-	// "testing"
 
+	// "testing"
+	altsvc "github.com/ebi-yade/altsvc-go"
 	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
 	"github.com/miekg/dns"
 )
+
+// getAltSvc 发送一个 HEAD 请求到指定的 URL 并返回 Alt-Svc 响应头的内容。
+// 如果成功获取到 Alt-Svc 头，函数将返回其值和 nil 作为错误；
+// 如果遇到错误，将返回空字符串和相应的错误信息。
+//
+// 参数:
+//
+//	url: 需要发送 HEAD 请求的 URL 字符串。
+//
+// 返回值:
+//
+//	string: Alt-Svc 响应头的内容。如果未找到该头，则返回 "Not found"。
+//	error: 发送请求或处理响应时遇到的错误，如果一切顺利则为 nil。
+func getAltSvc(url string) (string, error) {
+	resp, err := http.Head(url)
+	if err != nil {
+		return "", fmt.Errorf("failed to send HEAD request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// 检查状态码是否成功（200 等）
+	if resp.StatusCode < 500 {
+		return "", fmt.Errorf("received non-success status code: %d", resp.StatusCode)
+	}
+
+	// 获取 Alt-Svc 响应头
+	altSvc := resp.Header.Get("Alt-Svc")
+	if altSvc == "" {
+		return "Not found", fmt.Errorf("Alt-Svc header not found")
+	}
+
+	return altSvc, nil
+}
+
+// CheckHttp3ViaHttp2 通过HTTP/2检查特定域名和端口是否支持HTTP/3
+// 参数:
+// - domain: 需要检查的域名
+// - port: 需要检查的端口号
+// 返回值:
+// - bool: 如果支持HTTP/3，则返回true，否则返回false
+// - error: 如果检查过程中遇到错误，则返回错误信息
+func CheckHttp3ViaHttp2(domain string, port string) (bool, error) {
+	var altSvc, err = getAltSvc(fmt.Sprintf("https://%s:%s", domain, port))
+	if err != nil {
+		return false, err
+	}
+	svc, err := altsvc.Parse(altSvc)
+	if err != nil {
+		return false, err
+	}
+	for _, data := range svc {
+
+		if data.ProtocolID == "h3" && data.AltAuthority.Port == port {
+			return true, nil
+
+		}
+
+	}
+	return false, fmt.Errorf("alt-svc Not found h3 and port")
+}
 
 // CheckH3ViaDNS 通过DNS查询来检查指定域名和端口是否支持H3协议。
 // domain: 需要检查的域名。

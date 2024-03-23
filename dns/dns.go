@@ -46,7 +46,7 @@ func DohClient(msg *dns.Msg, dohServer string,
 	}
 	//利用ioutil包读取百度服务器返回的数据
 	data, err := io.ReadAll(res.Body)
-	res.Body.Close() //一定要记得关闭连接
+	defer res.Body.Close() //一定要记得关闭连接
 	if err != nil {
 		log.Println(err)
 		return nil, err

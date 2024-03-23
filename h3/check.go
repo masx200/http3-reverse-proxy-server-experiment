@@ -8,7 +8,18 @@ import (
 	"github.com/miekg/dns"
 )
 
-func CheckH3(domain string, port string, DOHServer string) (bool, error) {}
+func CheckH3ViaDNS(domain string, port string, DOHServer string) (bool, error) {}
+
+// DNSQueryHTTPS 执行DNS查询以获取HTTPS服务记录。
+//
+// 参数:
+// - domain: 需要查询的域名。
+// - port: 目标端口，如果不为"443"，则会构建特定端口的查询域名。
+// - DOHServer: DNS-over-HTTPS服务器地址。
+//
+// 返回值:
+// - []dns.SVCB: 查询到的HTTPS服务记录列表。
+// - error: 查询过程中发生的任何错误。
 func DNSQueryHTTPS(domain string, port string, DOHServer string) ([]dns.SVCB, error) {
 	var msg = new(dns.Msg)
 	var service_domain = domain

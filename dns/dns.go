@@ -11,6 +11,15 @@ import (
 	"github.com/miekg/dns"
 )
 
+// DohClient 是一个通过DOH（DNS over HTTPs）协议与DNS服务器进行通信的函数。
+//
+// 参数:
+// msg: 代表DNS查询消息的dns.Msg对象。
+// dohServer: 代表DOH服务器的URL字符串。
+//
+// 返回值:
+// r: 代表DNS应答消息的dns.Msg对象。
+// err: 如果过程中发生错误，则返回错误信息。
 func DohClient(msg *dns.Msg, dohServer string,
 ) (r *dns.Msg, err error) {
 	body, err := msg.Pack()

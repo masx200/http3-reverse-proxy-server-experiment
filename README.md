@@ -22,6 +22,8 @@ http3反向代理服务器实验
 
 增加了通过dns的https记录查询服务器支持http3的功能
 
+增加了通过http2响应头alt-svc查询支持http3的功能
+
 #### 安装教程
 
 1. xxxx

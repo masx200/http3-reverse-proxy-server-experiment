@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	// "testing"
 
 	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
 	"github.com/miekg/dns"

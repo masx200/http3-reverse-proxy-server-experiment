@@ -1,4 +1,4 @@
-module main
+module github.com/masx200/http3-reverse-proxy-server-experiment
 
 go 1.21.6
 

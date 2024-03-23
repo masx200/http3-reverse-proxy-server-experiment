@@ -1,4 +1,4 @@
-package main
+package dns
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/miekg/dns"
 )
 
-func dohClient(msg *dns.Msg, dohServer string,
+func DohClient(msg *dns.Msg, dohServer string,
 ) (r *dns.Msg, err error) {
 	body, err := msg.Pack()
 	if err != nil {
@@ -51,7 +51,7 @@ func dohClient(msg *dns.Msg, dohServer string,
 	}
 	return resp, nil
 }
-func main() {
+func Main() {
 	dohServer := []string{"https://doh.pub/dns-query", "https://doh.360.cn/dns-query", "https://dns.alidns.com/dns-query"}
 	// dohServer := []string{"9.9.9.9:853", "1.1.1.1:853", "8.8.4.4:853", "dot.sb:853"}
 	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev"
@@ -69,7 +69,7 @@ func main() {
 				var msg = new(dns.Msg)
 				msg.SetQuestion(domain+".", dns.TypeAAAA)
 
-				resp, err := dohClient(msg, dohServer)
+				resp, err := DohClient(msg, dohServer)
 				if err != nil {
 					log.Println(err)
 					return
@@ -93,7 +93,7 @@ func main() {
 				msg := new(dns.Msg)
 				msg.SetQuestion(domain+".", dns.TypeA)
 
-				resp, err := dohClient(msg, dohServer)
+				resp, err := DohClient(msg, dohServer)
 				if err != nil {
 					log.Println(err)
 					return
@@ -119,7 +119,7 @@ func main() {
 				var msg = new(dns.Msg)
 				msg.SetQuestion(domain+".", dns.TypeHTTPS)
 
-				resp, err := dohClient(msg, dohServer)
+				resp, err := DohClient(msg, dohServer)
 				if err != nil {
 					log.Println(err)
 					return

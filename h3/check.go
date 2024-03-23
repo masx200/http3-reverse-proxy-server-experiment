@@ -8,10 +8,14 @@ import (
 	"github.com/miekg/dns"
 )
 
-func Check(domain string) (bool, error) {}
-func DNSQueryHTTPS(domain string, DOHServer string) ([]dns.SVCB, error) {
+func Check(domain string, port string) (bool, error) {}
+func DNSQueryHTTPS(domain string, DOHServer string, port string) ([]dns.SVCB, error) {
 	var msg = new(dns.Msg)
-	msg.SetQuestion(domain+".", dns.TypeHTTPS)
+	var service_domain = domain
+	if port != "443" {
+		service_domain = fmt.Sprintf("_%s._https.", port) + domain
+	}
+	msg.SetQuestion(service_domain+".", dns.TypeHTTPS)
 
 	resp, err := DohClient(msg, DOHServer)
 	if err != nil {

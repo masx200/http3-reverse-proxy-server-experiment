@@ -79,7 +79,7 @@ func main() {
 				}
 
 				if len(resp.Answer) == 0 {
-					log.Println("No A records found")
+					log.Println(dohServer + "No A records found")
 					return
 				}
 
@@ -109,7 +109,7 @@ func main() {
 					return
 				}
 				if len(resp.Answer) == 0 {
-					log.Println("No AAAA records found")
+					log.Println(dohServer + "No AAAA records found")
 					return
 				}
 
@@ -138,7 +138,7 @@ func main() {
 					return
 				}
 				if len(resp.Answer) == 0 {
-					log.Println("No HTTPS records found")
+					log.Println(dohServer + "No HTTPS records found")
 					return
 				}
 

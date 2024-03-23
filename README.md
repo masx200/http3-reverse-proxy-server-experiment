@@ -20,6 +20,8 @@ http3反向代理服务器实验
 
 添加了dns over https客户端的功能
 
+增加了通过dns的https记录查询服务器支持http3的功能
+
 #### 安装教程
 
 1. xxxx

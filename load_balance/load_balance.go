@@ -29,8 +29,8 @@ type UpStream interface {
 	RoundTrip(*http.Request) (*http.Response, error)
 
 	// HealthyCheck 用于检查上游服务的健康状态，并返回健康状态及错误信息。
-	// 返回值：bool - 上游服务的健康状态（true为健康，false为不健康）；error - 错误信息（如果有）
-	HealthyCheck() (bool, error)
+	// 返回值：bool - 上游服务的主动健康状态（true为健康，false为不健康）；error - 错误信息（如果有）
+	ActiveHealthyCheck() (bool, error)
 
 	// Identifier 用于返回上游服务的唯一标识符。
 	// 返回值：string - 上游服务的唯一标识符
@@ -42,7 +42,7 @@ type UpStream interface {
 
 	// IsHealthy 根据HTTP响应判断上游服务是否健康。
 	// 参数：*http.Response - 上游服务返回的HTTP响应
-	// 返回值：bool - 上游服务的健康状态（true为健康，false为不健康）
+	// 返回值：bool - 上游服务的被动健康状态（true为健康，false为不健康）
 	IsHealthyResponse(*http.Response) bool
 }
 

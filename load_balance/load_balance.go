@@ -29,7 +29,7 @@ type LoadBalanceAndUpStream interface {
 
 	// Identifier 用于返回上游服务的唯一标识符。
 	// 返回值：string - 上游服务的唯一标识符
-	Identifier() string
+	GetIdentifier() string
 
 	// IsHealthy 用于判断上游服务是否健康。
 	// 返回值：bool - 上游服务的健康状态（true为健康，false为不健康）

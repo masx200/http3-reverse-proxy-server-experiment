@@ -19,12 +19,10 @@ import (
 // 无返回值。
 func TestHttpViaIP(t *testing.T) {
 
-	//var // The `addresses` variable in the code is a slice containing two IP addresses: "93.184.216.34"
-	// and "2606:2800:220:1:248:1893:25c8:1946". These IP addresses are used for testing HTTP and
-	// HTTPS connections to a specified URL in the `TestHttpViaIP` and `TestHttpsViaIP` functions. The
-	// code iterates over these addresses and performs HTTP requests using each IP address.
 	var addresses = []string{"93.184.216.34", "2606:2800:220:1:248:1893:25c8:1946"}
-	var eee error = nil
+	// var eee error = nil
+	var failure = 0
+	var success = 0
 	for _, address := range addresses {
 		ip := address                    // 要访问的目标IP地址
 		url := "http://www.example.com/" // 要访问的目标URL
@@ -34,7 +32,8 @@ func TestHttpViaIP(t *testing.T) {
 		if err != nil {
 			fmt.Println("Error:", err)
 			// t.Errorf(err.Error())
-			eee = err
+			// eee = err
+			failure += 1
 			continue
 		}
 
@@ -43,11 +42,17 @@ func TestHttpViaIP(t *testing.T) {
 		// 读取并打印响应体内容
 		body, _ := io.ReadAll(resp.Body)
 		fmt.Println("Response:", string(body))
-		return
+		success += 1
+		continue
 	}
-	if eee != nil {
-		fmt.Println("Error:", eee)
-		t.Errorf(eee.Error())
+
+	if failure > 0 {
+		fmt.Println("Error:", "have failure test")
+		// t.Errorf("No successful test")
+	}
+	if success == 0 {
+		fmt.Println("Error:", "No successful test")
+		t.Errorf("No successful test")
 	}
 }
 
@@ -59,7 +64,9 @@ func TestHttpViaIP(t *testing.T) {
 // 无返回值。
 func TestHttpsViaIP(t *testing.T) {
 	var addresses = []string{"93.184.216.34", "2606:2800:220:1:248:1893:25c8:1946"}
-	var eee error = nil
+	// var eee error = nil
+	var failure = 0
+	var success = 0
 	for _, address := range addresses {
 		ip := address                     // 要访问的目标IP地址
 		url := "https://www.example.com/" // 要访问的目标URL
@@ -69,7 +76,8 @@ func TestHttpsViaIP(t *testing.T) {
 		if err != nil {
 			fmt.Println("Error:", err)
 			// t.Errorf(err.Error())
-			eee = err
+			// eee = err
+			failure += 1
 			continue
 		}
 
@@ -78,11 +86,17 @@ func TestHttpsViaIP(t *testing.T) {
 		// 读取并打印响应体内容
 		body, _ := io.ReadAll(resp.Body)
 		fmt.Println("Response:", string(body))
-		return
+		success += 1
+		continue
 	}
-	if eee != nil {
-		fmt.Println("Error:", eee)
-		t.Errorf(eee.Error())
+
+	if failure > 0 {
+		fmt.Println("Error:", "have failure test")
+		// t.Errorf("No successful test")
+	}
+	if success == 0 {
+		fmt.Println("Error:", "No successful test")
+		t.Errorf("No successful test")
 	}
 }
 func FetchWithIP(ip, url string) (*http.Response, error) {

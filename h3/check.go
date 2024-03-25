@@ -2,10 +2,10 @@ package h3
 
 import (
 	"fmt"
+	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	"log"
 	"net/http"
 	"strings"
-
 	// "testing"
 	altsvc "github.com/ebi-yade/altsvc-go"
 	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
@@ -29,6 +29,8 @@ func getAltSvc(url string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to send HEAD request: %v", err)
 	}
+
+	PrintResponse(resp)
 	defer resp.Body.Close()
 
 	// 检查状态码是否成功（200 等）
@@ -43,6 +45,10 @@ func getAltSvc(url string) (string, error) {
 	}
 	log.Println("altSvc", altSvc)
 	return altSvc, nil
+}
+
+func PrintResponse(resp *http.Response) {
+	print_experiment.PrintResponse(resp)
 }
 
 // CheckHttp3ViaHttp2 通过HTTP/2检查特定域名和端口是否支持HTTP/3

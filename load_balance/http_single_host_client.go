@@ -1,6 +1,7 @@
 package load_balance
 
 import (
+	"fmt"
 	"net/http"
 	// "net/url"
 
@@ -46,6 +47,11 @@ func (l *SingleHostHTTPClientOfAddress) IsHealthyResponse(response *http.Respons
 	return l.IsHealthyResponseChecker(response)
 }
 func IsHealthyResponseDefault(response *http.Response) (bool, error) {
+
+	//check StatusCode<500
+	if response.StatusCode >= 500 {
+		return false, fmt.Errorf("StatusCode %d   is greater than 500", response.StatusCode)
+	}
 	return true, nil
 }
 

@@ -61,7 +61,7 @@ type Map[T comparable, Y any] interface {
 	// Values 返回映射中所有值的切片。
 	Values() []Y
 	// Kes 返回映射中所有键的切片。
-	Kes() []T
+	Keys() []T
 	// Size 返回映射中元素的数量。
 	Size() int64
 	// Entries 返回映射中所有键值对的切片。

@@ -6,9 +6,17 @@ import "net/http"
 // 其中包含了一个Map，用于映射域名到对应的UpStream。
 type LoadBalance interface {
 	// RoundTrip 是一个代理方法，用于发送HTTP请求，并返回响应或错误。
+	// 参数：
+	//   *http.Request: 待发送的HTTP请求
+	// 返回值：
+	//   *http.Response: 请求的响应
+	//   error: 请求过程中遇到的错误
 	RoundTrip(*http.Request) (*http.Response, error)
-	// Map 是一个键值对映射，键是字符串类型，值是UpStream类型。
-	Map[string, UpStream]
+
+	// UpStreams 返回一个键值对映射，其中键是字符串类型，表示域名；
+	// 值是UpStream类型，表示对应域名的上游服务集群。
+	// 这个方法用于获取当前负载均衡器中配置的所有上游服务信息。
+	UpStreams() Map[string, UpStream]
 }
 
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。

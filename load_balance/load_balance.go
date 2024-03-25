@@ -17,6 +17,10 @@ type LoadBalance interface {
 	// 值是UpStream类型，表示对应域名的上游服务集群。
 	// 这个方法用于获取当前负载均衡器中配置的所有上游服务信息。
 	UpStreams() Map[string, UpStream]
+
+	//选择一个可用的上游服务器
+	// 参数：
+	SelectAvailableServer() (UpStream, error)
 }
 
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。

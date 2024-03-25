@@ -49,15 +49,28 @@ func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool
 func PrintRequest(req *http.Request) {
 	print_experiment.PrintRequest(req)
 }
+
+// NewSingleHostHTTPClientOfAddress 创建一个指定地址的单主机HTTP客户端实例。
+//
+// 参数:
+//
+//	identifier string - 客户端的标识符，用于区分不同的客户端实例。
+//	UpStreamServerURL string - 上游服务器的URL，客户端将向该URL发送请求。
+//	ServerAddress string - 服务端地址，指定客户端连接的服务端主机地址。
+//
+// 返回值:
+//
+//	LoadBalanceAndUpStream - 实现了负载均衡和上游服务选择的接口。
 func NewSingleHostHTTPClientOfAddress(identifier string, UpStreamServerURL string, ServerAddress string) LoadBalanceAndUpStream {
+	// 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
 	return &SingleHostHTTPClientOfAddress{
 		Identifier:               identifier,
-		ActiveHealthyChecker:     ActiveHealthyCheckDefault,
-		IsHealthyResponseChecker: IsHealthyResponseDefault,
-		UpStreamServerURL:        UpStreamServerURL,
-		ServerAddress:            ServerAddress,
-		isHealthy:                true,
-		RoundTripper:             http.DefaultTransport,
+		ActiveHealthyChecker:     ActiveHealthyCheckDefault, // 使用默认的主动健康检查器
+		IsHealthyResponseChecker: IsHealthyResponseDefault,  // 使用默认的健康响应检查器
+		UpStreamServerURL:        UpStreamServerURL,         // 设置上游服务器URL
+		ServerAddress:            ServerAddress,             // 设置服务端地址
+		isHealthy:                true,                      // 初始状态设为健康
+		RoundTripper:             http.DefaultTransport,     // 使用默认的传输器
 	}
 }
 

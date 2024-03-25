@@ -675,23 +675,13 @@ func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Respo
 	return nil, rer
 }
 
+func PrintRequest(req *http.Request) {
+	print_experiment.PrintRequest(req)
+}
+
 // PrintRequest 打印HTTP请求的详细信息
 // 参数：
 // req *http.Request - 代表一个HTTP请求的结构体指针
-func PrintRequest(req *http.Request) {
-	// 打印HTTP请求的基本信息
-	fmt.Println(" HTTP Request {")
-	fmt.Printf("Method: %s\n", req.Method) // 打印请求方法
-	fmt.Printf("URL: %s\n", req.URL)       // 打印请求的URL
-	fmt.Printf("Proto: %s\n", req.Proto)   // 打印请求的协议版本
-	fmt.Printf("host: %s\n", req.Host)
-
-	// 打印请求头信息
-	fmt.Printf("Header: \n")
-	PrintHeader(req.Header)
-
-	fmt.Println("} HTTP Request ")
-}
 
 func PrintHeader(header http.Header) {
 	print_experiment.PrintHeader(header)

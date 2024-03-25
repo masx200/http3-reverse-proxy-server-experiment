@@ -5,31 +5,58 @@ import (
 	"net/http"
 	// "net/url"
 
+	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	optional "github.com/moznion/go-optional"
 )
 
-func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper) (bool, error) {
-	return true, nil
+func PrintResponse(resp *http.Response) {
+	print_experiment.PrintResponse(resp)
+}
+
+func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool, error) {
+
+	client := &http.Client{}
+
+	client.Transport = RoundTripper
+	req, err := http.NewRequest("HEAD", url, nil)
+	if err != nil {
+		return false, err
+	}
+	PrintRequest(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+	PrintResponse(resp)
+	return IsHealthyResponseDefault(resp)
+	//return true, nil
+}
+
+func PrintRequest(req *http.Request) {
+	print_experiment.PrintRequest(req)
 }
 func NewSingleHostHTTPClientOfAddress(identifier string, UpStreamServerURL string, address string) LoadBalanceAndUpStream {
 	return &SingleHostHTTPClientOfAddress{
 		Identifier:               identifier,
 		ActiveHealthyChecker:     ActiveHealthyCheckDefault,
 		IsHealthyResponseChecker: IsHealthyResponseDefault,
+		UpStreamServerURL:        UpStreamServerURL,
 	}
 }
 
 type SingleHostHTTPClientOfAddress struct {
-	ActiveHealthyChecker     func(RoundTripper http.RoundTripper) (bool, error)
+	ActiveHealthyChecker     func(RoundTripper http.RoundTripper, url string) (bool, error)
 	Identifier               string
 	isHealthy                bool
 	IsHealthyResponseChecker func(response *http.Response) (bool, error)
 	RoundTripper             http.RoundTripper
+	UpStreamServerURL        string
 }
 
 // ActiveHealthyCheck implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTPClientOfAddress) ActiveHealthyCheck() (bool, error) {
-	return l.ActiveHealthyChecker(l)
+	return l.ActiveHealthyChecker(l, l.UpStreamServerURL)
 }
 
 // Identifier implements LoadBalanceAndUpStream.

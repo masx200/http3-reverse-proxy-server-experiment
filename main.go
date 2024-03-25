@@ -154,9 +154,9 @@ func main() {
 		}
 
 		bCap := hostname + ":" + fmt.Sprint(httpsPort)
-		handler := &HandlerServeHTTP{
-			serveHTTP: handlerFunc,
-		}
+		handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			handlerFunc(w, req)
+		})
 		server := http3.Server{
 			Handler:    handler,
 			Addr:       bCap,
@@ -167,7 +167,7 @@ func main() {
 		log.Printf("Starting http3 reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
 
 		var err = server.ListenAndServeTLS(certFile, keyFile)
-		// var err = http3.ListenAndServe(bCap, certFile, keyFile, &HandlerServeHTTP{
+		// var err = http3.ListenAndServe(bCap, certFile, keyFile, &
 		// 	serveHTTP: handlerFunc,
 		// })
 		if err != nil {
@@ -246,14 +246,6 @@ func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*h
 
 // refreshHealthyUpStreams加锁操作
 // var mutex sync.Mutex
-
-type HandlerServeHTTP struct {
-	serveHTTP func(w http.ResponseWriter, req *http.Request)
-}
-
-func (h *HandlerServeHTTP) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	h.serveHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
-}
 
 // Forwarded 创建并返回一个 gin.HandlerFunc，用于在 HTTP 请求的 Header 中添加 "Forwarded" 信息。
 // 这个信息包含了客户端的 IP 地址、代理的标识、原始请求的目标主机名以及使用的协议（HTTP 或 HTTPS）。

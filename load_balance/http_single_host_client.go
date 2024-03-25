@@ -76,7 +76,7 @@ func NewSingleHostHTTPClientOfAddress(identifier string, UpStreamServerURL strin
 		IsHealthyResponseChecker: IsHealthyResponseDefault,  // 使用默认的健康响应检查器
 		UpStreamServerURL:        UpStreamServerURL,         // 设置上游服务器URL
 		ServerAddress:            ServerAddress,             // 设置服务端地址
-		isHealthy:                true,                      // 初始状态设为健康
+		IsHealthy:                true,                      // 初始状态设为健康
 		RoundTripper:             transport,                 // 使用默认的传输器
 	}
 }
@@ -86,7 +86,7 @@ type SingleHostHTTPClientOfAddress struct {
 	ServerAddress            string                                                         // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker     func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	Identifier               string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
-	isHealthy                bool                                                           // 健康状态，标识当前客户端是否被视为健康。
+	IsHealthy                bool                                                           // 健康状态，标识当前客户端是否被视为健康。
 	IsHealthyResponseChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	RoundTripper             http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL        string                                                         // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
@@ -103,8 +103,8 @@ func (l *SingleHostHTTPClientOfAddress) GetIdentifier() string {
 }
 
 // IsHealthy implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTPClientOfAddress) IsHealthy() bool {
-	return l.isHealthy
+func (l *SingleHostHTTPClientOfAddress) GetHealthy() bool {
+	return l.IsHealthy
 }
 
 // IsHealthyResponse implements LoadBalanceAndUpStream.
@@ -143,7 +143,7 @@ func (l *SingleHostHTTPClientOfAddress) SelectAvailableServer() (LoadBalanceAndU
 
 // SetHealthy implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTPClientOfAddress) SetHealthy(healthy bool) {
-	l.isHealthy = healthy
+	l.IsHealthy = healthy
 }
 
 // UpStreams implements LoadBalanceAndUpStream.

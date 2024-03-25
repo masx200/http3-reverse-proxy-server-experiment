@@ -33,7 +33,7 @@ type LoadBalanceAndUpStream interface {
 
 	// IsHealthy 用于判断上游服务是否健康。
 	// 返回值：bool - 上游服务的健康状态（true为健康，false为不健康）
-	IsHealthy() bool
+	GetHealthy() bool
 
 	// SetHealthy 用于标记上游服务的健康状态。
 	// 参数：bool - 上游服务的健康状态（true为健康，false为不健康）

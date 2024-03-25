@@ -129,24 +129,35 @@ func IsHealthyResponseDefault(response *http.Response) (bool, error) {
 		return false, fmt.Errorf("StatusCode %d   is greater than 500", response.StatusCode)
 	}
 	return true, nil
-}
+} // SingleHostHTTPClientOfAddress 是一个针对单个主机地址的HTTP客户端实现，
+// 实现了LoadBalanceAndUpStream接口，用于负载均衡和上游服务管理。
 
-// RoundTrip implements LoadBalanceAndUpStream.
+// RoundTrip 实现了LoadBalanceAndUpStream接口的RoundTrip方法，
+// 用于执行HTTP请求。
+// 参数request为待发送的HTTP请求。
+// 返回值为执行请求后的HTTP响应及可能发生的错误。
 func (l *SingleHostHTTPClientOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
 	return l.RoundTripper.RoundTrip(request)
 }
 
-// SelectAvailableServer implements LoadBalanceAndUpStream.
+// SelectAvailableServer 实现了LoadBalanceAndUpStream接口的SelectAvailableServer方法，
+// 用于选择可用的服务实例。
+// 返回值为可用的服务实例（此处始终为自身）及可能发生的错误。
 func (l *SingleHostHTTPClientOfAddress) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
 	return l, nil
 }
 
-// SetHealthy implements LoadBalanceAndUpStream.
+// SetHealthy 实现了LoadBalanceAndUpStream接口的SetHealthy方法，
+// 用于设置客户端的健康状态。
+// 参数healthy为true表示客户端健康，为false表示客户端不健康。
 func (l *SingleHostHTTPClientOfAddress) SetHealthy(healthy bool) {
 	l.IsHealthy = healthy
 }
 
-// UpStreams implements LoadBalanceAndUpStream.
+// UpStreams 实现了LoadBalanceAndUpStream接口的UpStreams方法，
+// 用于获取上游服务的集合。
+// 此处因为是单主机客户端，所以返回空集合。
+// 返回值为上游服务集合的可选类型，此处始终返回None。
 func (l *SingleHostHTTPClientOfAddress) UpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]] {
 	return optional.None[MapInterface[string, LoadBalanceAndUpStream]]()
 }

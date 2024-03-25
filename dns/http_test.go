@@ -18,22 +18,37 @@ import (
 //
 // 无返回值。
 func TestHttpViaIP(t *testing.T) {
-	ip := "2606:2800:220:1:248:1893:25c8:1946" // 要访问的目标IP地址
-	url := "http://www.example.com/"           // 要访问的目标URL
 
-	// 使用指定的IP地址发起HTTP GET请求
-	resp, err := FetchWithIP(ip, url)
-	if err != nil {
-		fmt.Println("Error:", err)
-		t.Errorf(err.Error())
+	//var // The `addresses` variable in the code is a slice containing two IP addresses: "93.184.216.34"
+	// and "2606:2800:220:1:248:1893:25c8:1946". These IP addresses are used for testing HTTP and
+	// HTTPS connections to a specified URL in the `TestHttpViaIP` and `TestHttpsViaIP` functions. The
+	// code iterates over these addresses and performs HTTP requests using each IP address.
+	var addresses = []string{"93.184.216.34", "2606:2800:220:1:248:1893:25c8:1946"}
+	var eee error = nil
+	for _, address := range addresses {
+		ip := address                    // 要访问的目标IP地址
+		url := "http://www.example.com/" // 要访问的目标URL
+
+		// 使用指定的IP地址发起HTTP GET请求
+		resp, err := FetchWithIP(ip, url)
+		if err != nil {
+			fmt.Println("Error:", err)
+			// t.Errorf(err.Error())
+			eee = err
+			continue
+		}
+
+		// 确保响应体在函数返回前被关闭
+		defer resp.Body.Close()
+		// 读取并打印响应体内容
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Println("Response:", string(body))
 		return
 	}
-
-	// 确保响应体在函数返回前被关闭
-	defer resp.Body.Close()
-	// 读取并打印响应体内容
-	body, _ := io.ReadAll(resp.Body)
-	fmt.Println("Response:", string(body))
+	if eee != nil {
+		fmt.Println("Error:", eee)
+		t.Errorf(eee.Error())
+	}
 }
 
 // TestHttpsViaIP 通过指定的IP地址测试HTTPS连接。
@@ -43,19 +58,32 @@ func TestHttpViaIP(t *testing.T) {
 //
 // 无返回值。
 func TestHttpsViaIP(t *testing.T) {
-	ip := "2606:2800:220:1:248:1893:25c8:1946" // 要访问的IP地址
-	url := "https://www.example.com/"          // 要访问的URL
+	var addresses = []string{"93.184.216.34", "2606:2800:220:1:248:1893:25c8:1946"}
+	var eee error = nil
+	for _, address := range addresses {
+		ip := address                     // 要访问的目标IP地址
+		url := "https://www.example.com/" // 要访问的目标URL
 
-	resp, err := FetchWithIP(ip, url)
-	if err != nil {
-		fmt.Println("Error:", err)
-		t.Errorf(err.Error())
+		// 使用指定的IP地址发起HTTP GET请求
+		resp, err := FetchWithIP(ip, url)
+		if err != nil {
+			fmt.Println("Error:", err)
+			// t.Errorf(err.Error())
+			eee = err
+			continue
+		}
+
+		// 确保响应体在函数返回前被关闭
+		defer resp.Body.Close()
+		// 读取并打印响应体内容
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Println("Response:", string(body))
 		return
 	}
-
-	defer resp.Body.Close() // 确保在函数返回前关闭响应体
-	body, _ := io.ReadAll(resp.Body)
-	fmt.Println("Response:", string(body)) // 打印响应内容
+	if eee != nil {
+		fmt.Println("Error:", eee)
+		t.Errorf(eee.Error())
+	}
 }
 func FetchWithIP(ip, url string) (*http.Response, error) {
 	dialer := &net.Dialer{

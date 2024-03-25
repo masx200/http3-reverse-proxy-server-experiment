@@ -46,7 +46,7 @@ type UpStream interface {
 	// IsHealthyResponse 根据HTTP响应判断上游服务是否健康。
 	// 参数：*http.Response - 上游服务返回的HTTP响应
 	// 返回值：bool - 上游服务的被动健康状态（true为健康，false为不健康）
-	IsHealthyResponse(*http.Response) bool
+	IsHealthyResponse(*http.Response) (bool, error)
 }
 
 // Map 是一个泛型映射接口，支持基本的映射操作。

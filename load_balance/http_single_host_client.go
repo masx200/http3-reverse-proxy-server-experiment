@@ -92,22 +92,31 @@ type SingleHostHTTPClientOfAddress struct {
 	UpStreamServerURL        string                                                         // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 }
 
-// ActiveHealthyCheck implements LoadBalanceAndUpStream.
+// ActiveHealthyCheck 执行活跃的健康检查。
+// 实现了 LoadBalanceAndUpStream 接口。
+// 返回值：检查是否成功（bool类型）和可能发生的错误（error类型）。
 func (l *SingleHostHTTPClientOfAddress) ActiveHealthyCheck() (bool, error) {
 	return l.ActiveHealthyChecker(l, l.UpStreamServerURL)
 }
 
-// Identifier implements LoadBalanceAndUpStream.
+// GetIdentifier 获取标识符。
+// 实现了 LoadBalanceAndUpStream 接口。
+// 返回值：此客户端的唯一标识符（string类型）。
 func (l *SingleHostHTTPClientOfAddress) GetIdentifier() string {
 	return l.Identifier
 }
 
-// IsHealthy implements LoadBalanceAndUpStream.
+// GetHealthy 获取健康状态。
+// 实现了 LoadBalanceAndUpStream 接口。
+// 返回值：当前客户端是否处于健康状态（bool类型）。
 func (l *SingleHostHTTPClientOfAddress) GetHealthy() bool {
 	return l.IsHealthy
 }
 
-// IsHealthyResponse implements LoadBalanceAndUpStream.
+// IsHealthyResponse 对HTTP响应进行健康状态检查。
+// 实现了 LoadBalanceAndUpStream 接口。
+// 参数：HTTP响应（*http.Response类型）。
+// 返回值：检查结果是否健康（bool类型）和可能发生的错误（error类型）。
 func (l *SingleHostHTTPClientOfAddress) IsHealthyResponse(response *http.Response) (bool, error) {
 	return l.IsHealthyResponseChecker(response)
 }

@@ -13,24 +13,37 @@ func PrintResponse(resp *http.Response) {
 	print_experiment.PrintResponse(resp)
 }
 
+// ActiveHealthyCheckDefault 执行一个主动的健康检查，默认使用HEAD请求对给定的URL进行检查。
+// 参数:
+// - RoundTripper: 实现了http.RoundTripper接口的对象，用于发送HTTP请求。如果为空，将使用默认的http.Transport。
+// - url: 需要进行健康检查的URL地址。
+// 返回值:
+// - bool: 检查结果，如果服务被认为是健康的则返回true，否则返回false。
+// - error: 执行过程中遇到的任何错误。
 func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool, error) {
 
 	client := &http.Client{}
 
+	// 使用提供的RoundTripper设置HTTP客户端的传输层。
 	client.Transport = RoundTripper
+	// 创建一个新的HEAD请求。
 	req, err := http.NewRequest("HEAD", url, nil)
 	if err != nil {
-		return false, err
+		return false, err // 如果请求创建失败，则返回错误。
 	}
-	PrintRequest(req)
-	resp, err := client.Do(req)
+	PrintRequest(req) // 打印请求信息，用于调试。
+
+	resp, err := client.Do(req) // 发送请求并获取响应。
 	if err != nil {
-		return false, err
+		return false, err // 如果请求过程中有错误，则返回错误。
 	}
-	defer resp.Body.Close()
-	PrintResponse(resp)
+	defer resp.Body.Close() // 确保在函数返回前关闭响应体。
+
+	PrintResponse(resp) // 打印响应信息，用于调试。
+
+	// 检查响应是否表明服务是健康的。
 	return IsHealthyResponseDefault(resp)
-	//return true, nil
+	// 如果服务健康，则返回true，否则返回false。
 }
 
 func PrintRequest(req *http.Request) {

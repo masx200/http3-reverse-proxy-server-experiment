@@ -4,7 +4,7 @@ import "net/http"
 
 // LoadBalance 是一个负载均衡接口，它定义了如何对HTTP请求进行负载均衡转发。
 // 其中包含了一个Map，用于映射域名到对应的UpStream。
-type LoadBalance interface {
+type LoadBalanceAndUpStream interface {
 	// RoundTrip 是一个代理方法，用于发送HTTP请求，并返回响应或错误。
 	// 参数：
 	//   *http.Request: 待发送的HTTP请求
@@ -16,21 +16,11 @@ type LoadBalance interface {
 	// UpStreams 返回一个键值对映射，其中键是字符串类型，表示域名；
 	// 值是UpStream类型，表示对应域名的上游服务集群。
 	// 这个方法用于获取当前负载均衡器中配置的所有上游服务信息。
-	UpStreams() Map[string, UpStream]
+	UpStreams() Map[string, LoadBalanceAndUpStream]
 
 	//选择一个可用的上游服务器
 	// 参数：
-	SelectAvailableServer() (UpStream, error)
-}
-
-// UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
-// 该接口包括发送HTTP请求、健康检查、标识服务和标记健康状态等方法。
-type UpStream interface {
-	LoadBalance
-	// RoundTrip 代理方法，用于发送HTTP请求，并返回响应或错误。
-	// 参数：*http.Request - 待发送的HTTP请求
-	// 返回值：*http.Response - HTTP响应；error - 错误信息（如果有）
-	RoundTrip(*http.Request) (*http.Response, error)
+	SelectAvailableServer() (LoadBalanceAndUpStream, error)
 
 	// ActiveHealthyCheck 用于检查上游服务的健康状态，并返回健康状态及错误信息。
 	// 返回值：bool - 上游服务的主动健康状态（true为健康，false为不健康）；error - 错误信息（如果有）
@@ -53,6 +43,9 @@ type UpStream interface {
 	// 返回值：bool - 上游服务的被动健康状态（true为健康，false为不健康）
 	IsHealthyResponse(*http.Response) (bool, error)
 }
+
+// UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
+// 该接口包括发送HTTP请求、健康检查、标识服务和标记健康状态等方法。
 
 // Map 是一个泛型映射接口，支持基本的映射操作。
 type Map[T comparable, Y any] interface {

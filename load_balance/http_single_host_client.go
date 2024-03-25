@@ -36,16 +36,20 @@ func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool
 func PrintRequest(req *http.Request) {
 	print_experiment.PrintRequest(req)
 }
-func NewSingleHostHTTPClientOfAddress(identifier string, UpStreamServerURL string, address string) LoadBalanceAndUpStream {
+func NewSingleHostHTTPClientOfAddress(identifier string, UpStreamServerURL string, ServerAddress string) LoadBalanceAndUpStream {
 	return &SingleHostHTTPClientOfAddress{
 		Identifier:               identifier,
 		ActiveHealthyChecker:     ActiveHealthyCheckDefault,
 		IsHealthyResponseChecker: IsHealthyResponseDefault,
 		UpStreamServerURL:        UpStreamServerURL,
+		ServerAddress:            ServerAddress,
+		isHealthy:                true,
+		RoundTripper:             http.DefaultTransport,
 	}
 }
 
 type SingleHostHTTPClientOfAddress struct {
+	ServerAddress            string
 	ActiveHealthyChecker     func(RoundTripper http.RoundTripper, url string) (bool, error)
 	Identifier               string
 	isHealthy                bool

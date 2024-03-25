@@ -26,6 +26,8 @@ http3反向代理服务器实验golang
 
 添加了通过自定义的ip地址访问http1/http2/http3的功能
 
+添加了主动健康检查功能和dns over https负载均衡功能
+
 #### 安装教程
 
 1. xxxx

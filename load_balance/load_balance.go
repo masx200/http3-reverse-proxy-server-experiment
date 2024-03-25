@@ -20,13 +20,24 @@ type LoadBalance interface {
 }
 
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
+// UpStream 是一个接口，定义了与上游服务交互的方法。
 type UpStream interface {
 	// RoundTrip 是一个代理方法，用于发送HTTP请求，并返回响应或错误。
+	// 参数：*http.Request - 待发送的HTTP请求
+	// 返回值：*http.Response - HTTP响应；error - 错误信息（如果有）
 	RoundTrip(*http.Request) (*http.Response, error)
+
 	// HealthyCheck 用于检查上游服务的健康状态，并返回健康状态及错误信息。
+	// 返回值：bool - 上游服务的健康状态（true为健康，false为不健康）；error - 错误信息（如果有）
 	HealthyCheck() (bool, error)
+
 	// Identifier 用于返回上游服务的唯一标识符。
+	// 返回值：string - 上游服务的唯一标识符
 	Identifier() string
+
+	// MarkHealthy 用于标记上游服务的健康状态。
+	// 参数：bool - 上游服务的健康状态（true为健康，false为不健康）
+	MarkHealthy(bool)
 }
 
 // Map 是一个泛型映射接口，支持基本的映射操作。

@@ -2,7 +2,10 @@ package dns
 
 import (
 	"context"
+	"time"
+
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
+
 	// "crypto/tls"
 	// "fmt"
 	// "io"
@@ -208,46 +211,48 @@ func Main() {
 }
 
 func FetchHttp2WithIP(ip, url string) (*http.Response, error) {
-	dialer := &net.Dialer{
-		// Timeout:   30 * time.Second,
-		// KeepAlive: 30 * time.Second,
-	}
-	/*  */
+	transport := CreateTransportWithIP(ip)
 	client := &http.Client{
-		Transport: &http.Transport{
-			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				host, port, err := net.SplitHostPort(addr)
-				if err != nil {
-					return nil, err
-				}
-				conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
-				if err != nil {
-					return nil, err
-				}
-				fmt.Println("连接成功http1", host, port, conn.LocalAddr(), conn.RemoteAddr())
-				return conn, err
-			},
-			DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				host, port, err := net.SplitHostPort(addr)
-				if err != nil {
-					return nil, err
-				}
-				conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
-				if err != nil {
-					return nil, err
-				}
-				//打印连接成功
-				fmt.Println("连接成功http2", host, port, conn.LocalAddr(), conn.RemoteAddr())
-				return tls.Client(conn, &tls.Config{
-					ServerName: host, // 使用原始域名，而不是IP地址
-					// 如果你需要跳过证书验证，可以设置 InsecureSkipVerify: true
-				}), nil
-			},
-		},
-	}
-
+		Transport: transport}
 	return client.Get(url)
 }
 func PrintResponse(resp *http.Response) {
 	print_experiment.PrintResponse(resp)
+}
+func CreateTransportWithIP(ip string) *http.Transport {
+	dialer := &net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+	return &http.Transport{
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			host, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
+			if err != nil {
+				return nil, err
+			}
+			fmt.Println("连接成功http1", host, port, conn.LocalAddr(), conn.RemoteAddr())
+			return conn, err
+		},
+		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			host, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
+			if err != nil {
+				return nil, err
+			}
+			//打印连接成功
+			fmt.Println("连接成功http2", host, port, conn.LocalAddr(), conn.RemoteAddr())
+			return tls.Client(conn, &tls.Config{
+				ServerName: host, // 使用原始域名，而不是IP地址
+				// 如果你需要跳过证书验证，可以设置 InsecureSkipVerify: true
+			}), nil
+		},
+	}
+
 }

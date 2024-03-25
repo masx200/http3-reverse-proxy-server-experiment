@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	// "net/url"
+	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
 
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	optional "github.com/moznion/go-optional"
@@ -62,6 +63,8 @@ func PrintRequest(req *http.Request) {
 //
 //	LoadBalanceAndUpStream - 实现了负载均衡和上游服务选择的接口。
 func NewSingleHostHTTPClientOfAddress(identifier string, UpStreamServerURL string, ServerAddress string) LoadBalanceAndUpStream {
+
+	transport := dns_experiment.CreateTransportWithIP(ServerAddress)
 	// 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
 	return &SingleHostHTTPClientOfAddress{
 		Identifier:               identifier,
@@ -70,7 +73,7 @@ func NewSingleHostHTTPClientOfAddress(identifier string, UpStreamServerURL strin
 		UpStreamServerURL:        UpStreamServerURL,         // 设置上游服务器URL
 		ServerAddress:            ServerAddress,             // 设置服务端地址
 		isHealthy:                true,                      // 初始状态设为健康
-		RoundTripper:             http.DefaultTransport,     // 使用默认的传输器
+		RoundTripper:             transport,                 // 使用默认的传输器
 	}
 }
 

@@ -49,7 +49,7 @@ type LoadBalanceAndUpStream interface {
 // 该接口包括发送HTTP请求、健康检查、标识服务和标记健康状态等方法。
 
 // MapInterface 是一个泛型映射接口，支持基本的映射操作。
-type MapInterface[T comparable, Y any] interface {
+type MapInterface[T any, Y any] interface {
 	// Clear 清空映射中的所有元素。
 	Clear()
 	// Delete 从映射中删除指定的键。

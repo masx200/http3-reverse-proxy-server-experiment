@@ -23,7 +23,11 @@ func PrintResponse(resp *http.Response) {
 // - error: 执行过程中遇到的任何错误。
 func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool, error) {
 
-	client := &http.Client{}
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 
 	// 使用提供的RoundTripper设置HTTP客户端的传输层。
 	client.Transport = RoundTripper

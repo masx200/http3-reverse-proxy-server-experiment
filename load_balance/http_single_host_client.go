@@ -2,7 +2,7 @@ package load_balance
 
 import (
 	"net/http"
-	"net/url"
+	// "net/url"
 
 	optional "github.com/moznion/go-optional"
 )
@@ -10,15 +10,15 @@ import (
 func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper) (bool, error) {
 	return true, nil
 }
-func NewLoadBalanceSingleHostHTTPClient(identifier string, UpStreamServer url.URL) LoadBalanceAndUpStream {
-	return &LoadBalanceSingleHostHTTPClient{
+func NewSingleHostHTTPClientOfAddress(identifier string, UpStreamServerURL string, address string) LoadBalanceAndUpStream {
+	return &SingleHostHTTPClientOfAddress{
 		Identifier:               identifier,
 		ActiveHealthyChecker:     ActiveHealthyCheckDefault,
 		IsHealthyResponseChecker: IsHealthyResponseDefault,
 	}
 }
 
-type LoadBalanceSingleHostHTTPClient struct {
+type SingleHostHTTPClientOfAddress struct {
 	ActiveHealthyChecker     func(RoundTripper http.RoundTripper) (bool, error)
 	Identifier               string
 	isHealthy                bool
@@ -27,22 +27,22 @@ type LoadBalanceSingleHostHTTPClient struct {
 }
 
 // ActiveHealthyCheck implements LoadBalanceAndUpStream.
-func (l *LoadBalanceSingleHostHTTPClient) ActiveHealthyCheck() (bool, error) {
+func (l *SingleHostHTTPClientOfAddress) ActiveHealthyCheck() (bool, error) {
 	return l.ActiveHealthyChecker(l)
 }
 
 // Identifier implements LoadBalanceAndUpStream.
-func (l *LoadBalanceSingleHostHTTPClient) GetIdentifier() string {
+func (l *SingleHostHTTPClientOfAddress) GetIdentifier() string {
 	return l.Identifier
 }
 
 // IsHealthy implements LoadBalanceAndUpStream.
-func (l *LoadBalanceSingleHostHTTPClient) IsHealthy() bool {
+func (l *SingleHostHTTPClientOfAddress) IsHealthy() bool {
 	return l.isHealthy
 }
 
 // IsHealthyResponse implements LoadBalanceAndUpStream.
-func (l *LoadBalanceSingleHostHTTPClient) IsHealthyResponse(response *http.Response) (bool, error) {
+func (l *SingleHostHTTPClientOfAddress) IsHealthyResponse(response *http.Response) (bool, error) {
 	return l.IsHealthyResponseChecker(response)
 }
 func IsHealthyResponseDefault(response *http.Response) (bool, error) {
@@ -50,21 +50,21 @@ func IsHealthyResponseDefault(response *http.Response) (bool, error) {
 }
 
 // RoundTrip implements LoadBalanceAndUpStream.
-func (l *LoadBalanceSingleHostHTTPClient) RoundTrip(request *http.Request) (*http.Response, error) {
+func (l *SingleHostHTTPClientOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
 	return l.RoundTripper.RoundTrip(request)
 }
 
 // SelectAvailableServer implements LoadBalanceAndUpStream.
-func (l *LoadBalanceSingleHostHTTPClient) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
+func (l *SingleHostHTTPClientOfAddress) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
 	return l, nil
 }
 
 // SetHealthy implements LoadBalanceAndUpStream.
-func (l *LoadBalanceSingleHostHTTPClient) SetHealthy(healthy bool) {
+func (l *SingleHostHTTPClientOfAddress) SetHealthy(healthy bool) {
 	l.isHealthy = healthy
 }
 
 // UpStreams implements LoadBalanceAndUpStream.
-func (l *LoadBalanceSingleHostHTTPClient) UpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]] {
+func (l *SingleHostHTTPClientOfAddress) UpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]] {
 	return optional.None[MapInterface[string, LoadBalanceAndUpStream]]()
 }

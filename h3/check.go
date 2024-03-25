@@ -1,11 +1,18 @@
 package h3
 
 import (
+	"context"
+	"crypto/tls"
 	"fmt"
-	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	"log"
+	"net"
 	"net/http"
 	"strings"
+
+	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
+	"github.com/quic-go/quic-go"
+	"github.com/quic-go/quic-go/http3"
+
 	// "testing"
 	altsvc "github.com/ebi-yade/altsvc-go"
 	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
@@ -189,4 +196,69 @@ func DNSQueryHTTPS(domain string, port string, DOHServer string) ([]dns.SVCB, er
 // err         - 错误类型，如果在与DNS服务器通信过程中发生错误，则返回非nil的错误值。
 func DohClient(msg *dns.Msg, DOHServer string) (r *dns.Msg, err error) {
 	return dns_experiment.DohClient(msg, DOHServer)
+}
+
+func FetchHttp3WithIP(ip, url string) (*http.Response, error) {
+	// dialer := &net.Dialer{
+	// 	// Timeout:   30 * time.Second,
+	// 	// KeepAlive: 30 * time.Second,
+	// }
+	udpConn, err := net.ListenUDP("udp", nil)
+	if err != nil {
+		return nil, err
+	}
+	tr := quic.Transport{Conn: udpConn}
+	/*  */
+	client := &http.Client{
+		Transport: &http3.RoundTripper{
+			Dial: func(ctx context.Context, addr string, tlsConf *tls.Config, quicConf *quic.Config) (quic.EarlyConnection, error) {
+				host, port, err := net.SplitHostPort(addr)
+				if err != nil {
+					return nil, err
+				}
+				var addr2 = net.JoinHostPort(ip, port)
+				a, err := net.ResolveUDPAddr("udp", addr2)
+				if err != nil {
+					return nil, err
+				}
+				conn, err := tr.DialEarly(ctx, a, tlsConf, quicConf)
+				if err != nil {
+					fmt.Println("http3连接失败", host, port, conn.LocalAddr(), conn.RemoteAddr())
+					return nil, err
+				}
+				fmt.Println("http3连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())
+				return conn, err
+			},
+			// DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			// 	host, port, err := net.SplitHostPort(addr)
+			// 	if err != nil {
+			// 		return nil, err
+			// 	}
+			// 	conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
+			// 	if err != nil {
+			// 		return nil, err
+			// 	}
+			// 	fmt.Println("连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())
+			// 	return conn, err
+			// },
+			// DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			// 	host, port, err := net.SplitHostPort(addr)
+			// 	if err != nil {
+			// 		return nil, err
+			// 	}
+			// 	conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
+			// 	if err != nil {
+			// 		return nil, err
+			// 	}
+			// 	//打印连接成功
+			// 	fmt.Println("连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())
+			// 	return tls.Client(conn, &tls.Config{
+			// 		ServerName: host, // 使用原始域名，而不是IP地址
+			// 		// 如果你需要跳过证书验证，可以设置 InsecureSkipVerify: true
+			// 	}), nil
+			// },
+		},
+	}
+
+	return client.Get(url)
 }

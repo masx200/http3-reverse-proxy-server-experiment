@@ -1,12 +1,13 @@
 package dns
 
 import (
-	"context"
-	"crypto/tls"
+	// "context"
+	// "crypto/tls"
 	"fmt"
 	"io"
-	"net"
-	"net/http"
+
+	// "net"
+	// "net/http"
 	"testing"
 )
 
@@ -17,7 +18,7 @@ import (
 //	t *testing.T - 测试框架提供的测试上下文，用于报告测试失败和日志记录。
 //
 // 无返回值。
-func TestHttpViaIP(t *testing.T) {
+func TestHttp1ViaIP(t *testing.T) {
 
 	var addresses = []string{"93.184.216.34" /* , "2606:2800:220:1:248:1893:25c8:1946" */}
 	// var eee error = nil
@@ -28,7 +29,7 @@ func TestHttpViaIP(t *testing.T) {
 		url := "http://www.example.com/" // 要访问的目标URL
 
 		// 使用指定的IP地址发起HTTP GET请求
-		resp, err := FetchWithIP(ip, url)
+		resp, err := FetchHttp2WithIP(ip, url)
 		if err != nil {
 			fmt.Println("Error:", err)
 			// t.Errorf(err.Error())
@@ -36,7 +37,7 @@ func TestHttpViaIP(t *testing.T) {
 			failure += 1
 			continue
 		}
-
+		PrintResponse(resp)
 		// 确保响应体在函数返回前被关闭
 		defer resp.Body.Close()
 		// 读取并打印响应体内容
@@ -54,6 +55,7 @@ func TestHttpViaIP(t *testing.T) {
 		fmt.Println("Error:", "No successful test")
 		t.Errorf("No successful test")
 	}
+	fmt.Println("http1 Success:", success)
 }
 
 // TestHttpsViaIP 通过指定的IP地址测试HTTPS连接。
@@ -62,7 +64,7 @@ func TestHttpViaIP(t *testing.T) {
 //	t *testing.T - 测试框架提供的测试上下文，用于报告测试失败和日志记录。
 //
 // 无返回值。
-func TestHttpsViaIP(t *testing.T) {
+func TestHttp2ViaIP(t *testing.T) {
 	var addresses = []string{"93.184.216.34" /* "2606:2800:220:1:248:1893:25c8:1946" */}
 	// var eee error = nil
 	var failure = 0
@@ -72,7 +74,7 @@ func TestHttpsViaIP(t *testing.T) {
 		url := "https://www.example.com/" // 要访问的目标URL
 
 		// 使用指定的IP地址发起HTTP GET请求
-		resp, err := FetchWithIP(ip, url)
+		resp, err := FetchHttp2WithIP(ip, url)
 		if err != nil {
 			fmt.Println("Error:", err)
 			// t.Errorf(err.Error())
@@ -80,7 +82,7 @@ func TestHttpsViaIP(t *testing.T) {
 			failure += 1
 			continue
 		}
-
+		PrintResponse(resp)
 		// 确保响应体在函数返回前被关闭
 		defer resp.Body.Close()
 		// 读取并打印响应体内容
@@ -98,45 +100,5 @@ func TestHttpsViaIP(t *testing.T) {
 		fmt.Println("Error:", "No successful test")
 		t.Errorf("No successful test")
 	}
-}
-func FetchWithIP(ip, url string) (*http.Response, error) {
-	dialer := &net.Dialer{
-		// Timeout:   30 * time.Second,
-		// KeepAlive: 30 * time.Second,
-	}
-	/*  */
-	client := &http.Client{
-		Transport: &http.Transport{
-			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				host, port, err := net.SplitHostPort(addr)
-				if err != nil {
-					return nil, err
-				}
-				conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
-				if err != nil {
-					return nil, err
-				}
-				fmt.Println("连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())
-				return conn, err
-			},
-			DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				host, port, err := net.SplitHostPort(addr)
-				if err != nil {
-					return nil, err
-				}
-				conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
-				if err != nil {
-					return nil, err
-				}
-				//打印连接成功
-				fmt.Println("连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())
-				return tls.Client(conn, &tls.Config{
-					ServerName: host, // 使用原始域名，而不是IP地址
-					// 如果你需要跳过证书验证，可以设置 InsecureSkipVerify: true
-				}), nil
-			},
-		},
-	}
-
-	return client.Get(url)
+	fmt.Println("http2 Success:", success)
 }

@@ -104,9 +104,20 @@ func (l *SingleHostHTTPClientOfAddress) IsHealthy() bool {
 func (l *SingleHostHTTPClientOfAddress) IsHealthyResponse(response *http.Response) (bool, error) {
 	return l.IsHealthyResponseChecker(response)
 }
+
+// IsHealthyResponseDefault 检查HTTP响应是否表示服务健康。
+//
+// 参数:
+//
+//	response *http.Response - 用于检查的HTTP响应对象。
+//
+// 返回值:
+//
+//	bool - 如果响应表示服务健康，则为true；否则为false。
+//	error - 如果检查过程中遇到错误，则返回错误信息；否则为nil。
 func IsHealthyResponseDefault(response *http.Response) (bool, error) {
 
-	//check StatusCode<500
+	// 检查响应状态码是否小于500
 	if response.StatusCode >= 500 {
 		return false, fmt.Errorf("StatusCode %d   is greater than 500", response.StatusCode)
 	}

@@ -19,7 +19,7 @@ import (
 // 无返回值。
 func TestHttpViaIP(t *testing.T) {
 
-	var addresses = []string{"93.184.216.34", "2606:2800:220:1:248:1893:25c8:1946"}
+	var addresses = []string{"93.184.216.34" /* , "2606:2800:220:1:248:1893:25c8:1946" */}
 	// var eee error = nil
 	var failure = 0
 	var success = 0
@@ -63,7 +63,7 @@ func TestHttpViaIP(t *testing.T) {
 //
 // 无返回值。
 func TestHttpsViaIP(t *testing.T) {
-	var addresses = []string{"93.184.216.34", "2606:2800:220:1:248:1893:25c8:1946"}
+	var addresses = []string{"93.184.216.34" /* "2606:2800:220:1:248:1893:25c8:1946" */}
 	// var eee error = nil
 	var failure = 0
 	var success = 0

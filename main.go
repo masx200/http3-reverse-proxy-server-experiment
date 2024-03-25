@@ -119,9 +119,13 @@ func main() {
 	var hostname = "0.0.0.0"
 	server := &http.Server{
 		Addr: hostname + ":" + strconv.Itoa(httpsPort),
-		Handler: &LoadBalanceHandler{
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+
+			engine.Handler().ServeHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
+
+		}), /*  &LoadBalanceHandler{
 			engine: engine,
-		},
+		}, */
 	}
 
 	go func() {
@@ -373,16 +377,11 @@ func LoopDetect() gin.HandlerFunc {
 }
 
 // LoadBalanceHandler 是一个用于负载均衡处理的结构体。
-type LoadBalanceHandler struct {
-	engine *gin.Engine // engine 是一个Gin框架的引擎实例，用于处理HTTP请求。
-}
 
 // ServeHTTP 是一个实现http.Handler接口的方法，用于处理HTTP请求。
 // 参数w是用于向客户端发送响应的http.ResponseWriter，
 // 参数req是客户端发来的HTTP请求。
-func (h *LoadBalanceHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	h.engine.Handler().ServeHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
-} // ChangeURLScheme 用于更改给定URL的协议。
+// ChangeURLScheme 用于更改给定URL的协议。
 //
 // 参数：
 // originalURLStr: 原始URL字符串，需要被更改协议的URL。

@@ -26,6 +26,7 @@ type LoadBalance interface {
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
 // 该接口包括发送HTTP请求、健康检查、标识服务和标记健康状态等方法。
 type UpStream interface {
+	LoadBalance
 	// RoundTrip 代理方法，用于发送HTTP请求，并返回响应或错误。
 	// 参数：*http.Request - 待发送的HTTP请求
 	// 返回值：*http.Response - HTTP响应；error - 错误信息（如果有）

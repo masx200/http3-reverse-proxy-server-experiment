@@ -39,9 +39,9 @@ type UpStream interface {
 	// 返回值：bool - 上游服务的健康状态（true为健康，false为不健康）
 	IsHealthy() bool
 
-	// MarkHealthy 用于标记上游服务的健康状态。
+	// SetHealthy 用于标记上游服务的健康状态。
 	// 参数：bool - 上游服务的健康状态（true为健康，false为不健康）
-	MarkHealthy(bool)
+	SetHealthy(bool)
 
 	// IsHealthyResponse 根据HTTP响应判断上游服务是否健康。
 	// 参数：*http.Response - 上游服务返回的HTTP响应

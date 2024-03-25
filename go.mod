@@ -4,6 +4,8 @@ go 1.21.6
 
 require github.com/quic-go/quic-go v0.42.0
 
+require github.com/moznion/go-optional v0.11.0 // indirect
+
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect

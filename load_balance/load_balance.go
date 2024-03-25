@@ -1,6 +1,7 @@
 package load_balance
 
 import "net/http"
+import "github.com/moznion/go-optional"
 
 // LoadBalance 是一个负载均衡接口，它定义了如何对HTTP请求进行负载均衡转发。
 // 其中包含了一个Map，用于映射域名到对应的UpStream。
@@ -16,7 +17,7 @@ type LoadBalanceAndUpStream interface {
 	// UpStreams 返回一个键值对映射，其中键是字符串类型，表示域名；
 	// 值是UpStream类型，表示对应域名的上游服务集群。
 	// 这个方法用于获取当前负载均衡器中配置的所有上游服务信息。
-	UpStreams() Map[string, LoadBalanceAndUpStream]
+	UpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]]
 
 	//选择一个可用的上游服务器
 	// 参数：
@@ -47,8 +48,8 @@ type LoadBalanceAndUpStream interface {
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
 // 该接口包括发送HTTP请求、健康检查、标识服务和标记健康状态等方法。
 
-// Map 是一个泛型映射接口，支持基本的映射操作。
-type Map[T comparable, Y any] interface {
+// MapInterface 是一个泛型映射接口，支持基本的映射操作。
+type MapInterface[T comparable, Y any] interface {
 	// Clear 清空映射中的所有元素。
 	Clear()
 	// Delete 从映射中删除指定的键。
@@ -66,7 +67,7 @@ type Map[T comparable, Y any] interface {
 	// Size 返回映射中元素的数量。
 	Size() int64
 	// Entries 返回映射中所有键值对的切片。
-	Entries() []Pair[T, Y]
+	Entries() []PairInterface[T, Y]
 }
 
 // Pair 是一个泛型结构体，用于存储一对任意类型的值。
@@ -74,4 +75,11 @@ type Map[T comparable, Y any] interface {
 type Pair[T any, Y any] struct {
 	First  T // First是结构体中的第一个元素。
 	Second Y // Second是结构体中的第二个元素。
+}
+type PairInterface[T any, Y any] interface {
+	GetFirst() T
+	SetFirst(T)
+	GetSecond() Y
+
+	SetSecond(Y)
 }

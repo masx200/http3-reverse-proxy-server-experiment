@@ -12,7 +12,7 @@ import (
 
 func TestDOQ(t *testing.T) {
 	// 创建一个新的 DoQ 客户端
-	x := "ibksturm.synology.me:853"
+	x := "family.adguard-dns.com:853"
 	doqServer := "quic://" + x
 	client := doq.NewClient(x, doq.Options{})
 	// if err != nil {

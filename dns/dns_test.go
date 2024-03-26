@@ -9,7 +9,7 @@ import (
 )
 
 func TestDOH(t *testing.T) {
-	dohServer := []string{"https://dns.dnswarden.com/uncensored", "https://doh.cleanbrowsing.org/doh/security-filter/"}
+	dohServer := []string{"https://doh.opendns.com/dns-query", "https://doh.cleanbrowsing.org/doh/security-filter/"}
 	// dohServer := []string{"9.9.9.9:853", "1.1.1.1:853", "8.8.4.4:853", "dot.sb:853"}
 	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev"
 

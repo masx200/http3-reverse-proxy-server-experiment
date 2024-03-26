@@ -7,7 +7,7 @@ import (
 
 func TestCheckHttp3ViaDNS(t *testing.T) {
 
-	DOHServer := "https://deno-dns-over-https-server-5ehq9rg3chgf.deno.dev/dns-query"
+	DOHServer := "https://doh.dns.sb/dns-query"
 
 	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev"
 	port := "443"

@@ -595,10 +595,10 @@ func (c *customRoundTripperLoadBalancer) RoundTrip(req *http.Request) (*http.Res
 // 返回值 []T 是打乱后的切片。
 func randomShuffle[T any](arr []T) []T {
 	// 使用当前时间的纳秒级种子初始化随机数生成器，以确保每次运行结果都不同。
-	rand.Seed(time.Now().UnixNano())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	// 使用 rand.Shuffle 函数来随机打乱切片的顺序。
 	// 这个函数会传入切片的长度以及一个交换元素的函数。
-	rand.Shuffle(len(arr), func(i, j int) {
+	r.Shuffle(len(arr), func(i, j int) {
 		// 交换函数通过交换 arr[i] 和 arr[j] 来打乱顺序。
 		arr[i], arr[j] = arr[j], arr[i]
 	})

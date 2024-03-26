@@ -1,11 +1,11 @@
-package dns
+package h12
 
 import (
 	// "context"
 	// "crypto/tls"
 	"fmt"
+	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
 	"io"
-
 	// "net"
 	// "net/http"
 	"testing"
@@ -37,7 +37,7 @@ func TestHttp1ViaIP(t *testing.T) {
 			failure += 1
 			continue
 		}
-		PrintResponse(resp)
+		dns_experiment.PrintResponse(resp)
 		// 确保响应体在函数返回前被关闭
 		defer resp.Body.Close()
 		// 读取并打印响应体内容
@@ -82,7 +82,7 @@ func TestHttp2ViaIP(t *testing.T) {
 			failure += 1
 			continue
 		}
-		PrintResponse(resp)
+		dns_experiment.PrintResponse(resp)
 		// 确保响应体在函数返回前被关闭
 		defer resp.Body.Close()
 		// 读取并打印响应体内容

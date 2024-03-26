@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+func FetchHttp2WithIP(ip, url string) (*http.Response, error) {
+	transport := CreateHTTP12TransportWithIP(ip)
+	client := &http.Client{
+		Transport: transport}
+	return client.Get(url)
+}
+
 // CreateHTTP12TransportWithIP 创建一个http.Transport实例，该实例通过指定的IP地址进行网络连接。
 // 这对于需要强制通过特定IP地址访问HTTP服务的情况非常有用。
 //

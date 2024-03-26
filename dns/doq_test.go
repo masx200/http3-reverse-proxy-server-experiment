@@ -52,12 +52,12 @@ func TestDOQ(t *testing.T) {
 	} else {
 		fmt.Println("AAAA Record Response:", respAAAA.String())
 	}
-	if qAAAA.Rcode != dns.RcodeSuccess {
+	if respAAAA.Rcode != dns.RcodeSuccess {
 		log.Println(dns.RcodeToString[qAAAA.Rcode])
 
 		t.Fatal(fmt.Errorf("dns server %s response error not success", doqServer))
 	}
-	if len(qAAAA.Answer) == 0 {
+	if len(respAAAA.Answer) == 0 {
 		log.Println(doqServer + "-No AAAA records found")
 		t.Fatal(fmt.Errorf(
 			"dns server  response error No AAAA records found",

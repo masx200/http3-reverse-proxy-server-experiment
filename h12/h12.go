@@ -1,4 +1,4 @@
-package dns
+package h12
 
 import (
 	"context"

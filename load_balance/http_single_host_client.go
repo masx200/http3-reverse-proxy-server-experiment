@@ -3,6 +3,7 @@ package load_balance
 import (
 	"fmt"
 	"net/http"
+
 	// "net/url"
 	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
 
@@ -66,12 +67,12 @@ func PrintRequest(req *http.Request) {
 // 返回值:
 //
 //	LoadBalanceAndUpStream - 实现了负载均衡和上游服务选择的接口。
-func NewSingleHostHTTPClientOfAddress(identifier string, UpStreamServerURL string, ServerAddress string) LoadBalanceAndUpStream {
+func NewSingleHostHTTPClientOfAddress(Identifier string, UpStreamServerURL string, ServerAddress string, options ...SingleHostHTTPClientOfAddressOption) LoadBalanceAndUpStream {
 
 	transport := dns_experiment.CreateTransportWithIP(ServerAddress)
 	// 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
-	return &SingleHostHTTPClientOfAddress{
-		Identifier:               identifier,
+	m := &SingleHostHTTPClientOfAddress{
+		Identifier:               Identifier,
 		ActiveHealthyChecker:     ActiveHealthyCheckDefault, // 使用默认的主动健康检查器
 		IsHealthyResponseChecker: IsHealthyResponseDefault,  // 使用默认的健康响应检查器
 		UpStreamServerURL:        UpStreamServerURL,         // 设置上游服务器URL
@@ -79,7 +80,13 @@ func NewSingleHostHTTPClientOfAddress(identifier string, UpStreamServerURL strin
 		IsHealthy:                true,                      // 初始状态设为健康
 		RoundTripper:             transport,                 // 使用默认的传输器
 	}
+	for _, option := range options {
+		option(m)
+	}
+	return m
 }
+
+type SingleHostHTTPClientOfAddressOption func(*SingleHostHTTPClientOfAddress)
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTPClientOfAddress struct {

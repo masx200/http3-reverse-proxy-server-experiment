@@ -73,6 +73,14 @@ type MapInterface[T any, Y any] interface {
 	Entries() []PairInterface[T, Y]
 }
 
+// 构造函数
+func NewPairImplement[T any, Y any](first T, second Y) PairInterface[T, Y] {
+	return &PairImplement[T, Y]{
+		First:  first,
+		Second: second,
+	}
+}
+
 // Pair 是一个泛型结构体，用于存储一对任意类型的值。
 // T和Y是泛型参数，代表First和Second可以是任何类型。
 type PairImplement[T any, Y any] struct {

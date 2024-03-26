@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
+	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -30,7 +31,7 @@ func main() {
 	var upstreamServers = []string{"https://production.hello-word-worker-cloudflare.masx200.workers.dev/", "https://hello-world-deno-deploy.deno.dev/"}
 	var httpsPort = 18443
 	var httpPort = 18080
-	var upStreamServerSchemeAndHostOfName map[string]Pair[string, string] = map[string]Pair[string, string]{}
+	var upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string] = map[string]generic.PairInterface[string, string]{}
 	engine := gin.Default()
 	engine.Use(Forwarded(), LoopDetect())
 	engine.Use(func(c *gin.Context) {
@@ -74,7 +75,7 @@ func main() {
 			return proxy.Transport.RoundTrip(req)
 		}
 		upstreamServerOfName[urlString] = urlString
-		upStreamServerSchemeAndHostOfName[urlString] = Pair[string, string]{upstreamURL.Scheme, upstreamURL.Host}
+		upStreamServerSchemeAndHostOfName[urlString] = generic.NewPairImplement[string, string](upstreamURL.Scheme, upstreamURL.Host)
 	}
 	// 启动反向代理服务器
 	var healthyUpstream = proxyServers
@@ -568,9 +569,9 @@ type customRoundTripperLoadBalancer struct {
 // error - 如果在发送请求过程中出现错误，则返回错误信息
 func (c *customRoundTripperLoadBalancer) RoundTrip(req *http.Request) (*http.Response, error) {
 	var roundTripper = c.getTransportHealthy()
-	var upStreamServerSchemeAndHostOfName map[string]Pair[string, string] = map[string]Pair[string, string]{}
+	var upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string] = map[string]generic.PairInterface[string, string]{}
 	for k := range roundTripper {
-		upStreamServerSchemeAndHostOfName[k] = Pair[string, string]{c.upstreamURL.Scheme, c.upstreamURL.Host}
+		upStreamServerSchemeAndHostOfName[k] = generic.NewPairImplement[string, string](c.upstreamURL.Scheme, c.upstreamURL.Host)
 	}
 	// 设置请求的Host为上游服务的Host
 	req.Host = c.upstreamURL.Host
@@ -607,10 +608,10 @@ func randomShuffle[T any](arr []T) []T {
 // 返回值是一个类型为 []Pair[T, Y] 的切片，其中 Pair 是一个包含两个字段 First 和 Second 的结构体。
 // 这个函数主要用于将映射的键值对形式转换为切片形式，方便后续处理。
 
-func mapToArray[T comparable, Y any](m map[T]Y) []Pair[T, Y] {
-	result := make([]Pair[T, Y], 0, len(m))
+func mapToArray[T comparable, Y any](m map[T]Y) []generic.PairInterface[T, Y] {
+	result := make([]generic.PairInterface[T, Y], 0, len(m))
 	for key := range m {
-		result = append(result, Pair[T, Y]{First: key, Second: m[key]})
+		result = append(result, generic.NewPairImplement[T, Y](key, m[key]))
 	}
 	return result
 }
@@ -622,7 +623,7 @@ func mapToArray[T comparable, Y any](m map[T]Y) []Pair[T, Y] {
 // 返回值：
 // - *http.Response：从运输函数中返回的HTTP响应指针，如果所有运输函数都失败，则为nil。
 // - error：如果在发送请求时遇到错误，则返回错误信息；否则为nil。
-func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Response, error), req *http.Request, upStreamServerSchemeAndHostOfName map[string]Pair[string, string]) (*http.Response, error) {
+func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Response, error), req *http.Request, upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string]) (*http.Response, error) {
 	// 打印传入的运输函数列表
 	fmt.Println("接收到的可用上游服务器:", roundTripper)
 
@@ -634,13 +635,13 @@ func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Respo
 
 	// 遍历洗牌后的运输函数列表，尝试发送HTTP请求
 	for _, transport := range healthRoundTripper {
-		var name = transport.First
-		var Scheme = upStreamServerSchemeAndHostOfName[name].First
-		var Host = upStreamServerSchemeAndHostOfName[name].Second
+		var name = transport.GetFirst()
+		var Scheme = upStreamServerSchemeAndHostOfName[name].GetFirst()
+		var Host = upStreamServerSchemeAndHostOfName[name].GetSecond()
 		req.URL.Scheme = Scheme
 		req.Host = Host
 		req.URL.Host = Host
-		var rs, err = transport.Second(req) // 执行运输函数
+		var rs, err = transport.GetSecond()(req) // 执行运输函数
 		if err != nil {
 			// 如果请求发送失败，打印错误信息，并更新错误变量
 			log.Println("ERROR:", err)
@@ -676,10 +677,6 @@ func PrintHeader(header http.Header) {
 
 // Pair是一个泛型结构体，用于存储一对任意类型的值。
 // T和Y是泛型参数，代表First和Second可以是任何类型。
-type Pair[T any, Y any] struct {
-	First  T // First是结构体中的第一个元素。
-	Second Y // Second是结构体中的第二个元素。
-}
 
 func PrintResponse(resp *http.Response) {
 	print_experiment.PrintResponse(resp)

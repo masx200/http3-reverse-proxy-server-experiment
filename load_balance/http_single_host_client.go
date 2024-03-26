@@ -69,7 +69,7 @@ func PrintRequest(req *http.Request) {
 //	LoadBalanceAndUpStream - 实现了负载均衡和上游服务选择的接口。
 func NewSingleHostHTTPClientOfAddress(Identifier string, UpStreamServerURL string, ServerAddress string, options ...SingleHostHTTPClientOfAddressOption) LoadBalanceAndUpStream {
 
-	transport := dns_experiment.CreateTransportWithIP(ServerAddress)
+	transport := dns_experiment.CreateHTTP12TransportWithIP(ServerAddress)
 	// 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
 	m := &SingleHostHTTPClientOfAddress{
 		Identifier:             Identifier,

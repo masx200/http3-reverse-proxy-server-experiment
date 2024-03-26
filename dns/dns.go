@@ -211,7 +211,7 @@ func Main() {
 }
 
 func FetchHttp2WithIP(ip, url string) (*http.Response, error) {
-	transport := CreateTransportWithIP(ip)
+	transport := CreateHTTP12TransportWithIP(ip)
 	client := &http.Client{
 		Transport: transport}
 	return client.Get(url)
@@ -220,7 +220,7 @@ func PrintResponse(resp *http.Response) {
 	print_experiment.PrintResponse(resp)
 }
 
-// CreateTransportWithIP 创建一个http.Transport实例，该实例通过指定的IP地址进行网络连接。
+// CreateHTTP12TransportWithIP 创建一个http.Transport实例，该实例通过指定的IP地址进行网络连接。
 // 这对于需要强制通过特定IP地址访问HTTP服务的情况非常有用。
 //
 // 参数:
@@ -230,7 +230,7 @@ func PrintResponse(resp *http.Response) {
 // 返回值:
 //
 //	*http.Transport - 配置好的http.Transport指针，可用于http.Client或其他需要http.Transport的场合。
-func CreateTransportWithIP(ip string) *http.Transport {
+func CreateHTTP12TransportWithIP(ip string) *http.Transport {
 	dialer := &net.Dialer{
 		Timeout:   30 * time.Second, // 设置拨号超时时间为30秒
 		KeepAlive: 30 * time.Second, // 设置保持活动状态的间隔为30秒

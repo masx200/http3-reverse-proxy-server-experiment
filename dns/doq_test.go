@@ -12,7 +12,7 @@ import (
 
 func TestDOQ(t *testing.T) {
 	// 创建一个新的 DoQ 客户端
-	x := "family.adguard-dns.com:853"
+	x := "ibksturm.synology.me:853"
 	doqServer := "quic://" + x
 	client := doq.NewClient(x, doq.Options{})
 	// if err != nil {
@@ -63,5 +63,16 @@ func TestDOQ(t *testing.T) {
 		t.Fatal(err)
 	} else {
 		fmt.Println("HTTPS Record Response:", respHTTPS.String())
+	}
+	if respHTTPS.Rcode != dns.RcodeSuccess {
+		log.Println(dns.RcodeToString[respHTTPS.Rcode])
+
+		t.Fatal(fmt.Errorf("dns server %s response error not success", doqServer))
+	}
+	if len(respHTTPS.Answer) == 0 {
+		log.Println(doqServer + "-No HTTPS records found")
+		t.Fatal(fmt.Errorf(
+			"dns server  response error No HTTPS records found",
+		))
 	}
 }

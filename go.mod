@@ -4,7 +4,12 @@ go 1.21.6
 
 require github.com/quic-go/quic-go v0.42.0
 
-require github.com/moznion/go-optional v0.11.0 // indirect
+require (
+	github.com/kr/text v0.2.0 // indirect
+	github.com/moznion/go-optional v0.11.0
+	github.com/rogpeppe/go-internal v1.9.0 // indirect
+	github.com/tantalor93/doq-go v0.9.0
+)
 
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect

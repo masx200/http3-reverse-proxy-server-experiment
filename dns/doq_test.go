@@ -3,6 +3,7 @@ package dns
 import (
 	"context"
 	"fmt"
+	"log"
 	"testing"
 
 	"github.com/miekg/dns"
@@ -11,7 +12,9 @@ import (
 
 func TestDOQ(t *testing.T) {
 	// 创建一个新的 DoQ 客户端
-	client := doq.NewClient("family.adguard-dns.com:853", doq.Options{})
+	x := "family.adguard-dns.com:853"
+	doqServer := "quic://" + x
+	client := doq.NewClient(x, doq.Options{})
 	// if err != nil {
 	// 	panic(err)
 	// }
@@ -28,7 +31,17 @@ func TestDOQ(t *testing.T) {
 	} else {
 		fmt.Println("A Record Response:", respA.String())
 	}
+	if respA.Rcode != dns.RcodeSuccess {
+		log.Println(dns.RcodeToString[respA.Rcode])
 
+		t.Fatal(fmt.Errorf("dns server %s response error not success", doqServer))
+	}
+	if len(respA.Answer) == 0 {
+		log.Println(doqServer + "-No AAAA records found")
+		t.Fatal(fmt.Errorf(
+			"dns server  response error No AAAA records found",
+		))
+	}
 	// 查询 AAAA 记录
 	qAAAA := dns.Msg{}
 	qAAAA.SetQuestion(domain+".", dns.TypeAAAA)

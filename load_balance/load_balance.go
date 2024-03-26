@@ -1,7 +1,10 @@
 package load_balance
 
-import "net/http"
-import "github.com/moznion/go-optional"
+import (
+	"net/http"
+
+	"github.com/moznion/go-optional"
+)
 
 // LoadBalance 是一个负载均衡接口，它定义了如何对HTTP请求进行负载均衡转发。
 // 其中包含了一个Map，用于映射域名到对应的UpStream。
@@ -39,10 +42,10 @@ type LoadBalanceAndUpStream interface {
 	// 参数：bool - 上游服务的健康状态（true为健康，false为不健康）
 	SetHealthy(bool)
 
-	// IsHealthyResponse 根据HTTP响应判断上游服务是否健康。
+	// HealthyResponseCheck 根据HTTP响应判断上游服务是否健康。
 	// 参数：*http.Response - 上游服务返回的HTTP响应
 	// 返回值：bool - 上游服务的被动健康状态（true为健康，false为不健康）
-	IsHealthyResponse(*http.Response) (bool, error)
+	HealthyResponseCheck(*http.Response) (bool, error)
 }
 
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。

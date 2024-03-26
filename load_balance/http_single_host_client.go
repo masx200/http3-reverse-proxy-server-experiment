@@ -48,7 +48,7 @@ func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool
 	PrintResponse(resp) // 打印响应信息，用于调试。
 
 	// 检查响应是否表明服务是健康的。
-	return IsHealthyResponseDefault(resp)
+	return HealthyResponseCheckDefault(resp)
 	// 如果服务健康，则返回true，否则返回false。
 }
 
@@ -72,13 +72,13 @@ func NewSingleHostHTTPClientOfAddress(Identifier string, UpStreamServerURL strin
 	transport := dns_experiment.CreateTransportWithIP(ServerAddress)
 	// 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
 	m := &SingleHostHTTPClientOfAddress{
-		Identifier:               Identifier,
-		ActiveHealthyChecker:     ActiveHealthyCheckDefault, // 使用默认的主动健康检查器
-		IsHealthyResponseChecker: IsHealthyResponseDefault,  // 使用默认的健康响应检查器
-		UpStreamServerURL:        UpStreamServerURL,         // 设置上游服务器URL
-		ServerAddress:            ServerAddress,             // 设置服务端地址
-		IsHealthy:                true,                      // 初始状态设为健康
-		RoundTripper:             transport,                 // 使用默认的传输器
+		Identifier:             Identifier,
+		ActiveHealthyChecker:   ActiveHealthyCheckDefault,   // 使用默认的主动健康检查器
+		HealthyResponseChecker: HealthyResponseCheckDefault, // 使用默认的健康响应检查器
+		UpStreamServerURL:      UpStreamServerURL,           // 设置上游服务器URL
+		ServerAddress:          ServerAddress,               // 设置服务端地址
+		IsHealthy:              true,                        // 初始状态设为健康
+		RoundTripper:           transport,                   // 使用默认的传输器
 	}
 	for _, option := range options {
 		option(m)
@@ -90,13 +90,13 @@ type SingleHostHTTPClientOfAddressOption func(*SingleHostHTTPClientOfAddress)
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTPClientOfAddress struct {
-	ServerAddress            string                                                         // 服务器地址，指定客户端要连接的HTTP服务器的地址。
-	ActiveHealthyChecker     func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
-	Identifier               string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
-	IsHealthy                bool                                                           // 健康状态，标识当前客户端是否被视为健康。
-	IsHealthyResponseChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
-	RoundTripper             http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
-	UpStreamServerURL        string                                                         // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
+	ServerAddress          string                                                         // 服务器地址，指定客户端要连接的HTTP服务器的地址。
+	ActiveHealthyChecker   func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
+	Identifier             string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
+	IsHealthy              bool                                                           // 健康状态，标识当前客户端是否被视为健康。
+	HealthyResponseChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
+	RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
+	UpStreamServerURL      string                                                         // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 }
 
 // ActiveHealthyCheck 执行活跃的健康检查。
@@ -120,15 +120,15 @@ func (l *SingleHostHTTPClientOfAddress) GetHealthy() bool {
 	return l.IsHealthy
 }
 
-// IsHealthyResponse 对HTTP响应进行健康状态检查。
+// HealthyResponseCheck 对HTTP响应进行健康状态检查。
 // 实现了 LoadBalanceAndUpStream 接口。
 // 参数：HTTP响应（*http.Response类型）。
 // 返回值：检查结果是否健康（bool类型）和可能发生的错误（error类型）。
-func (l *SingleHostHTTPClientOfAddress) IsHealthyResponse(response *http.Response) (bool, error) {
-	return l.IsHealthyResponseChecker(response)
+func (l *SingleHostHTTPClientOfAddress) HealthyResponseCheck(response *http.Response) (bool, error) {
+	return l.HealthyResponseChecker(response)
 }
 
-// IsHealthyResponseDefault 检查HTTP响应是否表示服务健康。
+// HealthyResponseCheckDefault 检查HTTP响应是否表示服务健康。
 //
 // 参数:
 //
@@ -138,7 +138,7 @@ func (l *SingleHostHTTPClientOfAddress) IsHealthyResponse(response *http.Respons
 //
 //	bool - 如果响应表示服务健康，则为true；否则为false。
 //	error - 如果检查过程中遇到错误，则返回错误信息；否则为nil。
-func IsHealthyResponseDefault(response *http.Response) (bool, error) {
+func HealthyResponseCheckDefault(response *http.Response) (bool, error) {
 
 	// 检查响应状态码是否小于500
 	if response.StatusCode >= 500 {

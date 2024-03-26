@@ -18,7 +18,7 @@ http3反向代理服务器实验golang
 
 添加了防环检测功能和被动健康检查的限速功能
 
-添加了dns over https客户端的功能
+添加了dns over https/dns over http3/dns over quic客户端的功能
 
 增加了通过dns的https记录查询服务器支持http3的功能
 

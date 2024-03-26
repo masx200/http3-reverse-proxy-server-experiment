@@ -198,29 +198,38 @@ func DohClient(msg *dns.Msg, DOHServer string) (r *dns.Msg, err error) {
 	return dns_experiment.DohClient(msg, DOHServer)
 }
 
+// FetchHttp3WithIP 使用IP地址通过HTTP/3协议获取网络资源。
+//
+// 参数:
+// ip: 要使用的IP地址。
+// url: 要请求的URL。
+//
+// 返回值:
+// *http.Response: 请求成功的响应对象。
+// error: 请求过程中发生的任何错误。
 func FetchHttp3WithIP(ip, url string) (*http.Response, error) {
-	// dialer := &net.Dialer{
-	// 	// Timeout:   30 * time.Second,
-	// 	// KeepAlive: 30 * time.Second,
-	// }
+	// 创建UDP连接以用于QUIC协议
 	udpConn, err := net.ListenUDP("udp", nil)
 	if err != nil {
 		return nil, err
 	}
 	tr := quic.Transport{Conn: udpConn}
-	/*  */
+
+	// 创建HTTP/3客户端
 	client := &http.Client{
 		Transport: &http3.RoundTripper{
 			Dial: func(ctx context.Context, addr string, tlsConf *tls.Config, quicConf *quic.Config) (quic.EarlyConnection, error) {
+				// 分解地址并替换为指定的IP
 				host, port, err := net.SplitHostPort(addr)
 				if err != nil {
 					return nil, err
 				}
-				var addr2 = net.JoinHostPort(ip, port)
+				addr2 := net.JoinHostPort(ip, port)
 				a, err := net.ResolveUDPAddr("udp", addr2)
 				if err != nil {
 					return nil, err
 				}
+				// 使用替换后的地址进行QUIC连接
 				conn, err := tr.DialEarly(ctx, a, tlsConf, quicConf)
 				if err != nil {
 					fmt.Println("http3连接失败", host, port, conn.LocalAddr(), conn.RemoteAddr())
@@ -229,36 +238,9 @@ func FetchHttp3WithIP(ip, url string) (*http.Response, error) {
 				fmt.Println("http3连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())
 				return conn, err
 			},
-			// DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			// 	host, port, err := net.SplitHostPort(addr)
-			// 	if err != nil {
-			// 		return nil, err
-			// 	}
-			// 	conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
-			// 	if err != nil {
-			// 		return nil, err
-			// 	}
-			// 	fmt.Println("连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())
-			// 	return conn, err
-			// },
-			// DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			// 	host, port, err := net.SplitHostPort(addr)
-			// 	if err != nil {
-			// 		return nil, err
-			// 	}
-			// 	conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
-			// 	if err != nil {
-			// 		return nil, err
-			// 	}
-			// 	//打印连接成功
-			// 	fmt.Println("连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())
-			// 	return tls.Client(conn, &tls.Config{
-			// 		ServerName: host, // 使用原始域名，而不是IP地址
-			// 		// 如果你需要跳过证书验证，可以设置 InsecureSkipVerify: true
-			// 	}), nil
-			// },
 		},
 	}
 
+	// 发起HTTP请求
 	return client.Get(url)
 }

@@ -1,17 +1,17 @@
 package h3
 
 import (
-	"context"
-	"crypto/tls"
+	// "context"
+	// "crypto/tls"
 	"fmt"
 	"log"
-	"net"
+	// "net"
 	"net/http"
 	"strings"
 
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
-	"github.com/quic-go/quic-go"
-	"github.com/quic-go/quic-go/http3"
+	// "github.com/quic-go/quic-go"
+	// "github.com/quic-go/quic-go/http3"
 
 	// "testing"
 	altsvc "github.com/ebi-yade/altsvc-go"
@@ -209,36 +209,10 @@ func DohClient(msg *dns.Msg, DOHServer string) (r *dns.Msg, err error) {
 // error: 请求过程中发生的任何错误。
 func FetchHttp3WithIP(ip, url string) (*http.Response, error) {
 	// 创建UDP连接以用于QUIC协议
-	udpConn, err := net.ListenUDP("udp", nil)
-	if err != nil {
-		return nil, err
-	}
-	tr := quic.Transport{Conn: udpConn}
 
 	// 创建HTTP/3客户端
 	client := &http.Client{
-		Transport: &http3.RoundTripper{
-			Dial: func(ctx context.Context, addr string, tlsConf *tls.Config, quicConf *quic.Config) (quic.EarlyConnection, error) {
-				// 分解地址并替换为指定的IP
-				host, port, err := net.SplitHostPort(addr)
-				if err != nil {
-					return nil, err
-				}
-				addr2 := net.JoinHostPort(ip, port)
-				a, err := net.ResolveUDPAddr("udp", addr2)
-				if err != nil {
-					return nil, err
-				}
-				// 使用替换后的地址进行QUIC连接
-				conn, err := tr.DialEarly(ctx, a, tlsConf, quicConf)
-				if err != nil {
-					fmt.Println("http3连接失败", host, port, conn.LocalAddr(), conn.RemoteAddr())
-					return nil, err
-				}
-				fmt.Println("http3连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())
-				return conn, err
-			},
-		},
+		Transport: CreateHTTP3TransportWithIP(ip),
 	}
 
 	// 发起HTTP请求

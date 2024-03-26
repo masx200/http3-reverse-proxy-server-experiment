@@ -3,7 +3,7 @@ package dns
 import (
 	// "context"
 	// "time"
-
+	h12_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h12"
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 
 	// "crypto/tls"
@@ -211,7 +211,7 @@ func Main() {
 }
 
 func FetchHttp2WithIP(ip, url string) (*http.Response, error) {
-	transport := CreateHTTP12TransportWithIP(ip)
+	transport := h12_experiment.CreateHTTP12TransportWithIP(ip)
 	client := &http.Client{
 		Transport: transport}
 	return client.Get(url)

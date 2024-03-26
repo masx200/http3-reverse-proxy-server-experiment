@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -208,18 +209,6 @@ func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Respon
 	return false, fmt.Errorf("ERROR:Status code is 500 or greater" + fmt.Sprint(statusCode))
 }
 
-// RoundTripTransport 是一个实现了 http.RoundTripper 接口的类型，
-// 允许自定义HTTP请求的传输行为。
-type RoundTripTransport struct {
-	roundTrip func(*http.Request) (*http.Response, error) // roundTrip 是一个函数，它执行HTTP请求的传输，并返回响应和可能的错误。
-}
-
-// RoundTrip 是 http.RoundTripper 接口要求的方法，用于执行HTTP请求。
-// 它简单地调用了结构体中的 roundTrip 函数，传递给它一个HTTP请求，并返回该请求的响应及可能的错误。
-func (r *RoundTripTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	return r.roundTrip(req)
-}
-
 // sendHeadRequestAndCheckStatus 发送一个HEAD请求并检查状态码。
 // url: 请求的目标URL。
 // RoundTrip: 自定义的HTTP.RoundTripper函数，用于发送请求。
@@ -227,9 +216,7 @@ func (r *RoundTripTransport) RoundTrip(req *http.Request) (*http.Response, error
 func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*http.Response, error)) (int, error) {
 	client := &http.Client{}
 
-	client.Transport = &RoundTripTransport{
-		roundTrip: RoundTrip,
-	}
+	client.Transport = adapter.RoundTripTransport(RoundTrip)
 	req, err := http.NewRequest("HEAD", url, nil)
 	if err != nil {
 		return 0, err

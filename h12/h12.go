@@ -19,7 +19,7 @@ import (
 // 返回值:
 //
 //	*http.Transport - 配置好的http.Transport指针，可用于http.Client或其他需要http.Transport的场合。
-func CreateHTTP12TransportWithIP(ip string) *http.Transport {
+func CreateHTTP12TransportWithIP(ip string) http.RoundTripper {
 	dialer := &net.Dialer{
 		Timeout:   30 * time.Second, // 设置拨号超时时间为30秒
 		KeepAlive: 30 * time.Second, // 设置保持活动状态的间隔为30秒

@@ -96,7 +96,7 @@ func DOQClient(msg *dns.Msg, dohServerURL string) (qA *dns.Msg, err error) {
 		return nil, err  // 如果有错误，返回nil和错误信息
 	}
 	var addr = fmt.Sprintf("%s:%s", serverName, port) // 格式化服务器地址
-
+	fmt.Println("addr", addr)
 	// 创建一个DOQ客户端
 	client := doq.NewClient(addr, doq.Options{})
 	// 发送DNS查询并获取应答

@@ -5,6 +5,7 @@ import (
 	// "time"
 	// h12_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h12"
 	"context"
+	"errors"
 
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	doq "github.com/tantalor93/doq-go/doq"
@@ -88,7 +89,11 @@ func PrintResponse(resp *http.Response) {
 // 返回一个包含DNS应答信息的dns.Msg结构体指针和一个错误信息。
 // 如果成功，错误信息为nil；如果发生错误，则返回相应的错误信息。
 func DOQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
-	fmt.Println("dohServerURL", doQServerURL)
+	fmt.Println("doQServerURL", doQServerURL)
+	if !strings.HasPrefix(doQServerURL, "quic://") {
+
+		return nil, errors.New("DOQ server URL must start with 'quic://'")
+	}
 	// 从DOH服务器URL中提取服务器名称和端口信息。
 	serverName, port, err := ExtractDOQServerDetails(doQServerURL)
 	if err != nil {
@@ -128,7 +133,12 @@ func ExtractDOQServerDetails(doqServer string) (string, string, error) {
 // 返回值 qA: 发送查询后收到的应答消息，为dns.Msg对象。
 // 返回值 err: 如果在进行DNS查询过程中遇到错误，则返回错误信息。
 func DOTClient(msg *dns.Msg, doTServerURL string) (qA *dns.Msg, err error) {
-	fmt.Println("dohServerURL", doTServerURL)
+	fmt.Println("doTServerURL", doTServerURL)
+
+	if !strings.HasPrefix(doTServerURL, "tls://") {
+
+		return nil, errors.New("DOT server URL must start with 'tls://'")
+	}
 	// 从DOH服务器URL中解析出服务器名称和端口。
 	serverName, port, err := ExtractDOQServerDetails(doTServerURL)
 	if err != nil {

@@ -48,8 +48,16 @@ func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool
 	PrintResponse(resp) // 打印响应信息，用于调试。
 
 	// 检查响应是否表明服务是健康的。
-	return HealthyResponseCheckDefault(resp)
+	return HealthyResponseCheckSuccess(resp)
 	// 如果服务健康，则返回true，否则返回false。
+}
+
+func HealthyResponseCheckSuccess(response *http.Response) (bool, error) {
+	// 检查响应状态码是否小于500
+	if response.StatusCode >= 200 && response.StatusCode < 300 {
+		return false, fmt.Errorf("StatusCode %d   is not success", response.StatusCode)
+	}
+	return true, nil
 }
 
 func PrintRequest(req *http.Request) {
@@ -67,7 +75,7 @@ func PrintRequest(req *http.Request) {
 // 返回值:
 //
 //	LoadBalanceAndUpStream - 实现了负载均衡和上游服务选择的接口。
-func NewSingleHostHTTPClientOfAddress(Identifier string, UpStreamServerURL string, ServerAddress string, options ...SingleHostHTTPClientOfAddressOption) LoadBalanceAndUpStream {
+func NewSingleHostHTTPClientOfAddress(Identifier string, UpStreamServerURL string, ServerAddress string, options ...func(*SingleHostHTTPClientOfAddress)) LoadBalanceAndUpStream {
 
 	transport := h12_experiment.CreateHTTP12TransportWithIP(ServerAddress)
 	// 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
@@ -85,8 +93,6 @@ func NewSingleHostHTTPClientOfAddress(Identifier string, UpStreamServerURL strin
 	}
 	return m
 }
-
-type SingleHostHTTPClientOfAddressOption func(*SingleHostHTTPClientOfAddress)
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTPClientOfAddress struct {

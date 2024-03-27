@@ -88,7 +88,7 @@ func PrintResponse(resp *http.Response) {
 // 返回一个包含DNS应答信息的dns.Msg结构体指针和一个错误信息。
 // 如果成功，错误信息为nil；如果发生错误，则返回相应的错误信息。
 func DOQClient(msg *dns.Msg, dohServerURL string) (qA *dns.Msg, err error) {
-
+	fmt.Println("dohServerURL", dohServerURL)
 	// 从DOH服务器URL中提取服务器名称和端口信息。
 	serverName, port, err := ExtractDOQServerDetails(dohServerURL)
 	if err != nil {
@@ -100,7 +100,7 @@ func DOQClient(msg *dns.Msg, dohServerURL string) (qA *dns.Msg, err error) {
 	// 创建一个DOQ客户端
 	client := doq.NewClient(addr, doq.Options{})
 	// 发送DNS查询并获取应答
-	respA, err := client.Send(context.Background(), qA)
+	respA, err := client.Send(context.Background(), msg)
 	return respA, err // 返回DNS应答和可能的错误信息
 }
 

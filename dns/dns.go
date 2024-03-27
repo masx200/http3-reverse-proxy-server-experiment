@@ -87,10 +87,10 @@ func PrintResponse(resp *http.Response) {
 // 返回值:
 // 返回一个包含DNS应答信息的dns.Msg结构体指针和一个错误信息。
 // 如果成功，错误信息为nil；如果发生错误，则返回相应的错误信息。
-func DOQClient(msg *dns.Msg, dohServerURL string) (qA *dns.Msg, err error) {
-	fmt.Println("dohServerURL", dohServerURL)
+func DOQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
+	fmt.Println("dohServerURL", doQServerURL)
 	// 从DOH服务器URL中提取服务器名称和端口信息。
-	serverName, port, err := ExtractDOQServerDetails(dohServerURL)
+	serverName, port, err := ExtractDOQServerDetails(doQServerURL)
 	if err != nil {
 		log.Println(err) // 记录提取详情时的错误
 		return nil, err  // 如果有错误，返回nil和错误信息
@@ -120,4 +120,27 @@ func ExtractDOQServerDetails(doqServer string) (string, string, error) {
 	serverName := serverParts[0]
 	port := serverParts[1]
 	return serverName, port, nil
+}
+
+// DOTClient 是一个通过DOH（DNS over HTTPS）协议与DNS服务器进行通信的函数。
+// msg: 包含要发送的DNS查询信息的dns.Msg对象。
+// doTServerURL: DOH服务器的URL，用于指定通信的目标DNS服务器。
+// 返回值 qA: 发送查询后收到的应答消息，为dns.Msg对象。
+// 返回值 err: 如果在进行DNS查询过程中遇到错误，则返回错误信息。
+func DOTClient(msg *dns.Msg, doTServerURL string) (qA *dns.Msg, err error) {
+	fmt.Println("dohServerURL", doTServerURL)
+	// 从DOH服务器URL中解析出服务器名称和端口。
+	serverName, port, err := ExtractDOQServerDetails(doTServerURL)
+	if err != nil {
+		log.Println(err) // 记录解析服务器详情时的错误
+		return nil, err  // 如果解析出错，则返回nil和错误信息
+	}
+	var addr = fmt.Sprintf("%s:%s", serverName, port) // 拼接服务器的地址信息
+	fmt.Println("addr", addr)
+	// 创建一个支持TCP-TLS的DOQ客户端实例。
+	client := new(dns.Client)
+	client.Net = "tcp-tls"
+	// 向指定的DNS服务器发送查询请求，并接收应答。
+	respA, _, err := client.Exchange(msg, addr)
+	return respA, err // 返回查询应答和可能存在的错误信息
 }

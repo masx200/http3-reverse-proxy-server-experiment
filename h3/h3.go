@@ -74,7 +74,7 @@ func CreateHTTP3TransportWithIP(ip string) http.RoundTripper {
 // 返回值:
 // r: 代表DNS应答消息的dns.Msg对象。
 // err: 如果过程中发生错误，则返回错误信息。
-func DoHTTP3Client(msg *dns.Msg, dohServerURL string) (r *dns.Msg, err error) {
+func DoHTTP3Client(msg *dns.Msg, dohttp3ServerURL string) (r *dns.Msg, err error) {
 	client := &http.Client{
 		Transport: &http3.RoundTripper{},
 	}
@@ -84,7 +84,7 @@ func DoHTTP3Client(msg *dns.Msg, dohServerURL string) (r *dns.Msg, err error) {
 		return nil, err
 	}
 	//http request doh
-	res, err := client.Post(dohServerURL, "application/dns-message", strings.NewReader(string(body)))
+	res, err := client.Post(dohttp3ServerURL, "application/dns-message", strings.NewReader(string(body)))
 	if err != nil {
 		log.Println(err)
 		return nil, err

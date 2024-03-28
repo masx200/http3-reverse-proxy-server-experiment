@@ -16,7 +16,7 @@ import (
 	// "net"
 	// "net/http"
 	// "crypto/tls"
-	"fmt"
+//	"fmt"
 	"io"
 
 	"log"
@@ -25,6 +25,27 @@ import (
 
 	"github.com/miekg/dns"
 )
+import (
+	"fmt"
+	"net/url"
+)
+
+func setPortIfMissing(rawURL string) (string, error) {
+	// 解析URL
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+
+	// 检查是否存在端口
+	if parsedURL.Port() == "" {
+		// 如果不存在端口，则将端口设置为853
+		parsedURL.Host = fmt.Sprintf("%s:853", parsedURL.Host)
+	}
+
+	// 返回修改后的URL字符串
+	return parsedURL.String(), nil
+}
 
 // DohClient 是一个通过DOH（DNS over HTTPs）协议与DNS服务器进行通信的函数。
 //
@@ -90,6 +111,12 @@ func PrintResponse(resp *http.Response) {
 // 如果成功，错误信息为nil；如果发生错误，则返回相应的错误信息。
 func DOQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
 	fmt.Println("doQServerURL", doQServerURL)
+	urlWithPort, err := setPortIfMissing(doQServerURL)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return nil, err
+	}
+	doQServerURL = urlWithPort
 	if !strings.HasPrefix(doQServerURL, "quic://") {
 
 		return nil, errors.New("DOQ server URL must start with 'quic://'")
@@ -134,7 +161,12 @@ func ExtractDOQServerDetails(doqServer string) (string, string, error) {
 // 返回值 err: 如果在进行DNS查询过程中遇到错误，则返回错误信息。
 func DOTClient(msg *dns.Msg, doTServerURL string) (qA *dns.Msg, err error) {
 	fmt.Println("doTServerURL", doTServerURL)
-
+	urlWithPort, err := setPortIfMissing(doTServerURL)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return nil, err
+	}
+	doTServerURL = urlWithPort
 	if !strings.HasPrefix(doTServerURL, "tls://") {
 
 		return nil, errors.New("DOT server URL must start with 'tls://'")

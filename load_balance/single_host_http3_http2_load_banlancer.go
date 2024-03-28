@@ -59,6 +59,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 		IsHealthy:               true,                        // 初始状态设为健康
 		// RoundTripper:         transport  , // 使用默认的传输器
 		HealthyCacheMaxAge: HealthyCacheMaxAgeDefault,
+		UpStreams:          optional.Some(generic.NewMapImplement[string, LoadBalanceAndUpStream]()),
 	}
 	for _, option := range options {
 		option(m)
@@ -77,6 +78,8 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	PassiveUnHealthyChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	// RoundTripper           func() http.RoundTripper                                       // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
+
+	UpStreams optional.Option[generic.MapInterface[string, LoadBalanceAndUpStream]]
 }
 
 // GetHealthyCacheMaxAge implements LoadBalanceAndUpStream.
@@ -160,5 +163,5 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetHealthy(healthy bool) {
 // 此处因为是单主机客户端，所以返回空集合。
 // 返回值为上游服务集合的可选类型，此处始终返回None。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUpStreams() optional.Option[generic.MapInterface[string, LoadBalanceAndUpStream]] {
-	return optional.None[generic.MapInterface[string, LoadBalanceAndUpStream]]()
+	return l.UpStreams
 }

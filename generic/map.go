@@ -26,7 +26,7 @@ type MapImplement[T comparable, Y any] struct {
 	data map[T]Y
 }
 
-func NewMapImplement[T comparable, Y any]() *MapImplement[T, Y] {
+func NewMapImplement[T comparable, Y any]() MapInterface[T, Y] {
 	return &MapImplement[T, Y]{
 		data: make(map[T]Y),
 	}

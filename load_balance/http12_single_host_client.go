@@ -64,7 +64,7 @@ func PrintRequest(req *http.Request) {
 	print_experiment.PrintRequest(req)
 }
 
-// NewSingleHostHTTPClientOfAddress 创建一个指定地址的单主机HTTP客户端实例。
+// NewSingleHostHTTP12ClientOfAddress 创建一个指定地址的单主机HTTP客户端实例。
 //
 // 参数:
 //
@@ -75,11 +75,11 @@ func PrintRequest(req *http.Request) {
 // 返回值:
 //
 //	LoadBalanceAndUpStream - 实现了负载均衡和上游服务选择的接口。
-func NewSingleHostHTTPClientOfAddress(Identifier string, UpStreamServerURL string, ServerAddress string, options ...func(*SingleHostHTTPClientOfAddress)) LoadBalanceAndUpStream {
+func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL string, ServerAddress string, options ...func(*SingleHostHTTP12ClientOfAddress)) LoadBalanceAndUpStream {
 
 	transport := h12_experiment.CreateHTTP12TransportWithIP(ServerAddress)
 	// 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
-	m := &SingleHostHTTPClientOfAddress{
+	m := &SingleHostHTTP12ClientOfAddress{
 		Identifier:             Identifier,
 		ActiveHealthyChecker:   ActiveHealthyCheckDefault,   // 使用默认的主动健康检查器
 		HealthyResponseChecker: HealthyResponseCheckDefault, // 使用默认的健康响应检查器
@@ -94,8 +94,8 @@ func NewSingleHostHTTPClientOfAddress(Identifier string, UpStreamServerURL strin
 	return m
 }
 
-// SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
-type SingleHostHTTPClientOfAddress struct {
+// SingleHostHTTP12ClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
+type SingleHostHTTP12ClientOfAddress struct {
 	ServerAddress          string                                                         // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker   func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	Identifier             string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
@@ -108,21 +108,21 @@ type SingleHostHTTPClientOfAddress struct {
 // ActiveHealthyCheck 执行活跃的健康检查。
 // 实现了 LoadBalanceAndUpStream 接口。
 // 返回值：检查是否成功（bool类型）和可能发生的错误（error类型）。
-func (l *SingleHostHTTPClientOfAddress) ActiveHealthyCheck() (bool, error) {
+func (l *SingleHostHTTP12ClientOfAddress) ActiveHealthyCheck() (bool, error) {
 	return l.ActiveHealthyChecker(l, l.UpStreamServerURL)
 }
 
 // GetIdentifier 获取标识符。
 // 实现了 LoadBalanceAndUpStream 接口。
 // 返回值：此客户端的唯一标识符（string类型）。
-func (l *SingleHostHTTPClientOfAddress) GetIdentifier() string {
+func (l *SingleHostHTTP12ClientOfAddress) GetIdentifier() string {
 	return l.Identifier
 }
 
 // GetHealthy 获取健康状态。
 // 实现了 LoadBalanceAndUpStream 接口。
 // 返回值：当前客户端是否处于健康状态（bool类型）。
-func (l *SingleHostHTTPClientOfAddress) GetHealthy() bool {
+func (l *SingleHostHTTP12ClientOfAddress) GetHealthy() bool {
 	return l.IsHealthy
 }
 
@@ -130,7 +130,7 @@ func (l *SingleHostHTTPClientOfAddress) GetHealthy() bool {
 // 实现了 LoadBalanceAndUpStream 接口。
 // 参数：HTTP响应（*http.Response类型）。
 // 返回值：检查结果是否健康（bool类型）和可能发生的错误（error类型）。
-func (l *SingleHostHTTPClientOfAddress) HealthyResponseCheck(response *http.Response) (bool, error) {
+func (l *SingleHostHTTP12ClientOfAddress) HealthyResponseCheck(response *http.Response) (bool, error) {
 	return l.HealthyResponseChecker(response)
 }
 
@@ -158,21 +158,21 @@ func HealthyResponseCheckDefault(response *http.Response) (bool, error) {
 // 用于执行HTTP请求。
 // 参数request为待发送的HTTP请求。
 // 返回值为执行请求后的HTTP响应及可能发生的错误。
-func (l *SingleHostHTTPClientOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
+func (l *SingleHostHTTP12ClientOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
 	return l.RoundTripper.RoundTrip(request)
 }
 
 // SelectAvailableServer 实现了LoadBalanceAndUpStream接口的SelectAvailableServer方法，
 // 用于选择可用的服务实例。
 // 返回值为可用的服务实例（此处始终为自身）及可能发生的错误。
-func (l *SingleHostHTTPClientOfAddress) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
+func (l *SingleHostHTTP12ClientOfAddress) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
 	return l, nil
 }
 
 // SetHealthy 实现了LoadBalanceAndUpStream接口的SetHealthy方法，
 // 用于设置客户端的健康状态。
 // 参数healthy为true表示客户端健康，为false表示客户端不健康。
-func (l *SingleHostHTTPClientOfAddress) SetHealthy(healthy bool) {
+func (l *SingleHostHTTP12ClientOfAddress) SetHealthy(healthy bool) {
 	l.IsHealthy = healthy
 }
 
@@ -180,6 +180,6 @@ func (l *SingleHostHTTPClientOfAddress) SetHealthy(healthy bool) {
 // 用于获取上游服务的集合。
 // 此处因为是单主机客户端，所以返回空集合。
 // 返回值为上游服务集合的可选类型，此处始终返回None。
-func (l *SingleHostHTTPClientOfAddress) UpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]] {
+func (l *SingleHostHTTP12ClientOfAddress) UpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]] {
 	return optional.None[MapInterface[string, LoadBalanceAndUpStream]]()
 }

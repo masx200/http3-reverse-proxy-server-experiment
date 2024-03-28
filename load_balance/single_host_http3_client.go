@@ -10,6 +10,8 @@ import (
 	optional "github.com/moznion/go-optional"
 )
 
+const HealthyCacheMaxAgeDefault = 10 * 1000
+
 // ActiveHealthyCheckDefault 执行一个主动的健康检查，默认使用HEAD请求对给定的URL进行检查。
 // 参数:
 // - RoundTripper: 实现了http.RoundTripper接口的对象，用于发送HTTP请求。如果为空，将使用默认的http.Transport。
@@ -33,7 +35,9 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 
 	transport := h3_experiment.CreateHTTP3TransportWithIP(ServerAddress)
 	// 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
+
 	m := &SingleHostHTTP3ClientOfAddress{
+		HealthyCacheMaxAge:     HealthyCacheMaxAgeDefault, // 使用默认的健康缓存时间
 		Identifier:             Identifier,
 		ActiveHealthyChecker:   ActiveHealthyCheckDefault,   // 使用默认的主动健康检查器
 		HealthyResponseChecker: HealthyResponseCheckDefault, // 使用默认的健康响应检查器
@@ -50,6 +54,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP3ClientOfAddress struct {
+	HealthyCacheMaxAge     int64
 	ServerAddress          string                                                         // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker   func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	Identifier             string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
@@ -57,6 +62,16 @@ type SingleHostHTTP3ClientOfAddress struct {
 	HealthyResponseChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL      string                                                         // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
+}
+
+// GetHealthyCacheMaxAge implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GetHealthyCacheMaxAge() int64 {
+	return l.HealthyCacheMaxAge
+}
+
+// SetHealthyCacheMaxAge implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) SetHealthyCacheMaxAge(maxAge int64) {
+	l.HealthyCacheMaxAge = maxAge
 }
 
 // ActiveHealthyCheck 执行活跃的健康检查。
@@ -80,11 +95,11 @@ func (l *SingleHostHTTP3ClientOfAddress) GetHealthy() bool {
 	return l.IsHealthy
 }
 
-// HealthyResponseCheck 对HTTP响应进行健康状态检查。
+// PassiveUnHealthyCheck 对HTTP响应进行健康状态检查。
 // 实现了 LoadBalanceAndUpStream 接口。
 // 参数：HTTP响应（*http.Response类型）。
 // 返回值：检查结果是否健康（bool类型）和可能发生的错误（error类型）。
-func (l *SingleHostHTTP3ClientOfAddress) HealthyResponseCheck(response *http.Response) (bool, error) {
+func (l *SingleHostHTTP3ClientOfAddress) PassiveUnHealthyCheck(response *http.Response) (bool, error) {
 	return l.HealthyResponseChecker(response)
 }
 

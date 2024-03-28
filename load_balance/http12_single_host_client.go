@@ -87,6 +87,7 @@ func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL str
 		ServerAddress:          ServerAddress,               // 设置服务端地址
 		IsHealthy:              true,                        // 初始状态设为健康
 		RoundTripper:           transport,                   // 使用默认的传输器
+		HealthyCacheMaxAge:     HealthyCacheMaxAgeDefault,
 	}
 	for _, option := range options {
 		option(m)
@@ -96,6 +97,7 @@ func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL str
 
 // SingleHostHTTP12ClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP12ClientOfAddress struct {
+	HealthyCacheMaxAge     int64
 	ServerAddress          string                                                         // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker   func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	Identifier             string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
@@ -103,6 +105,18 @@ type SingleHostHTTP12ClientOfAddress struct {
 	HealthyResponseChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL      string                                                         // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
+}
+
+// GetHealthyCacheMaxAge implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) GetHealthyCacheMaxAge() int64 {
+
+	return l.HealthyCacheMaxAge
+}
+
+// SetHealthyCacheMaxAge implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) SetHealthyCacheMaxAge(maxAge int64) {
+
+	l.HealthyCacheMaxAge = maxAge
 }
 
 // ActiveHealthyCheck 执行活跃的健康检查。
@@ -126,11 +140,11 @@ func (l *SingleHostHTTP12ClientOfAddress) GetHealthy() bool {
 	return l.IsHealthy
 }
 
-// HealthyResponseCheck 对HTTP响应进行健康状态检查。
+// PassiveUnHealthyCheck 对HTTP响应进行健康状态检查。
 // 实现了 LoadBalanceAndUpStream 接口。
 // 参数：HTTP响应（*http.Response类型）。
 // 返回值：检查结果是否健康（bool类型）和可能发生的错误（error类型）。
-func (l *SingleHostHTTP12ClientOfAddress) HealthyResponseCheck(response *http.Response) (bool, error) {
+func (l *SingleHostHTTP12ClientOfAddress) PassiveUnHealthyCheck(response *http.Response) (bool, error) {
 	return l.HealthyResponseChecker(response)
 }
 

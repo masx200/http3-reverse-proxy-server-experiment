@@ -1,9 +1,10 @@
 package load_balance
 
 import (
+	"net/http"
+
 	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	"github.com/moznion/go-optional"
-	"net/http"
 )
 
 // LoadBalance 是一个负载均衡接口，它定义了如何对HTTP请求进行负载均衡转发。
@@ -42,10 +43,23 @@ type LoadBalanceAndUpStream interface {
 	// 参数：bool - 上游服务的健康状态（true为健康，false为不健康）
 	SetHealthy(bool)
 
-	// HealthyResponseCheck 根据HTTP响应判断上游服务是否健康。
+	// PassiveUnHealthyCheck 根据HTTP响应判断上游服务是否健康。
 	// 参数：*http.Response - 上游服务返回的HTTP响应
 	// 返回值：bool - 上游服务的被动健康状态（true为健康，false为不健康）
-	HealthyResponseCheck(*http.Response) (bool, error)
+	PassiveUnHealthyCheck(*http.Response) (bool, error)
+
+	// SetHealthyCacheMaxAge 设置健康状态的缓存最大年龄。
+	// 参数:
+	//   int64 - 表示健康状态的缓存的最大年龄（单位：毫秒）。
+	SetHealthyCacheMaxAge(int64)
+	// 设置逻辑实现
+
+	// GetHealthyCacheMaxAge 获取健康状态的缓存最大年龄。
+	// 返回值:
+	//   int64 - 健康状态的缓存的最大年龄（单位：毫秒）。
+	GetHealthyCacheMaxAge() int64
+	// 获取逻辑实现
+
 }
 
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。

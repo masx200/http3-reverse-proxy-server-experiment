@@ -64,6 +64,46 @@ func CreateHTTP3TransportWithIP(ip string) http.RoundTripper {
 	})
 
 }
+func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
+	return adapter.RoundTripTransport(func(r *http.Request) (*http.Response, error) {
+		// 创建UDP连接，作为QUIC协议的基础。
+		udpConn, err := net.ListenUDP("udp", nil)
+		if err != nil {
+			return nil, err
+		}
+		tr := quic.Transport{Conn: udpConn}
+
+		// 创建HTTP/3传输器，定制了Dial函数以使用指定的IP地址。
+		var transport = &http3.RoundTripper{
+			Dial: func(ctx context.Context, addr string, tlsConf *tls.Config, quicConf *quic.Config) (quic.EarlyConnection, error) {
+				// 分解地址并替换为指定的IP地址。
+				host, port, err := net.SplitHostPort(addr)
+				if err != nil {
+					return nil, err
+				}
+				var ip = getter()
+				addr2 := net.JoinHostPort(ip, port)
+				a, err := net.ResolveUDPAddr("udp", addr2)
+				if err != nil {
+					return nil, err
+				}
+
+				// 使用替换后的地址尝试建立QUIC连接。
+				conn, err := tr.DialEarly(ctx, a, tlsConf, quicConf)
+				if err != nil {
+					fmt.Println("http3连接失败", host, port, conn.LocalAddr(), conn.RemoteAddr())
+					return nil, err
+				}
+				fmt.Println("http3连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())
+				return conn, err
+			},
+		}
+
+		// 使用定制的HTTP/3传输器进行HTTP请求的传输。
+		return transport.RoundTrip(r)
+	})
+
+}
 
 // DohClient 是一个通过DOH（DNS over HTTPs）协议与DNS服务器进行通信的函数。
 //

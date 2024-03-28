@@ -2,13 +2,24 @@ package load_balance
 
 import (
 	// "fmt"
+	"log"
 	"net/http"
+	"net/url"
 
 	// "net/url"
 	h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
 
 	optional "github.com/moznion/go-optional"
 )
+
+func ExtractHostname(rawURL string) (string, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+
+	return parsedURL.Hostname(), nil
+}
 
 // ActiveHealthyCheckDefault 执行一个主动的健康检查，默认使用HEAD请求对给定的URL进行检查。
 // 参数:
@@ -29,24 +40,30 @@ import (
 // 返回值:
 //
 //	LoadBalanceAndUpStream - 实现了负载均衡和上游服务选择的接口。
-func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamServerURL string, ServerAddress string, options ...func(*SingleHostHTTP3HTTP2LoadBalancerOfAddress)) LoadBalanceAndUpStream {
-
-	transport := h3_experiment.CreateHTTP3TransportWithIP(ServerAddress)
+func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamServerURL string /*  ServerAddress string, */, options ...func(*SingleHostHTTP3HTTP2LoadBalancerOfAddress)) (LoadBalanceAndUpStream, error) {
+	var ServerAddress, err = ExtractHostname(UpStreamServerURL)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	//  transport :=func() http.RoundTripper { return h3_experiment.CreateHTTP3TransportWithIPGetter(func() string {
+	// 		return m.ServerAddress
+	// 		}) }
 	// 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
-	m := &SingleHostHTTP3HTTP2LoadBalancerOfAddress{
+	var m = &SingleHostHTTP3HTTP2LoadBalancerOfAddress{
 		Identifier:             Identifier,
 		ActiveHealthyChecker:   ActiveHealthyCheckDefault,   // 使用默认的主动健康检查器
 		HealthyResponseChecker: HealthyResponseCheckDefault, // 使用默认的健康响应检查器
 		UpStreamServerURL:      UpStreamServerURL,           // 设置上游服务器URL
 		ServerAddress:          ServerAddress,               // 设置服务端地址
 		IsHealthy:              true,                        // 初始状态设为健康
-		RoundTripper:           transport,                   // 使用默认的传输器
-		HealthyCacheMaxAge:     HealthyCacheMaxAgeDefault,
+		// RoundTripper:         transport  , // 使用默认的传输器
+		HealthyCacheMaxAge: HealthyCacheMaxAgeDefault,
 	}
 	for _, option := range options {
 		option(m)
 	}
-	return m
+	return m, nil
 }
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
@@ -58,8 +75,8 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	Identifier             string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
 	IsHealthy              bool                                                           // 健康状态，标识当前客户端是否被视为健康。
 	HealthyResponseChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
-	RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
-	UpStreamServerURL      string                                                         // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
+	// RoundTripper           func() http.RoundTripper                                       // HTTP传输，用于执行HTTP请求的实际传输。
+	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 }
 
 // GetHealthyCacheMaxAge implements LoadBalanceAndUpStream.
@@ -119,7 +136,9 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) PassiveUnHealthyCheck(respon
 // 参数request为待发送的HTTP请求。
 // 返回值为执行请求后的HTTP响应及可能发生的错误。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
-	return l.RoundTripper.RoundTrip(request)
+	return h3_experiment.CreateHTTP3TransportWithIPGetter(func() string {
+		return l.ServerAddress
+	}).RoundTrip(request)
 }
 
 // SelectAvailableServer 实现了LoadBalanceAndUpStream接口的SelectAvailableServer方法，

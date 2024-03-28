@@ -21,7 +21,7 @@ type LoadBalanceAndUpStream interface {
 	// UpStreams 返回一个键值对映射，其中键是字符串类型，表示域名；
 	// 值是UpStream类型，表示对应域名的上游服务集群。
 	// 这个方法用于获取当前负载均衡器中配置的所有上游服务信息。
-	UpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]]
+	GetUpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]]
 
 	//选择一个可用的上游服务器
 	// 参数：

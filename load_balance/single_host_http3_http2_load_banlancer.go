@@ -159,6 +159,6 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetHealthy(healthy bool) {
 // 用于获取上游服务的集合。
 // 此处因为是单主机客户端，所以返回空集合。
 // 返回值为上游服务集合的可选类型，此处始终返回None。
-func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) UpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]] {
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]] {
 	return optional.None[MapInterface[string, LoadBalanceAndUpStream]]()
 }

@@ -2,6 +2,7 @@ package load_balance
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	// "net/url"
@@ -75,9 +76,13 @@ func PrintRequest(req *http.Request) {
 // 返回值:
 //
 //	LoadBalanceAndUpStream - 实现了负载均衡和上游服务选择的接口。
-func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL string, ServerAddress string, options ...func(*SingleHostHTTP12ClientOfAddress)) LoadBalanceAndUpStream {
-
-	transport := h12_experiment.CreateHTTP12TransportWithIP(ServerAddress)
+func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL string /*  ServerAddress string */, options ...func(*SingleHostHTTP12ClientOfAddress)) (LoadBalanceAndUpStream, error) {
+	var ServerAddress, err = ExtractHostname(UpStreamServerURL)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	// transport := h12_experiment.CreateHTTP12TransportWithIP(ServerAddress)
 	// 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
 	m := &SingleHostHTTP12ClientOfAddress{
 		Identifier:             Identifier,
@@ -86,13 +91,13 @@ func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL str
 		UpStreamServerURL:      UpStreamServerURL,           // 设置上游服务器URL
 		ServerAddress:          ServerAddress,               // 设置服务端地址
 		IsHealthy:              true,                        // 初始状态设为健康
-		RoundTripper:           transport,                   // 使用默认的传输器
-		HealthyCacheMaxAge:     HealthyCacheMaxAgeDefault,
+		// RoundTripper:           transport,                   // 使用默认的传输器
+		HealthyCacheMaxAge: HealthyCacheMaxAgeDefault,
 	}
 	for _, option := range options {
 		option(m)
 	}
-	return m
+	return m, nil
 }
 
 // SingleHostHTTP12ClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
@@ -103,8 +108,8 @@ type SingleHostHTTP12ClientOfAddress struct {
 	Identifier             string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
 	IsHealthy              bool                                                           // 健康状态，标识当前客户端是否被视为健康。
 	HealthyResponseChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
-	RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
-	UpStreamServerURL      string                                                         // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
+	// RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
+	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 }
 
 // GetHealthyCacheMaxAge implements LoadBalanceAndUpStream.
@@ -173,7 +178,10 @@ func HealthyResponseCheckDefault(response *http.Response) (bool, error) {
 // 参数request为待发送的HTTP请求。
 // 返回值为执行请求后的HTTP响应及可能发生的错误。
 func (l *SingleHostHTTP12ClientOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
-	return l.RoundTripper.RoundTrip(request)
+	// return l.RoundTripper.RoundTrip(request)
+	return h12_experiment.CreateHTTP12TransportWithIPGetter(func() string {
+		return l.ServerAddress
+	}).RoundTrip(request)
 }
 
 // SelectAvailableServer 实现了LoadBalanceAndUpStream接口的SelectAvailableServer方法，

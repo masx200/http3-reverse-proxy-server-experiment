@@ -121,7 +121,9 @@ func (l *SingleHostHTTP3ClientOfAddress) PassiveUnHealthyCheck(response *http.Re
 // 参数request为待发送的HTTP请求。
 // 返回值为执行请求后的HTTP响应及可能发生的错误。
 func (l *SingleHostHTTP3ClientOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
-	return l.RoundTripper.RoundTrip(request)
+	return h3_experiment.CreateHTTP3TransportWithIPGetter(func() string {
+		return l.ServerAddress
+	}).RoundTrip(request)
 }
 
 // SelectAvailableServer 实现了LoadBalanceAndUpStream接口的SelectAvailableServer方法，

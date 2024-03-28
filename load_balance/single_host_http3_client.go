@@ -2,9 +2,11 @@ package load_balance
 
 import (
 	// "fmt"
-	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	"log"
 	"net/http"
+
+	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
+
 	// "net/url"
 	h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
 
@@ -42,13 +44,13 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 	// // 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
 
 	m := &SingleHostHTTP3ClientOfAddress{
-		HealthyCacheMaxAge:     HealthyCacheMaxAgeDefault, // 使用默认的健康缓存时间
-		Identifier:             Identifier,
-		ActiveHealthyChecker:   ActiveHealthyCheckDefault,   // 使用默认的主动健康检查器
-		HealthyResponseChecker: HealthyResponseCheckDefault, // 使用默认的健康响应检查器
-		UpStreamServerURL:      UpStreamServerURL,           // 设置上游服务器URL
-		ServerAddress:          ServerAddress,               // 设置服务端地址
-		IsHealthy:              true,                        // 初始状态设为健康
+		HealthyCacheMaxAge:      HealthyCacheMaxAgeDefault, // 使用默认的健康缓存时间
+		Identifier:              Identifier,
+		ActiveHealthyChecker:    ActiveHealthyCheckDefault,   // 使用默认的主动健康检查器
+		PassiveUnHealthyChecker: HealthyResponseCheckDefault, // 使用默认的健康响应检查器
+		UpStreamServerURL:       UpStreamServerURL,           // 设置上游服务器URL
+		ServerAddress:           ServerAddress,               // 设置服务端地址
+		IsHealthy:               true,                        // 初始状态设为健康
 		// RoundTripper:           transport,                   // 使用默认的传输器
 	}
 	for _, option := range options {
@@ -59,12 +61,12 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP3ClientOfAddress struct {
-	HealthyCacheMaxAge     int64
-	ServerAddress          string                                                         // 服务器地址，指定客户端要连接的HTTP服务器的地址。
-	ActiveHealthyChecker   func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
-	Identifier             string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
-	IsHealthy              bool                                                           // 健康状态，标识当前客户端是否被视为健康。
-	HealthyResponseChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
+	HealthyCacheMaxAge      int64
+	ServerAddress           string                                                         // 服务器地址，指定客户端要连接的HTTP服务器的地址。
+	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
+	Identifier              string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
+	IsHealthy               bool                                                           // 健康状态，标识当前客户端是否被视为健康。
+	PassiveUnHealthyChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	// RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 }
@@ -105,7 +107,7 @@ func (l *SingleHostHTTP3ClientOfAddress) GetHealthy() bool {
 // 参数：HTTP响应（*http.Response类型）。
 // 返回值：检查结果是否健康（bool类型）和可能发生的错误（error类型）。
 func (l *SingleHostHTTP3ClientOfAddress) PassiveUnHealthyCheck(response *http.Response) (bool, error) {
-	return l.HealthyResponseChecker(response)
+	return l.PassiveUnHealthyChecker(response)
 }
 
 // HealthyResponseCheckDefault 检查HTTP响应是否表示服务健康。

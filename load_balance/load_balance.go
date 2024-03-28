@@ -21,7 +21,7 @@ type LoadBalanceAndUpStream interface {
 	// UpStreams 返回一个键值对映射，其中键是字符串类型，表示域名；
 	// 值是UpStream类型，表示对应域名的上游服务集群。
 	// 这个方法用于获取当前负载均衡器中配置的所有上游服务信息。
-	GetUpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]]
+	GetUpStreams() optional.Option[generic.MapInterface[string, LoadBalanceAndUpStream]]
 
 	//选择一个可用的上游服务器
 	// 参数：
@@ -64,25 +64,3 @@ type LoadBalanceAndUpStream interface {
 
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
 // 该接口包括发送HTTP请求、健康检查、标识服务和标记健康状态等方法。
-
-// MapInterface 是一个泛型映射接口，支持基本的映射操作。
-type MapInterface[T any, Y any] interface {
-	// Clear 清空映射中的所有元素。
-	Clear()
-	// Delete 从映射中删除指定的键。
-	Delete(T)
-	// Get 返回指定键的值，如果键不存在，则返回false。
-	Get(T) (Y, bool)
-	// Set 设置指定键的值。
-	Set(T, Y)
-	// Has 检查映射中是否存在指定的键。
-	Has(T) bool
-	// Values 返回映射中所有值的切片。
-	Values() []Y
-	// Kes 返回映射中所有键的切片。
-	Keys() []T
-	// Size 返回映射中元素的数量。
-	Size() int64
-	// Entries 返回映射中所有键值对的切片。
-	Entries() []generic.PairInterface[T, Y]
-}

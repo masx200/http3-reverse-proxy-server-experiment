@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	// "net/url"
+	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	h12_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h12"
 
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
@@ -202,6 +203,6 @@ func (l *SingleHostHTTP12ClientOfAddress) SetHealthy(healthy bool) {
 // 用于获取上游服务的集合。
 // 此处因为是单主机客户端，所以返回空集合。
 // 返回值为上游服务集合的可选类型，此处始终返回None。
-func (l *SingleHostHTTP12ClientOfAddress) GetUpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]] {
-	return optional.None[MapInterface[string, LoadBalanceAndUpStream]]()
+func (l *SingleHostHTTP12ClientOfAddress) GetUpStreams() optional.Option[generic.MapInterface[string, LoadBalanceAndUpStream]] {
+	return optional.None[generic.MapInterface[string, LoadBalanceAndUpStream]]()
 }

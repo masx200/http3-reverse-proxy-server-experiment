@@ -2,9 +2,9 @@ package load_balance
 
 import (
 	// "fmt"
+	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	"log"
 	"net/http"
-
 	// "net/url"
 	h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
 
@@ -149,6 +149,6 @@ func (l *SingleHostHTTP3ClientOfAddress) SetHealthy(healthy bool) {
 // 用于获取上游服务的集合。
 // 此处因为是单主机客户端，所以返回空集合。
 // 返回值为上游服务集合的可选类型，此处始终返回None。
-func (l *SingleHostHTTP3ClientOfAddress) GetUpStreams() optional.Option[MapInterface[string, LoadBalanceAndUpStream]] {
-	return optional.None[MapInterface[string, LoadBalanceAndUpStream]]()
+func (l *SingleHostHTTP3ClientOfAddress) GetUpStreams() optional.Option[generic.MapInterface[string, LoadBalanceAndUpStream]] {
+	return optional.None[generic.MapInterface[string, LoadBalanceAndUpStream]]()
 }

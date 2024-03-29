@@ -44,14 +44,14 @@ type MapIterator[T comparable, Y any] struct {
 }
 
 // Next implements Iterator.
-func (m *MapIterator[T, Y]) Next() IteratorResult[PairInterface[T, Y]] {
+func (m *MapIterator[T, Y]) Next() (PairInterface[T, Y], bool) {
 
 	if m.index < m.size {
 		entry := m.entries[m.index]
 		m.index++
-		return &IteratorResultImplement[PairInterface[T, Y]]{Done: false, Value: entry}
+		return entry, true
 	}
-	return &IteratorResultImplement[PairInterface[T, Y]]{Done: true, Value: nil}
+	return nil, false
 }
 
 func (m *MapImplement[T, Y]) Iterator() Iterator[PairInterface[T, Y]] {

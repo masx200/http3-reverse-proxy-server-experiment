@@ -122,6 +122,11 @@ type SingleHostHTTP12ClientOfAddress struct {
 	UnHealthyFailMaxCount int64
 }
 
+// GetServerConfigCommon implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) GetServerConfigCommon() ServerConfigCommon {
+	panic("unimplemented")
+}
+
 // GetUnHealthyFailMaxCount implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP12ClientOfAddress) GetUnHealthyFailMaxCount() int64 {
 	return l.UnHealthyFailMaxCount

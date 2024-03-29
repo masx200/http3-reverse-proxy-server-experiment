@@ -79,6 +79,11 @@ type SingleHostHTTP3ClientOfAddress struct {
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 }
 
+// GetServerConfigCommon implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GetServerConfigCommon() ServerConfigCommon {
+	panic("unimplemented")
+}
+
 // GetUnHealthyFailMaxCount implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3ClientOfAddress) GetUnHealthyFailMaxCount() int64 {
 	return l.UnHealthyFailMaxCount

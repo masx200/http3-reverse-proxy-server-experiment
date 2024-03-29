@@ -24,6 +24,13 @@ type LoadBalanceAndUpStream interface {
 
 	// ActiveHealthyCheck 用于检查上游服务的健康状态，并返回健康状态及错误信息。
 	// 返回值：bool - 上游服务的主动健康状态（true为健康，false为不健康）；error - 错误信息（如果有）
+
+	GetLoadBalanceService() optional.Option[LoadBalanceService]
+
+	GetServerConfigCommon() ServerConfigCommon
+}
+type ServerConfigCommon interface {
+	GetUpStreamServerURL() string
 	ActiveHealthyCheck() (bool, error)
 
 	// Identifier 用于返回上游服务的唯一标识符。
@@ -76,9 +83,7 @@ type LoadBalanceAndUpStream interface {
 	SetUnHealthyFailMaxCount(int64)
 
 	GetUnHealthyFailMaxCount() int64
-	GetLoadBalanceService() optional.Option[LoadBalanceService]
 }
-
 type LoadBalanceService interface {
 	GetUpStreams() generic.MapInterface[string, LoadBalanceAndUpStream]
 

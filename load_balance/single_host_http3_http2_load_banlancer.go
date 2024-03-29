@@ -159,6 +159,11 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	LoadBalanceService *HTTP3HTTP2LoadBalancer
 }
 
+// GetServerConfigCommon implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetServerConfigCommon() ServerConfigCommon {
+	panic("unimplemented")
+}
+
 // GetUnHealthyFailMaxCount implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUnHealthyFailMaxCount() int64 {
 	return l.UnHealthyFailMaxCount
@@ -258,7 +263,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 	upstreams := l.UpStreams
 	for _, value := range generic.RandomShuffle((upstreams.Entries())) {
 
-		if value.GetSecond().GetHealthy() {
+		if value.GetSecond().GetServerConfigCommon().GetHealthy() {
 			response, err := value.GetSecond().RoundTrip(request)
 			if err != nil {
 				log.Println(err)
@@ -287,7 +292,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SelectAvailableServer() (Loa
 	upstreams := l.UpStreams
 	for _, value := range generic.RandomShuffle((upstreams.Entries())) {
 
-		if value.GetSecond().GetHealthy() {
+		if value.GetSecond().GetServerConfigCommon().GetHealthy() {
 			return value.GetSecond(), nil
 		}
 
@@ -384,7 +389,7 @@ func (h *HTTP3HTTP2LoadBalancer) runPeriodicHealthChecks() {
 				upstreamSvc := upstream.GetSecond()
 
 				go func(key string, svc LoadBalanceAndUpStream) {
-					healthy, err := svc.ActiveHealthyCheck()
+					healthy, err := svc.GetServerConfigCommon().ActiveHealthyCheck()
 					results <- HealthCheckResult{key, healthy, err, svc}
 				}(key, upstreamSvc)
 				//var key = upstream.GetFirst()
@@ -408,12 +413,12 @@ func (h *HTTP3HTTP2LoadBalancer) runPeriodicHealthChecks() {
 			result := <-results
 			if result.err != nil || !result.healthy {
 				log.Printf("上游服务 %s 在健康检查时发生错误: %v", result.key, result.err)
-				log.Printf("上游服务 %s 不健康", result.svc.GetIdentifier())
+				log.Printf("上游服务 %s 不健康", result.svc.GetServerConfigCommon().GetIdentifier())
 
-				result.svc.SetHealthy(false)
+				result.svc.GetServerConfigCommon().SetHealthy(false)
 			} else {
 				log.Printf("上游服务 %s 健康", result.key)
-				result.svc.SetHealthy(true)
+				result.svc.GetServerConfigCommon().SetHealthy(true)
 			}
 		}
 	}

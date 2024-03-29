@@ -13,7 +13,7 @@ import (
 	optional "github.com/moznion/go-optional"
 )
 
-const HealthyCacheMaxAgeDefault = 10 * 1000
+const HealthCheckIntervalDefault = 10 * 1000
 
 // ActiveHealthyCheckDefault 执行一个主动的健康检查，默认使用HEAD请求对给定的URL进行检查。
 // 参数:
@@ -44,7 +44,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 	// // 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
 
 	m := &SingleHostHTTP3ClientOfAddress{
-		HealthyCacheMaxAge:      HealthyCacheMaxAgeDefault, // 使用默认的健康缓存时间
+		HealthCheckInterval:     HealthCheckIntervalDefault, // 使用默认的健康缓存时间
 		Identifier:              Identifier,
 		ActiveHealthyChecker:    ActiveHealthyCheckDefault,   // 使用默认的主动健康检查器
 		PassiveUnHealthyChecker: HealthyResponseCheckDefault, // 使用默认的健康响应检查器
@@ -52,6 +52,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 		ServerAddress:           ServerAddress,               // 设置服务端地址
 		IsHealthy:               true,                        // 初始状态设为健康
 		// RoundTripper:           transport,                   // 使用默认的传输器
+		UnHealthyFailDuration: UnHealthyFailDurationDefault,
 	}
 	for _, option := range options {
 		option(m)
@@ -61,7 +62,8 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP3ClientOfAddress struct {
-	HealthyCacheMaxAge      int64
+	UnHealthyFailDuration   int64
+	HealthCheckInterval     int64
 	ServerAddress           string                                                         // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	Identifier              string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
@@ -71,14 +73,34 @@ type SingleHostHTTP3ClientOfAddress struct {
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 }
 
-// GetHealthyCacheMaxAge implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP3ClientOfAddress) GetHealthyCacheMaxAge() int64 {
-	return l.HealthyCacheMaxAge
+// GetHealthyCheckInterval implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GetHealthyCheckInterval() int64 {
+	return l.HealthCheckInterval
 }
 
-// SetHealthyCacheMaxAge implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP3ClientOfAddress) SetHealthyCacheMaxAge(maxAge int64) {
-	l.HealthyCacheMaxAge = maxAge
+// GetUnHealthyFailDuration implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GetUnHealthyFailDuration() int64 {
+	return l.UnHealthyFailDuration
+}
+
+// SetHealthyCheckInterval implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) SetHealthyCheckInterval(interval int64) {
+	l.HealthCheckInterval = interval
+}
+
+// SetUnHealthyFailDuration implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) SetUnHealthyFailDuration(Duration int64) {
+	l.UnHealthyFailDuration = Duration
+}
+
+// GetHealthCheckInterval implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GetHealthCheckInterval() int64 {
+	return l.HealthCheckInterval
+}
+
+// SetHealthCheckInterval implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) SetHealthCheckInterval(maxAge int64) {
+	l.HealthCheckInterval = maxAge
 }
 
 // ActiveHealthyCheck 执行活跃的健康检查。

@@ -48,18 +48,24 @@ type LoadBalanceAndUpStream interface {
 	// 返回值：bool - 上游服务的被动健康状态（true为健康，false为不健康）
 	PassiveUnHealthyCheck(*http.Response) (bool, error)
 
-	// SetHealthyCacheMaxAge 设置健康状态的缓存最大年龄。
+	// SetHealthCheckInterval 设置健康状态的缓存最大年龄。
 	// 参数:
 	//   int64 - 表示健康状态的缓存的最大年龄（单位：毫秒）。
-	SetHealthyCacheMaxAge(int64)
+	SetHealthyCheckInterval(int64)
 	// 设置逻辑实现
 
-	// GetHealthyCacheMaxAge 获取健康状态的缓存最大年龄。
+	// GetHealthCheckInterval 获取健康状态的缓存最大年龄。
 	// 返回值:
 	//   int64 - 健康状态的缓存的最大年龄（单位：毫秒）。
-	GetHealthyCacheMaxAge() int64
+	GetHealthyCheckInterval() int64
 	// 获取逻辑实现
+	SetUnHealthyFailDuration(int64)
+	// 设置逻辑实现
 
+	// GetHealthCheckInterval 获取健康状态的缓存最大年龄。
+	// 返回值:
+	//   int64 - 健康状态的缓存的最大年龄（单位：毫秒）。
+	GetUnHealthyFailDuration() int64
 }
 
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。

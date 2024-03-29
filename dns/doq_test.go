@@ -16,7 +16,7 @@ func TestDOQ(t *testing.T) {
 	doqServer := "quic://" + x
 	// client := doq.NewClient(x, doq.Options{})
 	// if err != nil {
-	// 	panic(err)
+
 	// }
 
 	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev"
@@ -104,7 +104,7 @@ func TestDOQ2(t *testing.T) {
 	doqServer := "quic://" + x
 	// client := doq.NewClient(x, doq.Options{})
 	// if err != nil {
-	// 	panic(err)
+
 	// }
 
 	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev"

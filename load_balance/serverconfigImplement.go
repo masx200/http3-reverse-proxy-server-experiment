@@ -9,6 +9,7 @@ import (
 type ServerConfigImplement struct {
 	Identifier              string
 	HealthMutex             sync.Mutex
+	UnHealthMutex           sync.Mutex
 	UpstreamServerURL       string
 	IsHealthy               bool
 	HealthCheckIntervalMs   int64
@@ -17,21 +18,32 @@ type ServerConfigImplement struct {
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	RoundTripper            http.RoundTripper
 	PassiveUnHealthyChecker func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
+	UnHealthyFailCount      int64
+}
+
+func ServerConfigImplementConstructor() ServerConfigCommon {
+	return &ServerConfigImplement{}
 }
 
 // GetUnHealthyFailCount implements ServerConfigCommon.
 func (s *ServerConfigImplement) GetUnHealthyFailCount() int64 {
-	panic("unimplemented")
+	s.UnHealthMutex.Lock()
+	defer s.UnHealthMutex.Unlock()
+	return s.UnHealthyFailCount
 }
 
 // IncrementUnHealthyFailCount implements ServerConfigCommon.
 func (s *ServerConfigImplement) IncrementUnHealthyFailCount() {
-	panic("unimplemented")
+	s.UnHealthMutex.Lock()
+	defer s.UnHealthMutex.Unlock()
+	s.UnHealthyFailCount += 1
 }
 
 // ResetUnHealthyFailCount implements ServerConfigCommon.
 func (s *ServerConfigImplement) ResetUnHealthyFailCount() {
-	panic("unimplemented")
+	s.UnHealthMutex.Lock()
+	defer s.UnHealthMutex.Unlock()
+	s.UnHealthyFailCount = 0
 }
 
 func (s *ServerConfigImplement) GetUpStreamServerURL() string {

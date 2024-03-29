@@ -16,7 +16,7 @@ func TestDOT2(t *testing.T) {
 	doqServer := "tls://" + x
 	// client := doq.NewClient(x, doq.Options{})
 	// if err != nil {
-	// 	panic(err)
+
 	// }
 
 	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev"
@@ -104,7 +104,7 @@ func TestDOT(t *testing.T) {
 	doqServer := "tls://" + x
 	// client := doq.NewClient(x, doq.Options{})
 	// if err != nil {
-	// 	panic(err)
+
 	// }
 
 	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev"

@@ -54,6 +54,17 @@ type LoadBalanceAndUpStream interface {
 	//   int64 - 健康状态的缓存的最大年龄（单位：毫秒）。
 	GetHealthyCheckInterval() int64
 	// 获取逻辑实现
+	/*
+		SetUnHealthyFailDuration 设置不健康状态失败持续时间。
+
+		参数:
+		- duration: int64类型，表示不健康状态失败的持续时间。
+
+		返回值:
+		- 无
+
+		该函数用于设置一个指定的时间长度，在此时间长度内，如果组件或系统的状态持续不健康，则可能导致操作失败或系统视为异常。
+	*/
 	SetUnHealthyFailDuration(int64)
 	// 设置逻辑实现
 

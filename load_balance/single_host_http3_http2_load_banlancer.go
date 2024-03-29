@@ -342,7 +342,8 @@ func (h *HTTP3HTTP2LoadBalancer) runPeriodicHealthChecks() {
 		// 对每个上游服务执行健康检查
 		upstreams := h.UpStreamsGetter()
 		iterator := upstreams.Iterator()
-		results := make(chan HealthCheckResult, (upstreams).Size())
+		size := (upstreams).Size()
+		results := make(chan HealthCheckResult, size)
 		for {
 			var upstream, o = iterator.Next()
 			if o {
@@ -370,7 +371,7 @@ func (h *HTTP3HTTP2LoadBalancer) runPeriodicHealthChecks() {
 				break
 			}
 		}
-		for i := 0; i < len(results); i++ {
+		for i := int64(0); i < size; i++ {
 			result := <-results
 			if result.err != nil || !result.healthy {
 				log.Printf("上游服务 %s 在健康检查时发生错误: %v", result.key, result.err)

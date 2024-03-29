@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+
 	// "io/ioutil"
 	"log"
 	"net/http"
@@ -263,7 +264,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 	return &http.Response{
 		StatusCode: 502,
 		Body:       io.NopCloser(bytes.NewBufferString("502 Bad Gateway")),
-	}, errors.New("no healthy upstreams or PassiveUnHealthyCheck error")
+	}, errors.New("bad Gateway: no healthy upstreams or PassiveUnHealthyCheck error")
 
 }
 

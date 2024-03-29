@@ -12,7 +12,7 @@ type ServerConfigImplement struct {
 	Identifier              string
 	HealthMutex             sync.Mutex
 	FailureMutex            sync.Mutex
-	UnHealthMutex           sync.Mutex
+	FailCountMutex          sync.Mutex
 	UpstreamServerURL       string
 	IsHealthy               bool
 	HealthCheckIntervalMs   int64
@@ -74,22 +74,22 @@ func ServerConfigImplementConstructor(Identifier string, UpStreamServerURL strin
 
 // GetUnHealthyFailCount implements ServerConfigCommon.
 func (s *ServerConfigImplement) GetUnHealthyFailCount() int64 {
-	s.UnHealthMutex.Lock()
-	defer s.UnHealthMutex.Unlock()
+	s.FailCountMutex.Lock()
+	defer s.FailCountMutex.Unlock()
 	return s.UnHealthyFailCount
 }
 
 // IncrementUnHealthyFailCount implements ServerConfigCommon.
 func (s *ServerConfigImplement) IncrementUnHealthyFailCount() {
-	s.UnHealthMutex.Lock()
-	defer s.UnHealthMutex.Unlock()
+	s.FailCountMutex.Lock()
+	defer s.FailCountMutex.Unlock()
 	s.UnHealthyFailCount += 1
 }
 
 // ResetUnHealthyFailCount implements ServerConfigCommon.
 func (s *ServerConfigImplement) ResetUnHealthyFailCount() {
-	s.UnHealthMutex.Lock()
-	defer s.UnHealthMutex.Unlock()
+	s.FailCountMutex.Lock()
+	defer s.FailCountMutex.Unlock()
 	s.UnHealthyFailCount = 0
 }
 

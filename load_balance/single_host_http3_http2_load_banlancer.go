@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sync"
+	"time"
 
 	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 
@@ -131,6 +133,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
+	//毫秒
 	HealthCheckInterval     int64
 	UnHealthyFailDuration   int64
 	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
@@ -270,9 +273,13 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUpStreams() generic.MapIn
 type HTTP3HTTP2LoadBalancer struct {
 	UpStreamsGetter         func() generic.MapInterface[string, LoadBalanceAndUpStream]
 	SelectorAvailableServer func() (LoadBalanceAndUpStream, error)
-	GetHealthyCheckInterval func() int64
-	SetHealthy              func(healthy bool)
-	ActiveHealthyChecker    func() (bool, error)
+	//毫秒
+	GetHealthyCheckInterval   func() int64
+	SetHealthy                func(healthy bool)
+	ActiveHealthyChecker      func() (bool, error)
+	healthCheckIntervalTicker *time.Ticker
+	healthCheckRunning        bool
+	mu                        sync.Mutex // 添加互斥锁，确保并发安全
 }
 
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
@@ -288,13 +295,58 @@ func (h *HTTP3HTTP2LoadBalancer) SelectAvailableServer() (LoadBalanceAndUpStream
 }
 
 func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
-	panic("not implemented") // TODO: Implement
-}
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
+	if h.healthCheckRunning {
+		log.Println("健康检查已在运行，无需重新启动.")
+		return
+	}
+
+	interval := time.Duration(h.GetHealthyCheckInterval()) * time.Millisecond
+	h.healthCheckIntervalTicker = time.NewTicker(interval)
+	go h.runPeriodicHealthChecks()
+
+	h.healthCheckRunning = true
+	log.Printf("健康检查已启动，间隔时间为 %v", interval)
+}
+func (h *HTTP3HTTP2LoadBalancer) runPeriodicHealthChecks() {
+	for range h.healthCheckIntervalTicker.C {
+		// 对每个上游服务执行健康检查
+		upstreams := h.UpStreamsGetter()
+		for _, upstream := range upstreams.Entries() {
+			var key = upstream.GetFirst()
+			healthy, err := upstream.GetSecond().ActiveHealthyCheck()
+			if err != nil || !healthy {
+				log.Printf("上游服务 %s 在健康检查时发生错误: %v", key, err)
+
+				log.Printf("上游服务 %s 不健康", upstream.GetSecond().GetIdentifier())
+				// 根据实际情况更新健康状态并处理不健康的服务
+				upstream.GetSecond().SetHealthy(false)
+				// 可能需要从负载均衡中暂时移除不健康的服务
+			} else {
+				log.Printf("上游服务 %s 健康", key)
+				upstream.GetSecond().SetHealthy(true)
+			}
+		}
+	}
+}
 func (h *HTTP3HTTP2LoadBalancer) HealthyCheckRunning() bool {
-	panic("not implemented") // TODO: Implement
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.healthCheckRunning
 }
 
 func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStop() {
-	panic("not implemented") // TODO: Implement
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if !h.healthCheckRunning {
+		log.Println("健康检查并未运行，无需停止.")
+		return
+	}
+
+	h.healthCheckIntervalTicker.Stop()
+	h.healthCheckRunning = false
+	log.Println("健康检查已停止.")
 }

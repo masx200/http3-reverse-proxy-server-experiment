@@ -21,8 +21,23 @@ type ServerConfigImplement struct {
 	UnHealthyFailCount      int64
 }
 
-func ServerConfigImplementConstructor(option ...func(*ServerConfigImplement)) ServerConfigCommon {
-	var s = &ServerConfigImplement{}
+// ServerConfigImplementConstructor 是用于构造ServerConfigImplement对象的函数。
+// Identifier: 用于标识服务器的唯一字符串。
+// UpStreamServerURL: 指定上游服务器的URL。
+// RoundTripper: 实现http.RoundTripper接口的对象，用于进行HTTP请求。
+// option: 可选参数，一系列函数，可用于修改ServerConfigImplement对象的配置。
+// 返回值为配置好的ServerConfigCommon接口，实现了服务器配置的通用接口。
+func ServerConfigImplementConstructor(Identifier string, UpStreamServerURL string, RoundTripper http.RoundTripper, option ...func(*ServerConfigImplement)) ServerConfigCommon {
+	var s = &ServerConfigImplement{
+		Identifier:              Identifier,
+		HealthCheckIntervalMs:   HealthCheckIntervalMsDefault,
+		UpstreamServerURL:       UpStreamServerURL,
+		IsHealthy:               true,
+		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
+		unHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
+		ActiveHealthyChecker:    ActiveHealthyCheckDefault,
+		RoundTripper:            RoundTripper,
+		PassiveUnHealthyChecker: HealthyResponseCheckDefault}
 	for _, callback := range option {
 		callback(s)
 

@@ -265,7 +265,7 @@ func (h *HTTP3HTTP2LoadBalancer) GetUpStreams() generic.MapInterface[string, Loa
 // 选择一个可用的上游服务器
 // 参数：
 func (h *HTTP3HTTP2LoadBalancer) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
-	panic("not implemented") // TODO: Implement
+	return h.SelectorAvailableServer()
 }
 
 func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {

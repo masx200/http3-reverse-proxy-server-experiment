@@ -2,6 +2,7 @@ package generic
 
 // MapInterface 是一个泛型映射接口，支持基本的映射操作。
 type MapInterface[T comparable, Y any] interface {
+	Iterable[PairInterface[T, Y]]
 	// Clear 清空映射中的所有元素。
 	Clear()
 	// Delete 从映射中删除指定的键。
@@ -36,6 +37,18 @@ func NewMapImplement[T comparable, Y any](entries ...PairInterface[T, Y]) MapInt
 	return m
 }
 
+type MapIterator[T comparable, Y any] struct {
+	data map[T]Y
+}
+
+// Next implements Iterator.
+func (m *MapIterator[T, Y]) Next() IteratorResult[PairInterface[T, Y]] {
+	panic("unimplemented")
+}
+
+func (m *MapImplement[T, Y]) Iterator() Iterator[PairInterface[T, Y]] {
+	return &MapIterator[T, Y]{data: m.data}
+}
 func (m *MapImplement[T, Y]) Clear() {
 	m.data = make(map[T]Y)
 }

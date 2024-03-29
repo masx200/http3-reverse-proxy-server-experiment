@@ -2,9 +2,9 @@ package load_balance
 
 import (
 	// "fmt"
-	"bytes"
+	// "bytes"
 	"errors"
-	"io"
+	// "io"
 
 	// "io/ioutil"
 	"log"
@@ -261,10 +261,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 
 	}
 
-	return &http.Response{
-		StatusCode: 502,
-		Body:       io.NopCloser(bytes.NewBufferString("502 Bad Gateway")),
-	}, errors.New("bad Gateway: no healthy upstreams or PassiveUnHealthyCheck error")
+	return nil, errors.New("bad Gateway: no healthy upstreams or PassiveUnHealthyCheck error")
 
 }
 

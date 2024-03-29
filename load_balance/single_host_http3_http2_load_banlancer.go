@@ -2,7 +2,10 @@ package load_balance
 
 import (
 	// "fmt"
+	"bytes"
 	"errors"
+	"io"
+	// "io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -14,7 +17,7 @@ import (
 	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 
 	// "net/url"
-	h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
+	// h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
 
 	optional "github.com/moznion/go-optional"
 )
@@ -239,9 +242,29 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) PassiveUnHealthyCheck(respon
 // 返回值为执行请求后的HTTP响应及可能发生的错误。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
 	go l.LoadBalanceService.HealthyCheckStart()
-	return h3_experiment.CreateHTTP3TransportWithIPGetter(func() string {
-		return l.GetServerAddress()
-	}).RoundTrip(request)
+	upstreams := l.UpStreams
+	for _, value := range generic.RandomShuffle((upstreams.Entries())) {
+
+		if value.GetSecond().GetHealthy() {
+			response, err := value.GetSecond().RoundTrip(request)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			if ok, err := l.PassiveUnHealthyCheck(response); err != nil || !ok {
+				log.Println(err)
+				continue
+			}
+			return response, nil
+		}
+
+	}
+
+	return &http.Response{
+		StatusCode: 502,
+		Body:       io.NopCloser(bytes.NewBufferString("502 Bad Gateway")),
+	}, errors.New("no healthy upstreams or PassiveUnHealthyCheck error")
+
 }
 
 // SelectAvailableServer 实现了LoadBalanceAndUpStream接口的SelectAvailableServer方法，

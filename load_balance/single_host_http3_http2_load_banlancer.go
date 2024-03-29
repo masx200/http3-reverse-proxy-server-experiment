@@ -2,6 +2,7 @@ package load_balance
 
 import (
 	// "fmt"
+	"errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -172,7 +173,20 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 // 用于选择可用的服务实例。
 // 返回值为可用的服务实例（此处始终为自身）及可能发生的错误。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
-	return l, nil
+
+	//random selection from upstreams
+	if l.UpStreams.IsSome() {
+		upstreams := l.UpStreams.Unwrap()
+		for _, value := range upstreams.Entries() {
+
+			if value.GetSecond().GetHealthy() {
+				return value.GetSecond(), nil
+			}
+
+		}
+	}
+
+	return nil, errors.New("no healthy upstreams")
 }
 
 // SetHealthy 实现了LoadBalanceAndUpStream接口的SetHealthy方法，

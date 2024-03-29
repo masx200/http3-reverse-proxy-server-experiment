@@ -243,34 +243,12 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) PassiveUnHealthyCheck(respon
 	return l.PassiveUnHealthyChecker(response)
 }
 
-// MarkUpstreamAsUnhealthy 标记上游服务为不健康。
-func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) MarkUpstreamAsUnhealthy(upstream LoadBalanceAndUpStream) {
-	upstream.GetServerConfigCommon().SetHealthy(false)
-	// 可能还会记录日志或其他通知机制，例如事件广播
-	log.Printf("Marking upstream '%s' as unhealthy due to consecutive failures ", upstream.GetServerConfigCommon().GetIdentifier())
-}
-
 // OnUpstreamFailure 处理上游服务失败的逻辑。
 // 当检测到上游服务失败时，根据配置的不健康服务失败时长和次数，来判断是否标记该上游服务为不健康。
 // 参数:
 // - loadBalanceAndUpStream: 包含负载均衡和上游服务信息的对象。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) OnUpstreamFailure(loadBalanceAndUpStream LoadBalanceAndUpStream) {
-	loadBalanceAndUpStream.GetServerConfigCommon().IncrementUnHealthyFailCount()
-	failDuration := l.GetServerConfigCommon().GetUnHealthyFailDurationMs() * int64(time.Millisecond)
-	failCount := loadBalanceAndUpStream.GetServerConfigCommon().GetUnHealthyFailCount()
-
-	// 如果unHealthyFailDurationMs大于0并且当前失败次数+1超过unHealthyFailMaxCount，则标记上游服务为不健康
-	if l.unHealthyFailDurationMs > 0 && failCount >= l.UnHealthyFailMaxCount {
-		l.MarkUpstreamAsUnhealthy(loadBalanceAndUpStream)
-	} else if failCount == 1 { // 第一次失败时，启动计时器
-		go func() {
-			time.Sleep(time.Duration(failDuration))
-			if loadBalanceAndUpStream.GetServerConfigCommon().GetUnHealthyFailCount() >= 1 { // 计时结束后，如果期间没有其他失败请求，则重置失败次数
-				loadBalanceAndUpStream.GetServerConfigCommon().ResetUnHealthyFailCount()
-			}
-		}()
-	}
-
+	loadBalanceAndUpStream.GetServerConfigCommon().OnUpstreamFailure()
 	// 更新失败次数
 
 }
@@ -300,11 +278,13 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 		if value.GetSecond().GetServerConfigCommon().GetHealthy() {
 			response, err := value.GetSecond().RoundTrip(request)
 			if err != nil {
-				log.Println(err)
+				log.Println("OnUpstreamFailure", err)
+				l.OnUpstreamFailure(value.GetSecond())
 				continue
 			}
 			if ok, err := l.PassiveUnHealthyCheck(response); err != nil || !ok {
-				log.Println(err)
+				log.Println("OnUpstreamFailure", err)
+				l.OnUpstreamFailure(value.GetSecond())
 				continue
 			}
 			return response, nil

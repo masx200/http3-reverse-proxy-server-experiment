@@ -86,6 +86,8 @@ type ServerConfigCommon interface {
 	SetUnHealthyFailMaxCount(int64)
 
 	GetUnHealthyFailMaxCount() int64
+
+	OnUpstreamFailure()
 }
 type LoadBalanceService interface {
 	GetUpStreams() generic.MapInterface[string, LoadBalanceAndUpStream]

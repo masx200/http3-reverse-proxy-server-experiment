@@ -1,14 +1,17 @@
 package load_balance
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
+	"time"
 	// "time"
 )
 
 type ServerConfigImplement struct {
 	Identifier              string
 	HealthMutex             sync.Mutex
+	FailureMutex            sync.Mutex
 	UnHealthMutex           sync.Mutex
 	UpstreamServerURL       string
 	IsHealthy               bool
@@ -19,6 +22,30 @@ type ServerConfigImplement struct {
 	RoundTripper            http.RoundTripper
 	PassiveUnHealthyChecker func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	UnHealthyFailCount      int64
+}
+
+// OnUpstreamFailure implements ServerConfigCommon.
+func (s *ServerConfigImplement) OnUpstreamFailure() {
+
+	fmt.Println("OnUpstreamFailure", s.GetIdentifier())
+	s.FailureMutex.Lock()
+	defer s.FailureMutex.Unlock()
+	s.IncrementUnHealthyFailCount()
+	failDuration := s.GetUnHealthyFailDurationMs() * int64(time.Millisecond)
+	failCount := s.GetUnHealthyFailCount()
+
+	// 如果unHealthyFailDurationMs大于0并且当前失败次数+1超过unHealthyFailMaxCount，则标记上游服务为不健康
+	if s.unHealthyFailDurationMs > 0 && failCount >= s.GetUnHealthyFailMaxCount() {
+		s.SetHealthy(false)
+	} else if failCount == 1 { // 第一次失败时，启动计时器
+		go func() {
+			time.Sleep(time.Duration(failDuration))
+			if s.GetUnHealthyFailCount() >= 1 { // 计时结束后，如果期间没有其他失败请求，则重置失败次数
+				s.ResetUnHealthyFailCount()
+			}
+		}()
+	}
+
 }
 
 // ServerConfigImplementConstructor 是用于构造ServerConfigImplement对象的函数。

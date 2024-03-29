@@ -322,6 +322,12 @@ func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
 	log.Printf("健康检查已启动，间隔时间为 %v", interval)
 }
 
+// HealthCheckResult 是一个健康检查结果的结构体。
+// 它包含以下字段：
+// key: 用于标识健康检查的唯一键。
+// healthy: 表示检查是否健康的布尔值。
+// err: 执行健康检查时遇到的错误信息。
+// svc: 实现了LoadBalanceAndUpStream接口的服务，用于在健康检查中进行负载均衡和上游服务管理。
 type HealthCheckResult struct {
 	key     string
 	healthy bool

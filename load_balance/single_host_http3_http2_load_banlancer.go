@@ -52,6 +52,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 	// 		return m.ServerAddress
 	// 		}) }
 	// 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
+	upstreammapinstance := generic.NewMapImplement[string, LoadBalanceAndUpStream]()
 	var m = &SingleHostHTTP3HTTP2LoadBalancerOfAddress{
 		Identifier:              Identifier,
 		ActiveHealthyChecker:    ActiveHealthyCheckDefault,   // 使用默认的主动健康检查器
@@ -61,7 +62,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 		IsHealthy:               true,                        // 初始状态设为健康
 		// RoundTripper:         transport  , // 使用默认的传输器
 		HealthCheckInterval:   HealthCheckIntervalDefault,
-		UpStreams:             optional.Some(generic.NewMapImplement[string, LoadBalanceAndUpStream]()),
+		UpStreams:             optional.Some(upstreammapinstance),
 		UnHealthyFailDuration: UnHealthyFailDurationDefault,
 	}
 	for _, option := range options {

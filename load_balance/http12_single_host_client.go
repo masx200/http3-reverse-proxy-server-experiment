@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	// "net/url"
 	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
@@ -112,8 +113,9 @@ type SingleHostHTTP12ClientOfAddress struct {
 	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	Identifier              string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
-	IsHealthy               bool                                                           // 健康状态，标识当前客户端是否被视为健康。
-	PassiveUnHealthyChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
+	healthMutex             sync.Mutex
+	IsHealthy               bool                                        // 健康状态，标识当前客户端是否被视为健康。
+	PassiveUnHealthyChecker func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	// RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 }
@@ -173,6 +175,8 @@ func (l *SingleHostHTTP12ClientOfAddress) GetIdentifier() string {
 // 实现了 LoadBalanceAndUpStream 接口。
 // 返回值：当前客户端是否处于健康状态（bool类型）。
 func (l *SingleHostHTTP12ClientOfAddress) GetHealthy() bool {
+	l.healthMutex.Lock()
+	defer l.healthMutex.Unlock()
 	return l.IsHealthy
 }
 
@@ -226,6 +230,8 @@ func (l *SingleHostHTTP12ClientOfAddress) SelectAvailableServer() (LoadBalanceAn
 // 用于设置客户端的健康状态。
 // 参数healthy为true表示客户端健康，为false表示客户端不健康。
 func (l *SingleHostHTTP12ClientOfAddress) SetHealthy(healthy bool) {
+	l.healthMutex.Lock()
+	defer l.healthMutex.Unlock()
 	l.IsHealthy = healthy
 }
 

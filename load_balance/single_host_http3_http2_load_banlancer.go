@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+
 	// "sync/atomic"
 	"time"
 
@@ -205,6 +206,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetIdentifier() string {
 // 实现了 LoadBalanceAndUpStream 接口。
 // 返回值：当前客户端是否处于健康状态（bool类型）。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetHealthy() bool {
+
 	l.healthMutex.Lock()
 	defer l.healthMutex.Unlock()
 	return l.IsHealthy
@@ -266,6 +268,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SelectAvailableServer() (Loa
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetHealthy(healthy bool) {
 	l.healthMutex.Lock()
 	defer l.healthMutex.Unlock()
+
 	l.IsHealthy = healthy
 }
 

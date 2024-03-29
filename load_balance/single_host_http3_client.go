@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 
@@ -63,6 +64,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP3ClientOfAddress struct {
+	healthMutex             sync.Mutex
 	UnHealthyFailDuration   int64
 	HealthCheckInterval     int64
 	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
@@ -127,6 +129,8 @@ func (l *SingleHostHTTP3ClientOfAddress) GetIdentifier() string {
 // 实现了 LoadBalanceAndUpStream 接口。
 // 返回值：当前客户端是否处于健康状态（bool类型）。
 func (l *SingleHostHTTP3ClientOfAddress) GetHealthy() bool {
+	l.healthMutex.Lock()
+	defer l.healthMutex.Unlock()
 	return l.IsHealthy
 }
 
@@ -172,6 +176,8 @@ func (l *SingleHostHTTP3ClientOfAddress) SelectAvailableServer() (LoadBalanceAnd
 // 用于设置客户端的健康状态。
 // 参数healthy为true表示客户端健康，为false表示客户端不健康。
 func (l *SingleHostHTTP3ClientOfAddress) SetHealthy(healthy bool) {
+	l.healthMutex.Lock()
+	defer l.healthMutex.Unlock()
 	l.IsHealthy = healthy
 }
 

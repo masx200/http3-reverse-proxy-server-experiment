@@ -249,7 +249,13 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) MarkUpstreamAsUnhealthy(upst
 	// 可能还会记录日志或其他通知机制，例如事件广播
 	log.Printf("Marking upstream '%s' as unhealthy due to consecutive failures ", upstream.GetServerConfigCommon().GetIdentifier())
 }
+
+// OnUpstreamFailure 处理上游服务失败的逻辑。
+// 当检测到上游服务失败时，根据配置的不健康服务失败时长和次数，来判断是否标记该上游服务为不健康。
+// 参数:
+// - loadBalanceAndUpStream: 包含负载均衡和上游服务信息的对象。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) OnUpstreamFailure(loadBalanceAndUpStream LoadBalanceAndUpStream) {
+	loadBalanceAndUpStream.GetServerConfigCommon().IncrementUnHealthyFailCount()
 	failDuration := l.GetServerConfigCommon().GetUnHealthyFailDurationMs() * int64(time.Millisecond)
 	failCount := loadBalanceAndUpStream.GetServerConfigCommon().GetUnHealthyFailCount()
 
@@ -259,14 +265,14 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) OnUpstreamFailure(loadBalanc
 	} else if failCount == 1 { // 第一次失败时，启动计时器
 		go func() {
 			time.Sleep(time.Duration(failDuration))
-			if loadBalanceAndUpStream.GetServerConfigCommon().GetUnHealthyFailCount() == 1 { // 计时结束后，如果期间没有其他失败请求，则重置失败次数
+			if loadBalanceAndUpStream.GetServerConfigCommon().GetUnHealthyFailCount() >= 1 { // 计时结束后，如果期间没有其他失败请求，则重置失败次数
 				loadBalanceAndUpStream.GetServerConfigCommon().ResetUnHealthyFailCount()
 			}
 		}()
 	}
 
 	// 更新失败次数
-	loadBalanceAndUpStream.GetServerConfigCommon().IncrementUnHealthyFailCount()
+
 }
 
 // HealthyResponseCheckDefault 检查HTTP响应是否表示服务健康。

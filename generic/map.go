@@ -26,10 +26,14 @@ type MapImplement[T comparable, Y any] struct {
 	data map[T]Y
 }
 
-func NewMapImplement[T comparable, Y any]() MapInterface[T, Y] {
-	return &MapImplement[T, Y]{
+func NewMapImplement[T comparable, Y any](entries ...PairInterface[T, Y]) MapInterface[T, Y] {
+	var m = &MapImplement[T, Y]{
 		data: make(map[T]Y),
 	}
+	for _, entry := range entries {
+		m.Set(entry.GetFirst(), entry.GetSecond())
+	}
+	return m
 }
 
 func (m *MapImplement[T, Y]) Clear() {

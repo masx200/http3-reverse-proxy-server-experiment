@@ -54,21 +54,46 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 	// 		}) }
 	// 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
 	upstreammapinstance := generic.NewMapImplement[string, LoadBalanceAndUpStream]()
+
 	var m = &SingleHostHTTP3HTTP2LoadBalancerOfAddress{
 		Identifier:              Identifier,
-		ActiveHealthyChecker:    ActiveHealthyCheckDefault,   // 使用默认的主动健康检查器
-		PassiveUnHealthyChecker: HealthyResponseCheckDefault, // 使用默认的健康响应检查器
-		UpStreamServerURL:       UpStreamServerURL,           // 设置上游服务器URL
-		ServerAddress:           ServerAddress,               // 设置服务端地址
-		IsHealthy:               true,                        // 初始状态设为健康
+		ActiveHealthyChecker:    ActiveHealthyCheckDefault,              // 使用默认的主动健康检查器
+		PassiveUnHealthyChecker: HealthyResponseCheckDefault,            // 使用默认的健康响应检查器
+		UpStreamServerURL:       UpStreamServerURL,                      // 设置上游服务器URL
+		GetServerAddress:        func() string { return ServerAddress }, //      ServerAddress,               // 设置服务端地址
+		IsHealthy:               true,                                   // 初始状态设为健康
 		// RoundTripper:         transport  , // 使用默认的传输器
 		HealthCheckInterval:   HealthCheckIntervalDefault,
 		UpStreams:             optional.Some(upstreammapinstance),
 		UnHealthyFailDuration: UnHealthyFailDurationDefault,
 	}
+	var http2identifier = ""
+	var http3identifier = ""
+	var http2upstream, err1 = NewSingleHostHTTP12ClientOfAddress(http2identifier, UpStreamServerURL, func(shhcoa *SingleHostHTTP12ClientOfAddress) {
+		shhcoa.GetServerAddress = func() string {
+			return m.GetServerAddress()
+		}
+
+	})
+	var http3upstream, err2 = NewSingleHostHTTP3ClientOfAddress(http3identifier, UpStreamServerURL, func(shhcoa *SingleHostHTTP3ClientOfAddress) {
+		shhcoa.GetServerAddress = func() string {
+			return m.GetServerAddress()
+		}
+	})
+	if err1 != nil {
+		log.Println(err1)
+		return nil, err1
+	}
+	if err2 != nil {
+		log.Println(err2)
+		return nil, err2
+	}
+	upstreammapinstance.Set(http2identifier, http2upstream)
+	upstreammapinstance.Set(http3identifier, http3upstream)
 	for _, option := range options {
 		option(m)
 	}
+
 	return m, nil
 }
 
@@ -76,7 +101,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	HealthCheckInterval     int64
 	UnHealthyFailDuration   int64
-	ServerAddress           string                                                         // 服务器地址，指定客户端要连接的HTTP服务器的地址。
+	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	Identifier              string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
 	IsHealthy               bool                                                           // 健康状态，标识当前客户端是否被视为健康。
@@ -165,7 +190,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) PassiveUnHealthyCheck(respon
 // 返回值为执行请求后的HTTP响应及可能发生的错误。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
 	return h3_experiment.CreateHTTP3TransportWithIPGetter(func() string {
-		return l.ServerAddress
+		return l.GetServerAddress()
 	}).RoundTrip(request)
 }
 

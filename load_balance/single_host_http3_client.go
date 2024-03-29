@@ -47,11 +47,11 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 	m := &SingleHostHTTP3ClientOfAddress{
 		HealthCheckInterval:     HealthCheckIntervalDefault, // 使用默认的健康缓存时间
 		Identifier:              Identifier,
-		ActiveHealthyChecker:    ActiveHealthyCheckDefault,   // 使用默认的主动健康检查器
-		PassiveUnHealthyChecker: HealthyResponseCheckDefault, // 使用默认的健康响应检查器
-		UpStreamServerURL:       UpStreamServerURL,           // 设置上游服务器URL
-		ServerAddress:           ServerAddress,               // 设置服务端地址
-		IsHealthy:               true,                        // 初始状态设为健康
+		ActiveHealthyChecker:    ActiveHealthyCheckDefault,              // 使用默认的主动健康检查器
+		PassiveUnHealthyChecker: HealthyResponseCheckDefault,            // 使用默认的健康响应检查器
+		UpStreamServerURL:       UpStreamServerURL,                      // 设置上游服务器URL
+		GetServerAddress:        func() string { return ServerAddress }, // 设置服务端地址
+		IsHealthy:               true,                                   // 初始状态设为健康
 		// RoundTripper:           transport,                   // 使用默认的传输器
 		UnHealthyFailDuration: UnHealthyFailDurationDefault,
 	}
@@ -65,7 +65,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 type SingleHostHTTP3ClientOfAddress struct {
 	UnHealthyFailDuration   int64
 	HealthCheckInterval     int64
-	ServerAddress           string                                                         // 服务器地址，指定客户端要连接的HTTP服务器的地址。
+	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	Identifier              string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
 	IsHealthy               bool                                                           // 健康状态，标识当前客户端是否被视为健康。
@@ -152,7 +152,7 @@ func (l *SingleHostHTTP3ClientOfAddress) PassiveUnHealthyCheck(response *http.Re
 // 返回值为执行请求后的HTTP响应及可能发生的错误。
 func (l *SingleHostHTTP3ClientOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
 	return h3_experiment.CreateHTTP3TransportWithIPGetter(func() string {
-		return l.ServerAddress
+		return l.GetServerAddress()
 	}).RoundTrip(request)
 }
 

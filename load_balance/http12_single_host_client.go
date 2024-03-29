@@ -95,9 +95,20 @@ func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL str
 		GetServerAddress:        func() string { return ServerAddress }, // 设置服务端地址
 		IsHealthy:               true,                                   // 初始状态设为健康
 		// RoundTripper:           transport,                   // 使用默认的传输器
-		HealthCheckInterval:   HealthCheckIntervalDefault,
-		UnHealthyFailDuration: UnHealthyFailDurationDefault,
-		UnHealthyFailMaxCount: UnHealthyFailMaxCountDefault,
+		healthCheckIntervalMs:   healthCheckIntervalMsDefault,
+		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
+		UnHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
+	}
+	m.ServerConfigCommon = &ServerConfigImplement{
+		Identifier:              Identifier,
+		healthCheckIntervalMs:   healthCheckIntervalMsDefault,
+		UpstreamServerURL:       UpStreamServerURL,
+		IsHealthy:               true,
+		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
+		unHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
+		ActiveHealthyChecker:    ActiveHealthyCheckDefault,
+		RoundTripper:            m,
+		PassiveUnHealthyChecker: HealthyResponseCheckDefault,
 	}
 	for _, option := range options {
 		option(m)
@@ -105,13 +116,13 @@ func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL str
 	return m, nil
 }
 
-const UnHealthyFailDurationDefault = 10 * 1000
+const unHealthyFailDurationMsDefault = 10 * 1000
 
 // SingleHostHTTP12ClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP12ClientOfAddress struct {
 	ServerConfigCommon      *ServerConfigImplement
-	UnHealthyFailDuration   int64
-	HealthCheckInterval     int64
+	unHealthyFailDurationMs int64
+	healthCheckIntervalMs   int64
 	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	Identifier              string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
@@ -145,34 +156,34 @@ func (l *SingleHostHTTP12ClientOfAddress) GetLoadBalanceService() optional.Optio
 
 // GetHealthyCheckInterval implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP12ClientOfAddress) GetHealthyCheckInterval() int64 {
-	return l.HealthCheckInterval
+	return l.healthCheckIntervalMs
 }
 
-// GetUnHealthyFailDuration implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP12ClientOfAddress) GetUnHealthyFailDuration() int64 {
-	return l.UnHealthyFailDuration
+// GetunHealthyFailDurationMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) GetunHealthyFailDurationMs() int64 {
+	return l.unHealthyFailDurationMs
 }
 
 // SetHealthyCheckInterval implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP12ClientOfAddress) SetHealthyCheckInterval(interval int64) {
-	l.HealthCheckInterval = interval
+	l.healthCheckIntervalMs = interval
 }
 
-// SetUnHealthyFailDuration implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP12ClientOfAddress) SetUnHealthyFailDuration(Duration int64) {
-	l.UnHealthyFailDuration = Duration
+// SetunHealthyFailDurationMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) SetunHealthyFailDurationMs(Duration int64) {
+	l.unHealthyFailDurationMs = Duration
 }
 
-// GetHealthCheckInterval implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP12ClientOfAddress) GetHealthCheckInterval() int64 {
+// GethealthCheckIntervalMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) GethealthCheckIntervalMs() int64 {
 
-	return l.HealthCheckInterval
+	return l.healthCheckIntervalMs
 }
 
-// SetHealthCheckInterval implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP12ClientOfAddress) SetHealthCheckInterval(maxAge int64) {
+// SethealthCheckIntervalMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) SethealthCheckIntervalMs(maxAge int64) {
 
-	l.HealthCheckInterval = maxAge
+	l.healthCheckIntervalMs = maxAge
 }
 
 // ActiveHealthyCheck 执行活跃的健康检查。

@@ -16,7 +16,7 @@ import (
 )
 
 const UnHealthyFailMaxCountDefault = 5
-const HealthCheckIntervalDefault = 10 * 1000
+const healthCheckIntervalMsDefault = 10 * 1000
 
 // ActiveHealthyCheckDefault 执行一个主动的健康检查，默认使用HEAD请求对给定的URL进行检查。
 // 参数:
@@ -47,7 +47,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 	// // 初始化SingleHostHTTPClientOfAddress实例，并设置其属性值。
 
 	m := &SingleHostHTTP3ClientOfAddress{
-		HealthCheckInterval:     HealthCheckIntervalDefault, // 使用默认的健康缓存时间
+		healthCheckIntervalMs:   healthCheckIntervalMsDefault, // 使用默认的健康缓存时间
 		Identifier:              Identifier,
 		ActiveHealthyChecker:    ActiveHealthyCheckDefault,              // 使用默认的主动健康检查器
 		PassiveUnHealthyChecker: HealthyResponseCheckDefault,            // 使用默认的健康响应检查器
@@ -55,8 +55,19 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 		GetServerAddress:        func() string { return ServerAddress }, // 设置服务端地址
 		IsHealthy:               true,                                   // 初始状态设为健康
 		// RoundTripper:           transport,                   // 使用默认的传输器
-		UnHealthyFailDuration: UnHealthyFailDurationDefault,
-		UnHealthyFailMaxCount: UnHealthyFailMaxCountDefault,
+		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
+		UnHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
+	}
+	m.ServerConfigCommon = &ServerConfigImplement{
+		Identifier:              Identifier,
+		healthCheckIntervalMs:   healthCheckIntervalMsDefault,
+		UpstreamServerURL:       UpStreamServerURL,
+		IsHealthy:               true,
+		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
+		unHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
+		ActiveHealthyChecker:    ActiveHealthyCheckDefault,
+		RoundTripper:            m,
+		PassiveUnHealthyChecker: HealthyResponseCheckDefault,
 	}
 	for _, option := range options {
 		option(m)
@@ -69,8 +80,8 @@ type SingleHostHTTP3ClientOfAddress struct {
 	ServerConfigCommon      *ServerConfigImplement
 	UnHealthyFailMaxCount   int64
 	healthMutex             sync.Mutex
-	UnHealthyFailDuration   int64
-	HealthCheckInterval     int64
+	unHealthyFailDurationMs int64
+	healthCheckIntervalMs   int64
 	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	Identifier              string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
@@ -102,32 +113,32 @@ func (l *SingleHostHTTP3ClientOfAddress) GetLoadBalanceService() optional.Option
 
 // GetHealthyCheckInterval implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3ClientOfAddress) GetHealthyCheckInterval() int64 {
-	return l.HealthCheckInterval
+	return l.healthCheckIntervalMs
 }
 
-// GetUnHealthyFailDuration implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP3ClientOfAddress) GetUnHealthyFailDuration() int64 {
-	return l.UnHealthyFailDuration
+// GetunHealthyFailDurationMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GetunHealthyFailDurationMs() int64 {
+	return l.unHealthyFailDurationMs
 }
 
 // SetHealthyCheckInterval implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3ClientOfAddress) SetHealthyCheckInterval(interval int64) {
-	l.HealthCheckInterval = interval
+	l.healthCheckIntervalMs = interval
 }
 
-// SetUnHealthyFailDuration implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP3ClientOfAddress) SetUnHealthyFailDuration(Duration int64) {
-	l.UnHealthyFailDuration = Duration
+// SetunHealthyFailDurationMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) SetunHealthyFailDurationMs(Duration int64) {
+	l.unHealthyFailDurationMs = Duration
 }
 
-// GetHealthCheckInterval implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP3ClientOfAddress) GetHealthCheckInterval() int64 {
-	return l.HealthCheckInterval
+// GethealthCheckIntervalMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GethealthCheckIntervalMs() int64 {
+	return l.healthCheckIntervalMs
 }
 
-// SetHealthCheckInterval implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP3ClientOfAddress) SetHealthCheckInterval(maxAge int64) {
-	l.HealthCheckInterval = maxAge
+// SethealthCheckIntervalMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) SethealthCheckIntervalMs(maxAge int64) {
+	l.healthCheckIntervalMs = maxAge
 }
 
 // ActiveHealthyCheck 执行活跃的健康检查。

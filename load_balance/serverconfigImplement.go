@@ -12,7 +12,7 @@ type ServerConfigImplement struct {
 	UpstreamServerURL       string
 	IsHealthy               bool
 	healthCheckIntervalMs   int64
-	unHealthyFailDuration   int64
+	unHealthyFailDurationMs int64
 	unHealthyFailMaxCount   int64
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	RoundTripper            http.RoundTripper
@@ -61,12 +61,12 @@ func (s *ServerConfigImplement) GetHealthyCheckInterval() int64 {
 	return s.healthCheckIntervalMs
 }
 
-func (s *ServerConfigImplement) SetUnHealthyFailDuration(durationMs int64) {
-	s.unHealthyFailDuration = durationMs
+func (s *ServerConfigImplement) SetunHealthyFailDurationMs(durationMs int64) {
+	s.unHealthyFailDurationMs = durationMs
 }
 
-func (s *ServerConfigImplement) GetUnHealthyFailDuration() int64 {
-	return int64(s.unHealthyFailDuration)
+func (s *ServerConfigImplement) GetunHealthyFailDurationMs() int64 {
+	return int64(s.unHealthyFailDurationMs)
 }
 
 func (s *ServerConfigImplement) SetUnHealthyFailMaxCount(count int64) {

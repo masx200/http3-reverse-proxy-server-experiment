@@ -50,19 +50,19 @@ type ServerConfigCommon interface {
 	// 返回值：bool - 上游服务的被动健康状态（true为健康，false为不健康）
 	PassiveUnHealthyCheck(*http.Response) (bool, error)
 
-	// SetHealthCheckInterval 设置健康状态的缓存最大年龄。
+	// SethealthCheckIntervalMs 设置健康状态的缓存最大年龄。
 	// 参数:
 	//   int64 - 表示健康状态的缓存的最大年龄（单位：毫秒）。
 	SetHealthyCheckInterval(int64)
 	// 设置逻辑实现
 
-	// GetHealthCheckInterval 获取健康状态的缓存最大年龄。
+	// GethealthCheckIntervalMs 获取健康状态的缓存最大年龄。
 	// 返回值:
 	//   int64 - 健康状态的缓存的最大年龄（单位：毫秒）。
 	GetHealthyCheckInterval() int64
 	// 获取逻辑实现
 	/*
-		SetUnHealthyFailDuration 设置不健康状态失败持续时间。
+		SetunHealthyFailDurationMs 设置不健康状态失败持续时间。
 
 		参数:
 		- duration: int64类型，表示不健康状态失败的持续时间。
@@ -72,13 +72,13 @@ type ServerConfigCommon interface {
 
 		该函数用于设置一个指定的时间长度，在此时间长度内，如果组件或系统的状态持续不健康，则可能导致操作失败或系统视为异常。
 	*/
-	SetUnHealthyFailDuration(int64)
+	SetunHealthyFailDurationMs(int64)
 	// 设置逻辑实现
 
-	// GetHealthCheckInterval 获取健康状态的缓存最大年龄。
+	// GethealthCheckIntervalMs 获取健康状态的缓存最大年龄。
 	// 返回值:
 	//   int64 - 健康状态的缓存的最大年龄（单位：毫秒）。
-	GetUnHealthyFailDuration() int64
+	GetunHealthyFailDurationMs() int64
 
 	SetUnHealthyFailMaxCount(int64)
 

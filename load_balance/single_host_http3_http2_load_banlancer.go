@@ -238,6 +238,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) PassiveUnHealthyCheck(respon
 // 参数request为待发送的HTTP请求。
 // 返回值为执行请求后的HTTP响应及可能发生的错误。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
+	go l.LoadBalanceService.HealthyCheckStart()
 	return h3_experiment.CreateHTTP3TransportWithIPGetter(func() string {
 		return l.GetServerAddress()
 	}).RoundTrip(request)

@@ -64,7 +64,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 		IsHealthy:               true,                                   // 初始状态设为健康
 		// RoundTripper:         transport  , // 使用默认的传输器
 		HealthCheckInterval:   HealthCheckIntervalDefault,
-		UpStreams:             optional.Some(upstreammapinstance),
+		UpStreams:             (upstreammapinstance),
 		UnHealthyFailDuration: UnHealthyFailDurationDefault,
 	}
 	parsedURL2, err := url.Parse(UpStreamServerURL)
@@ -121,7 +121,7 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	// RoundTripper           func() http.RoundTripper                                       // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 
-	UpStreams optional.Option[generic.MapInterface[string, LoadBalanceAndUpStream]]
+	UpStreams generic.MapInterface[string, LoadBalanceAndUpStream]
 
 	LoadBalanceService *HTTP3HTTP2LoadBalancer
 }
@@ -219,15 +219,14 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
 
 	//random selection from upstreams
-	if l.UpStreams.IsSome() {
-		upstreams := l.UpStreams.Unwrap()
-		for _, value := range generic.RandomShuffle((upstreams.Entries())) {
 
-			if value.GetSecond().GetHealthy() {
-				return value.GetSecond(), nil
-			}
+	upstreams := l.UpStreams
+	for _, value := range generic.RandomShuffle((upstreams.Entries())) {
 
+		if value.GetSecond().GetHealthy() {
+			return value.GetSecond(), nil
 		}
+
 	}
 
 	return nil, errors.New("no healthy upstreams")
@@ -244,16 +243,18 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetHealthy(healthy bool) {
 // 用于获取上游服务的集合。
 // 此处因为是单主机客户端，所以返回空集合。
 // 返回值为上游服务集合的可选类型，此处始终返回None。
-func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUpStreams() optional.Option[generic.MapInterface[string, LoadBalanceAndUpStream]] {
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUpStreams() generic.MapInterface[string, LoadBalanceAndUpStream] {
 	return l.UpStreams
 }
 
-type HTTP3HTTP2LoadBalancer struct{}
+type HTTP3HTTP2LoadBalancer struct {
+	UpStreams generic.MapInterface[string, LoadBalanceAndUpStream]
+}
 
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
 // 该接口包括发送HTTP请求、健康检查、标识服务和标记健康状态等方法。
-func (HTTP3HTTP2LoadBalancer) GetUpStreams() generic.MapInterface[string, LoadBalanceAndUpStream] {
-	panic("not implemented") // TODO: Implement
+func (h *HTTP3HTTP2LoadBalancer) GetUpStreams() generic.MapInterface[string, LoadBalanceAndUpStream] {
+	return h.UpStreams
 }
 
 // 选择一个可用的上游服务器

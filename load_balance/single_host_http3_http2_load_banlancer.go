@@ -102,12 +102,27 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 	upstreammapinstance.Set(http3identifier, http3upstream)
 
 	var LoadBalanceServiceInstance *HTTP3HTTP2LoadBalancer = &HTTP3HTTP2LoadBalancer{
-		UpStreamsGetter: func() generic.MapInterface[string, LoadBalanceAndUpStream] { return upstreammapinstance }}
-	m.LoadBalanceService = LoadBalanceServiceInstance
-	LoadBalanceServiceInstance.SelectorAvailableServer = func() (LoadBalanceAndUpStream, error) {
+		UpStreamsGetter: func() generic.MapInterface[string, LoadBalanceAndUpStream] {
+			return upstreammapinstance
+		},
 
-		return m.SelectAvailableServer()
+		SelectorAvailableServer: func() (LoadBalanceAndUpStream, error) {
+
+			return m.SelectAvailableServer()
+		},
+		GetHealthyCheckInterval: func() int64 {
+
+			return m.GetHealthyCheckInterval()
+		}, SetHealthy: func(healthy bool) {
+			m.SetHealthy(healthy)
+		},
+		ActiveHealthyChecker: func() (bool, error) {
+
+			return m.ActiveHealthyCheck()
+		},
 	}
+	m.LoadBalanceService = LoadBalanceServiceInstance
+
 	for _, option := range options {
 		option(m)
 	}
@@ -256,7 +271,7 @@ type HTTP3HTTP2LoadBalancer struct {
 	UpStreamsGetter         func() generic.MapInterface[string, LoadBalanceAndUpStream]
 	SelectorAvailableServer func() (LoadBalanceAndUpStream, error)
 	GetHealthyCheckInterval func() int64
-	SetHealthyCallBack      func(healthy bool)
+	SetHealthy              func(healthy bool)
 	ActiveHealthyChecker    func() (bool, error)
 }
 

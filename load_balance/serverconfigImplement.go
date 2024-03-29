@@ -21,8 +21,13 @@ type ServerConfigImplement struct {
 	UnHealthyFailCount      int64
 }
 
-func ServerConfigImplementConstructor() ServerConfigCommon {
-	return &ServerConfigImplement{}
+func ServerConfigImplementConstructor(option ...func(*ServerConfigImplement)) ServerConfigCommon {
+	var s = &ServerConfigImplement{}
+	for _, callback := range option {
+		callback(s)
+
+	}
+	return s
 }
 
 // GetUnHealthyFailCount implements ServerConfigCommon.

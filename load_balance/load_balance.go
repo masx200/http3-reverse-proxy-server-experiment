@@ -30,6 +30,9 @@ type LoadBalanceAndUpStream interface {
 	GetServerConfigCommon() ServerConfigCommon
 }
 type ServerConfigCommon interface {
+	IncrementUnHealthyFailCount()
+	ResetUnHealthyFailCount()
+	GetUnHealthyFailCount() int64
 	GetUpStreamServerURL() string
 	ActiveHealthyCheck() (bool, error)
 

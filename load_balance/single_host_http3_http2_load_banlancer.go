@@ -252,8 +252,31 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetHealthy() bool {
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) PassiveUnHealthyCheck(response *http.Response) (bool, error) {
 	return l.PassiveUnHealthyChecker(response)
 }
-func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) OnUpstreamFailure(loadBalanceAndUpStream LoadBalanceAndUpStream) {
 
+// MarkUpstreamAsUnhealthy 标记上游服务为不健康。
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) MarkUpstreamAsUnhealthy(upstream LoadBalanceAndUpStream) {
+	upstream.GetServerConfigCommon().SetHealthy(false)
+	// 可能还会记录日志或其他通知机制，例如事件广播
+	log.Printf("Marking upstream '%s' as unhealthy due to consecutive failures ", upstream.GetServerConfigCommon().GetIdentifier())
+}
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) OnUpstreamFailure(loadBalanceAndUpStream LoadBalanceAndUpStream) {
+	failDuration := l.GetServerConfigCommon().GetUnHealthyFailDurationMs() * int64(time.Millisecond)
+	failCount := loadBalanceAndUpStream.GetServerConfigCommon().GetUnHealthyFailCount()
+
+	// 如果unHealthyFailDurationMs大于0并且当前失败次数+1超过unHealthyFailMaxCount，则标记上游服务为不健康
+	if l.unHealthyFailDurationMs > 0 && failCount >= l.UnHealthyFailMaxCount {
+		l.MarkUpstreamAsUnhealthy(loadBalanceAndUpStream)
+	} else if failCount == 1 { // 第一次失败时，启动计时器
+		go func() {
+			time.Sleep(time.Duration(failDuration))
+			if loadBalanceAndUpStream.GetServerConfigCommon().GetUnHealthyFailCount() == 1 { // 计时结束后，如果期间没有其他失败请求，则重置失败次数
+				loadBalanceAndUpStream.GetServerConfigCommon().ResetUnHealthyFailCount()
+			}
+		}()
+	}
+
+	// 更新失败次数
+	loadBalanceAndUpStream.GetServerConfigCommon().IncrementUnHealthyFailCount()
 }
 
 // HealthyResponseCheckDefault 检查HTTP响应是否表示服务健康。

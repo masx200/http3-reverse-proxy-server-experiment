@@ -19,6 +19,21 @@ type ServerConfigImplement struct {
 	PassiveUnHealthyChecker func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 }
 
+// GetUnHealthyFailCount implements ServerConfigCommon.
+func (s *ServerConfigImplement) GetUnHealthyFailCount() int64 {
+	panic("unimplemented")
+}
+
+// IncrementUnHealthyFailCount implements ServerConfigCommon.
+func (s *ServerConfigImplement) IncrementUnHealthyFailCount() {
+	panic("unimplemented")
+}
+
+// ResetUnHealthyFailCount implements ServerConfigCommon.
+func (s *ServerConfigImplement) ResetUnHealthyFailCount() {
+	panic("unimplemented")
+}
+
 func (s *ServerConfigImplement) GetUpStreamServerURL() string {
 	return s.UpstreamServerURL
 }

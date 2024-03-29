@@ -109,6 +109,7 @@ const UnHealthyFailDurationDefault = 10 * 1000
 
 // SingleHostHTTP12ClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP12ClientOfAddress struct {
+	ServerConfigCommon      *ServerConfigImplement
 	UnHealthyFailDuration   int64
 	HealthCheckInterval     int64
 	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
@@ -124,7 +125,7 @@ type SingleHostHTTP12ClientOfAddress struct {
 
 // GetServerConfigCommon implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP12ClientOfAddress) GetServerConfigCommon() ServerConfigCommon {
-	panic("unimplemented")
+	return l.ServerConfigCommon
 }
 
 // GetUnHealthyFailMaxCount implements LoadBalanceAndUpStream.

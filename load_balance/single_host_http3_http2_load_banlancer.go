@@ -157,11 +157,13 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	UpStreams generic.MapInterface[string, LoadBalanceAndUpStream]
 
 	LoadBalanceService *HTTP3HTTP2LoadBalancer
+
+	ServerConfigCommon *ServerConfigImplement
 }
 
 // GetServerConfigCommon implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetServerConfigCommon() ServerConfigCommon {
-	panic("unimplemented")
+	return l.ServerConfigCommon
 }
 
 // GetUnHealthyFailMaxCount implements LoadBalanceAndUpStream.

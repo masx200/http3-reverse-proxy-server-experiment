@@ -66,6 +66,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP3ClientOfAddress struct {
+	ServerConfigCommon      *ServerConfigImplement
 	UnHealthyFailMaxCount   int64
 	healthMutex             sync.Mutex
 	UnHealthyFailDuration   int64
@@ -81,7 +82,7 @@ type SingleHostHTTP3ClientOfAddress struct {
 
 // GetServerConfigCommon implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3ClientOfAddress) GetServerConfigCommon() ServerConfigCommon {
-	panic("unimplemented")
+	return l.ServerConfigCommon
 }
 
 // GetUnHealthyFailMaxCount implements LoadBalanceAndUpStream.

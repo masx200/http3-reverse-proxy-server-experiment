@@ -252,6 +252,9 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetHealthy() bool {
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) PassiveUnHealthyCheck(response *http.Response) (bool, error) {
 	return l.PassiveUnHealthyChecker(response)
 }
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) OnUpstreamFailure(loadBalanceAndUpStream LoadBalanceAndUpStream) {
+
+}
 
 // HealthyResponseCheckDefault 检查HTTP响应是否表示服务健康。
 //

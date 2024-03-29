@@ -177,7 +177,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SelectAvailableServer() (Loa
 	//random selection from upstreams
 	if l.UpStreams.IsSome() {
 		upstreams := l.UpStreams.Unwrap()
-		for _, value := range upstreams.Entries() {
+		for _, value := range generic.RandomShuffle((upstreams.Entries())) {
 
 			if value.GetSecond().GetHealthy() {
 				return value.GetSecond(), nil

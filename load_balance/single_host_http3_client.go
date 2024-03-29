@@ -160,7 +160,7 @@ func (l *SingleHostHTTP3ClientOfAddress) RoundTrip(request *http.Request) (*http
 // 用于选择可用的服务实例。
 // 返回值为可用的服务实例（此处始终为自身）及可能发生的错误。
 func (l *SingleHostHTTP3ClientOfAddress) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
-	return nil, fmt.Errorf("no upstream")
+	return nil, fmt.Errorf("no upstream available")
 }
 
 // SetHealthy 实现了LoadBalanceAndUpStream接口的SetHealthy方法，

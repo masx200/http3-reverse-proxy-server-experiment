@@ -95,13 +95,13 @@ func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL str
 		GetServerAddress:        func() string { return ServerAddress }, // 设置服务端地址
 		IsHealthy:               true,                                   // 初始状态设为健康
 		// RoundTripper:           transport,                   // 使用默认的传输器
-		healthCheckIntervalMs:   healthCheckIntervalMsDefault,
+		HealthCheckIntervalMs:   HealthCheckIntervalMsDefault,
 		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
 		UnHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
 	}
 	m.ServerConfigCommon = &ServerConfigImplement{
 		Identifier:              Identifier,
-		healthCheckIntervalMs:   healthCheckIntervalMsDefault,
+		HealthCheckIntervalMs:   HealthCheckIntervalMsDefault,
 		UpstreamServerURL:       UpStreamServerURL,
 		IsHealthy:               true,
 		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
@@ -122,11 +122,11 @@ const unHealthyFailDurationMsDefault = 10 * 1000
 type SingleHostHTTP12ClientOfAddress struct {
 	ServerConfigCommon      *ServerConfigImplement
 	unHealthyFailDurationMs int64
-	healthCheckIntervalMs   int64
+	HealthCheckIntervalMs   int64
 	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	Identifier              string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
-	healthMutex             sync.Mutex
+	HealthMutex             sync.Mutex
 	IsHealthy               bool                                        // 健康状态，标识当前客户端是否被视为健康。
 	PassiveUnHealthyChecker func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	// RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
@@ -156,7 +156,7 @@ func (l *SingleHostHTTP12ClientOfAddress) GetLoadBalanceService() optional.Optio
 
 // GetHealthyCheckInterval implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP12ClientOfAddress) GetHealthyCheckInterval() int64 {
-	return l.healthCheckIntervalMs
+	return l.HealthCheckIntervalMs
 }
 
 // GetunHealthyFailDurationMs implements LoadBalanceAndUpStream.
@@ -166,24 +166,24 @@ func (l *SingleHostHTTP12ClientOfAddress) GetunHealthyFailDurationMs() int64 {
 
 // SetHealthyCheckInterval implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP12ClientOfAddress) SetHealthyCheckInterval(interval int64) {
-	l.healthCheckIntervalMs = interval
+	l.HealthCheckIntervalMs = interval
 }
 
-// SetunHealthyFailDurationMs implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP12ClientOfAddress) SetunHealthyFailDurationMs(Duration int64) {
+// SetUnHealthyFailDurationMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) SetUnHealthyFailDurationMs(Duration int64) {
 	l.unHealthyFailDurationMs = Duration
 }
 
-// GethealthCheckIntervalMs implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP12ClientOfAddress) GethealthCheckIntervalMs() int64 {
+// GetHealthCheckIntervalMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) GetHealthCheckIntervalMs() int64 {
 
-	return l.healthCheckIntervalMs
+	return l.HealthCheckIntervalMs
 }
 
-// SethealthCheckIntervalMs implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP12ClientOfAddress) SethealthCheckIntervalMs(maxAge int64) {
+// SetHealthCheckIntervalMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) SetHealthCheckIntervalMs(maxAge int64) {
 
-	l.healthCheckIntervalMs = maxAge
+	l.HealthCheckIntervalMs = maxAge
 }
 
 // ActiveHealthyCheck 执行活跃的健康检查。
@@ -204,8 +204,8 @@ func (l *SingleHostHTTP12ClientOfAddress) GetIdentifier() string {
 // 实现了 LoadBalanceAndUpStream 接口。
 // 返回值：当前客户端是否处于健康状态（bool类型）。
 func (l *SingleHostHTTP12ClientOfAddress) GetHealthy() bool {
-	l.healthMutex.Lock()
-	defer l.healthMutex.Unlock()
+	l.HealthMutex.Lock()
+	defer l.HealthMutex.Unlock()
 	return l.IsHealthy
 }
 
@@ -259,8 +259,8 @@ func (l *SingleHostHTTP12ClientOfAddress) SelectAvailableServer() (LoadBalanceAn
 // 用于设置客户端的健康状态。
 // 参数healthy为true表示客户端健康，为false表示客户端不健康。
 func (l *SingleHostHTTP12ClientOfAddress) SetHealthy(healthy bool) {
-	l.healthMutex.Lock()
-	defer l.healthMutex.Unlock()
+	l.HealthMutex.Lock()
+	defer l.HealthMutex.Unlock()
 	l.IsHealthy = healthy
 }
 

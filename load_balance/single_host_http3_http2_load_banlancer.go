@@ -71,7 +71,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 		GetServerAddress:        func() string { return ServerAddress }, //      ServerAddress,               // 设置服务端地址
 		IsHealthy:               true,                                   // 初始状态设为健康
 		// RoundTripper:         transport  , // 使用默认的传输器
-		healthCheckIntervalMs:   healthCheckIntervalMsDefault,
+		HealthCheckIntervalMs:   HealthCheckIntervalMsDefault,
 		UpStreams:               (upstreammapinstance),
 		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
 		UnHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
@@ -134,7 +134,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 	m.LoadBalanceService = LoadBalanceServiceInstance
 	m.ServerConfigCommon = &ServerConfigImplement{
 		Identifier:              Identifier,
-		healthCheckIntervalMs:   healthCheckIntervalMsDefault,
+		HealthCheckIntervalMs:   HealthCheckIntervalMsDefault,
 		UpstreamServerURL:       UpStreamServerURL,
 		IsHealthy:               true,
 		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
@@ -153,11 +153,11 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	UnHealthyFailMaxCount int64
 	//毫秒
-	healthCheckIntervalMs   int64
+	HealthCheckIntervalMs   int64
 	unHealthyFailDurationMs int64
 	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
-	healthMutex             sync.Mutex
+	HealthMutex             sync.Mutex
 	Identifier              string                                      // 标识符，用于标识此HTTP客户端的唯一字符串。
 	IsHealthy               bool                                        // 健康状态，标识当前客户端是否被视为健康。
 	PassiveUnHealthyChecker func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
@@ -193,7 +193,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetLoadBalanceService() opti
 
 // GetHealthyCheckInterval implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetHealthyCheckInterval() int64 {
-	return l.healthCheckIntervalMs
+	return l.HealthCheckIntervalMs
 }
 
 // GetunHealthyFailDurationMs implements LoadBalanceAndUpStream.
@@ -203,22 +203,22 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetunHealthyFailDurationMs()
 
 // SetHealthyCheckInterval implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetHealthyCheckInterval(interval int64) {
-	l.healthCheckIntervalMs = interval
+	l.HealthCheckIntervalMs = interval
 }
 
-// SetunHealthyFailDurationMs implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetunHealthyFailDurationMs(Duration int64) {
+// SetUnHealthyFailDurationMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetUnHealthyFailDurationMs(Duration int64) {
 	l.unHealthyFailDurationMs = Duration
 }
 
-// GethealthCheckIntervalMs implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GethealthCheckIntervalMs() int64 {
-	return l.healthCheckIntervalMs
+// GetHealthCheckIntervalMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetHealthCheckIntervalMs() int64 {
+	return l.HealthCheckIntervalMs
 }
 
-// SethealthCheckIntervalMs implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SethealthCheckIntervalMs(maxAge int64) {
-	l.healthCheckIntervalMs = maxAge
+// SetHealthCheckIntervalMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetHealthCheckIntervalMs(maxAge int64) {
+	l.HealthCheckIntervalMs = maxAge
 }
 
 // ActiveHealthyCheck 执行活跃的健康检查。
@@ -240,8 +240,8 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetIdentifier() string {
 // 返回值：当前客户端是否处于健康状态（bool类型）。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetHealthy() bool {
 
-	l.healthMutex.Lock()
-	defer l.healthMutex.Unlock()
+	l.HealthMutex.Lock()
+	defer l.HealthMutex.Unlock()
 	return l.IsHealthy
 }
 
@@ -317,8 +317,8 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SelectAvailableServer() (Loa
 // 用于设置客户端的健康状态。
 // 参数healthy为true表示客户端健康，为false表示客户端不健康。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetHealthy(healthy bool) {
-	l.healthMutex.Lock()
-	defer l.healthMutex.Unlock()
+	l.HealthMutex.Lock()
+	defer l.HealthMutex.Unlock()
 
 	l.IsHealthy = healthy
 }
@@ -338,7 +338,7 @@ type HTTP3HTTP2LoadBalancer struct {
 	GetHealthyCheckInterval     func() int64
 	SetHealthy                  func(healthy bool)
 	ActiveHealthyChecker        func() (bool, error)
-	healthCheckIntervalMsTicker *time.Ticker
+	HealthCheckIntervalMsTicker *time.Ticker
 	healthCheckRunning          bool
 	mu                          sync.Mutex // 添加互斥锁，确保并发安全
 }
@@ -365,7 +365,7 @@ func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
 	}
 
 	interval := time.Duration(h.GetHealthyCheckInterval()) * time.Millisecond
-	h.healthCheckIntervalMsTicker = time.NewTicker(interval)
+	h.HealthCheckIntervalMsTicker = time.NewTicker(interval)
 	go h.runPeriodicHealthChecks()
 
 	h.healthCheckRunning = true
@@ -388,7 +388,7 @@ type HealthCheckResult struct {
 // runPeriodicHealthChecks 开启周期性健康检查。
 // 此函数为循环执行，不断对上游服务进行健康检查，并根据检查结果更新服务的健康状态。
 func (h *HTTP3HTTP2LoadBalancer) runPeriodicHealthChecks() {
-	for range h.healthCheckIntervalMsTicker.C {
+	for range h.HealthCheckIntervalMsTicker.C {
 		// 对每个上游服务执行健康检查
 		upstreams := h.UpStreamsGetter()
 		iterator := upstreams.Iterator()
@@ -438,7 +438,7 @@ func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStop() {
 		return
 	}
 
-	h.healthCheckIntervalMsTicker.Stop()
+	h.HealthCheckIntervalMsTicker.Stop()
 	h.healthCheckRunning = false
 	log.Println("健康检查已停止.")
 }

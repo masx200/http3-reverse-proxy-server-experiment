@@ -8,10 +8,10 @@ import (
 
 type ServerConfigImplement struct {
 	Identifier              string
-	healthMutex             sync.Mutex
+	HealthMutex             sync.Mutex
 	UpstreamServerURL       string
 	IsHealthy               bool
-	healthCheckIntervalMs   int64
+	HealthCheckIntervalMs   int64
 	unHealthyFailDurationMs int64
 	unHealthyFailMaxCount   int64
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
@@ -35,14 +35,14 @@ func (s *ServerConfigImplement) GetIdentifier() string {
 }
 
 func (s *ServerConfigImplement) GetHealthy() bool {
-	s.healthMutex.Lock()
-	defer s.healthMutex.Unlock()
+	s.HealthMutex.Lock()
+	defer s.HealthMutex.Unlock()
 	return s.IsHealthy
 }
 
 func (s *ServerConfigImplement) SetHealthy(healthStatus bool) {
-	s.healthMutex.Lock()
-	defer s.healthMutex.Unlock()
+	s.HealthMutex.Lock()
+	defer s.HealthMutex.Unlock()
 	s.IsHealthy = healthStatus
 }
 
@@ -54,14 +54,14 @@ func (s *ServerConfigImplement) PassiveUnHealthyCheck(response *http.Response) (
 }
 
 func (s *ServerConfigImplement) SetHealthyCheckInterval(intervalMs int64) {
-	s.healthCheckIntervalMs = intervalMs
+	s.HealthCheckIntervalMs = intervalMs
 }
 
 func (s *ServerConfigImplement) GetHealthyCheckInterval() int64 {
-	return s.healthCheckIntervalMs
+	return s.HealthCheckIntervalMs
 }
 
-func (s *ServerConfigImplement) SetunHealthyFailDurationMs(durationMs int64) {
+func (s *ServerConfigImplement) SetUnHealthyFailDurationMs(durationMs int64) {
 	s.unHealthyFailDurationMs = durationMs
 }
 

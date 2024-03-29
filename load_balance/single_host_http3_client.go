@@ -116,8 +116,8 @@ func (l *SingleHostHTTP3ClientOfAddress) GetHealthyCheckInterval() int64 {
 	return l.HealthCheckIntervalMs
 }
 
-// GetunHealthyFailDurationMs implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP3ClientOfAddress) GetunHealthyFailDurationMs() int64 {
+// GetUnHealthyFailDurationMs implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GetUnHealthyFailDurationMs() int64 {
 	return l.unHealthyFailDurationMs
 }
 

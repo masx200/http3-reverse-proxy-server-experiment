@@ -65,7 +65,7 @@ func (s *ServerConfigImplement) SetUnHealthyFailDurationMs(durationMs int64) {
 	s.unHealthyFailDurationMs = durationMs
 }
 
-func (s *ServerConfigImplement) GetunHealthyFailDurationMs() int64 {
+func (s *ServerConfigImplement) GetUnHealthyFailDurationMs() int64 {
 	return int64(s.unHealthyFailDurationMs)
 }
 

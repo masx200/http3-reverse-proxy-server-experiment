@@ -78,7 +78,7 @@ type ServerConfigCommon interface {
 	// GetHealthCheckIntervalMs 获取健康状态的缓存最大年龄。
 	// 返回值:
 	//   int64 - 健康状态的缓存的最大年龄（单位：毫秒）。
-	GetunHealthyFailDurationMs() int64
+	GetUnHealthyFailDurationMs() int64
 
 	SetUnHealthyFailMaxCount(int64)
 

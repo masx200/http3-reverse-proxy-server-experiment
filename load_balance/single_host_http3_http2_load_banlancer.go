@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	// "sync/atomic"
 	"time"
 
 	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
@@ -69,6 +70,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 		UpStreams:             (upstreammapinstance),
 		UnHealthyFailDuration: UnHealthyFailDurationDefault,
 	}
+	// m.IsHealthy.Store(true)
 	parsedURL2, err := url.Parse(UpStreamServerURL)
 	if err != nil {
 		return nil, err
@@ -138,9 +140,10 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	UnHealthyFailDuration   int64
 	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
-	Identifier              string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
-	IsHealthy               bool                                                           // 健康状态，标识当前客户端是否被视为健康。
-	PassiveUnHealthyChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
+	healthMutex             sync.Mutex
+	Identifier              string                                      // 标识符，用于标识此HTTP客户端的唯一字符串。
+	IsHealthy               bool                                        // 健康状态，标识当前客户端是否被视为健康。
+	PassiveUnHealthyChecker func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	// RoundTripper           func() http.RoundTripper                                       // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 
@@ -202,6 +205,8 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetIdentifier() string {
 // 实现了 LoadBalanceAndUpStream 接口。
 // 返回值：当前客户端是否处于健康状态（bool类型）。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetHealthy() bool {
+	l.healthMutex.Lock()
+	defer l.healthMutex.Unlock()
 	return l.IsHealthy
 }
 
@@ -259,6 +264,8 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SelectAvailableServer() (Loa
 // 用于设置客户端的健康状态。
 // 参数healthy为true表示客户端健康，为false表示客户端不健康。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetHealthy(healthy bool) {
+	l.healthMutex.Lock()
+	defer l.healthMutex.Unlock()
 	l.IsHealthy = healthy
 }
 
@@ -310,23 +317,59 @@ func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
 	h.healthCheckRunning = true
 	log.Printf("健康检查已启动，间隔时间为 %v", interval)
 }
+
+type HealthCheckResult struct {
+	key     string
+	healthy bool
+	err     error
+	svc     LoadBalanceAndUpStream
+}
+
+// runPeriodicHealthChecks 开启周期性健康检查。
+// 此函数为循环执行，不断对上游服务进行健康检查，并根据检查结果更新服务的健康状态。
 func (h *HTTP3HTTP2LoadBalancer) runPeriodicHealthChecks() {
 	for range h.healthCheckIntervalTicker.C {
 		// 对每个上游服务执行健康检查
 		upstreams := h.UpStreamsGetter()
-		for _, upstream := range upstreams.Entries() {
-			var key = upstream.GetFirst()
-			healthy, err := upstream.GetSecond().ActiveHealthyCheck()
-			if err != nil || !healthy {
-				log.Printf("上游服务 %s 在健康检查时发生错误: %v", key, err)
+		iterator := upstreams.Iterator()
+		results := make(chan HealthCheckResult, (upstreams).Size())
+		for {
+			var upstream, o = iterator.Next()
+			if o {
+				key := upstream.GetFirst()
+				upstreamSvc := upstream.GetSecond()
 
-				log.Printf("上游服务 %s 不健康", upstream.GetSecond().GetIdentifier())
-				// 根据实际情况更新健康状态并处理不健康的服务
-				upstream.GetSecond().SetHealthy(false)
-				// 可能需要从负载均衡中暂时移除不健康的服务
+				go func(key string, svc LoadBalanceAndUpStream) {
+					healthy, err := svc.ActiveHealthyCheck()
+					results <- HealthCheckResult{key, healthy, err, svc}
+				}(key, upstreamSvc)
+				//var key = upstream.GetFirst()
+				// healthy, err := upstream.GetSecond().ActiveHealthyCheck()
+				// if err != nil || !healthy {
+				// 	log.Printf("上游服务 %s 在健康检查时发生错误: %v", key, err)
+
+				// 	log.Printf("上游服务 %s 不健康", upstream.GetSecond().GetIdentifier())
+				// 	// 根据实际情况更新健康状态并处理不健康的服务
+				// 	upstream.GetSecond().SetHealthy(false)
+				// 	// 可能需要从负载均衡中暂时移除不健康的服务
+				// } else {
+				// 	log.Printf("上游服务 %s 健康", key)
+				// 	upstream.GetSecond().SetHealthy(true)
+				// }
 			} else {
-				log.Printf("上游服务 %s 健康", key)
-				upstream.GetSecond().SetHealthy(true)
+				break
+			}
+		}
+		for i := 0; i < len(results); i++ {
+			result := <-results
+			if result.err != nil || !result.healthy {
+				log.Printf("上游服务 %s 在健康检查时发生错误: %v", result.key, result.err)
+				log.Printf("上游服务 %s 不健康", result.svc.GetIdentifier())
+
+				result.svc.SetHealthy(false)
+			} else {
+				log.Printf("上游服务 %s 健康", result.key)
+				result.svc.SetHealthy(true)
 			}
 		}
 	}

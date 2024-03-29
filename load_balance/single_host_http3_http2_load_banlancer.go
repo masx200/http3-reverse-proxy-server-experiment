@@ -101,7 +101,8 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 	upstreammapinstance.Set(http2identifier, http2upstream)
 	upstreammapinstance.Set(http3identifier, http3upstream)
 
-	var LoadBalanceServiceInstance *HTTP3HTTP2LoadBalancer = &HTTP3HTTP2LoadBalancer{UpStreams: upstreammapinstance}
+	var LoadBalanceServiceInstance *HTTP3HTTP2LoadBalancer = &HTTP3HTTP2LoadBalancer{
+		UpStreamsGetter: func() generic.MapInterface[string, LoadBalanceAndUpStream] { return upstreammapinstance }}
 	m.LoadBalanceService = LoadBalanceServiceInstance
 	LoadBalanceServiceInstance.SelectorAvailableServer = func() (LoadBalanceAndUpStream, error) {
 
@@ -252,14 +253,17 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUpStreams() generic.MapIn
 }
 
 type HTTP3HTTP2LoadBalancer struct {
-	UpStreams               generic.MapInterface[string, LoadBalanceAndUpStream]
+	UpStreamsGetter         func() generic.MapInterface[string, LoadBalanceAndUpStream]
 	SelectorAvailableServer func() (LoadBalanceAndUpStream, error)
+	GetHealthyCheckInterval func() int64
+	SetHealthyCallBack      func(healthy bool)
+	ActiveHealthyChecker    func() (bool, error)
 }
 
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
 // 该接口包括发送HTTP请求、健康检查、标识服务和标记健康状态等方法。
 func (h *HTTP3HTTP2LoadBalancer) GetUpStreams() generic.MapInterface[string, LoadBalanceAndUpStream] {
-	return h.UpStreams
+	return h.UpStreamsGetter()
 }
 
 // 选择一个可用的上游服务器

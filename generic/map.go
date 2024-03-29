@@ -38,16 +38,24 @@ func NewMapImplement[T comparable, Y any](entries ...PairInterface[T, Y]) MapInt
 }
 
 type MapIterator[T comparable, Y any] struct {
-	data map[T]Y
+	entries []PairInterface[T, Y]
+	index   int64
+	size    int64
 }
 
 // Next implements Iterator.
 func (m *MapIterator[T, Y]) Next() IteratorResult[PairInterface[T, Y]] {
-	panic("unimplemented")
+
+	if m.index < m.size {
+		entry := m.entries[m.index]
+		m.index++
+		return &IteratorResultImplement[PairInterface[T, Y]]{Done: false, Value: entry}
+	}
+	return &IteratorResultImplement[PairInterface[T, Y]]{Done: true, Value: nil}
 }
 
 func (m *MapImplement[T, Y]) Iterator() Iterator[PairInterface[T, Y]] {
-	return &MapIterator[T, Y]{data: m.data}
+	return &MapIterator[T, Y]{entries: m.Entries(), size: m.Size(), index: 0}
 }
 func (m *MapImplement[T, Y]) Clear() {
 	m.data = make(map[T]Y)

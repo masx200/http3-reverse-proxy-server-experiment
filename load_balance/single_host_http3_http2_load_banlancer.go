@@ -132,17 +132,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 		},
 	}
 	m.LoadBalanceService = LoadBalanceServiceInstance
-	m.ServerConfigCommon = &ServerConfigImplement{
-		Identifier:              Identifier,
-		HealthCheckIntervalMs:   HealthCheckIntervalMsDefault,
-		UpstreamServerURL:       UpStreamServerURL,
-		IsHealthy:               true,
-		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
-		unHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
-		ActiveHealthyChecker:    ActiveHealthyCheckDefault,
-		RoundTripper:            m,
-		PassiveUnHealthyChecker: HealthyResponseCheckDefault,
-	}
+	m.ServerConfigCommon = ServerConfigImplementConstructor(m.Identifier, m.UpStreamServerURL, m)
 	for _, option := range options {
 		option(m)
 	}
@@ -168,7 +158,7 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 
 	LoadBalanceService *HTTP3HTTP2LoadBalancer
 
-	ServerConfigCommon *ServerConfigImplement
+	ServerConfigCommon ServerConfigCommon
 }
 
 // GetServerConfigCommon implements LoadBalanceAndUpStream.

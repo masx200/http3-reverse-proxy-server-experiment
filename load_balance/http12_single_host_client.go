@@ -99,17 +99,7 @@ func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL str
 		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
 		UnHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
 	}
-	m.ServerConfigCommon = &ServerConfigImplement{
-		Identifier:              Identifier,
-		HealthCheckIntervalMs:   HealthCheckIntervalMsDefault,
-		UpstreamServerURL:       UpStreamServerURL,
-		IsHealthy:               true,
-		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
-		unHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
-		ActiveHealthyChecker:    ActiveHealthyCheckDefault,
-		RoundTripper:            m,
-		PassiveUnHealthyChecker: HealthyResponseCheckDefault,
-	}
+	m.ServerConfigCommon = ServerConfigImplementConstructor(m.Identifier, m.UpStreamServerURL, m)
 	for _, option := range options {
 		option(m)
 	}
@@ -120,7 +110,7 @@ const unHealthyFailDurationMsDefault = 10 * 1000
 
 // SingleHostHTTP12ClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP12ClientOfAddress struct {
-	ServerConfigCommon      *ServerConfigImplement
+	ServerConfigCommon      ServerConfigCommon
 	unHealthyFailDurationMs int64
 	HealthCheckIntervalMs   int64
 	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。

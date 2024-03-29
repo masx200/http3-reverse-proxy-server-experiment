@@ -58,17 +58,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
 		UnHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
 	}
-	m.ServerConfigCommon = &ServerConfigImplement{
-		Identifier:              Identifier,
-		HealthCheckIntervalMs:   HealthCheckIntervalMsDefault,
-		UpstreamServerURL:       UpStreamServerURL,
-		IsHealthy:               true,
-		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
-		unHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
-		ActiveHealthyChecker:    ActiveHealthyCheckDefault,
-		RoundTripper:            m,
-		PassiveUnHealthyChecker: HealthyResponseCheckDefault,
-	}
+	m.ServerConfigCommon = ServerConfigImplementConstructor(m.Identifier, m.UpStreamServerURL, m)
 	for _, option := range options {
 		option(m)
 	}
@@ -77,7 +67,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP3ClientOfAddress struct {
-	ServerConfigCommon      *ServerConfigImplement
+	ServerConfigCommon      ServerConfigCommon
 	UnHealthyFailMaxCount   int64
 	HealthMutex             sync.Mutex
 	unHealthyFailDurationMs int64

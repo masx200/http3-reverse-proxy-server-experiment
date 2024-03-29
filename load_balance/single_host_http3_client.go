@@ -15,6 +15,7 @@ import (
 	optional "github.com/moznion/go-optional"
 )
 
+const UnHealthyFailMaxCountDefault = 5
 const HealthCheckIntervalDefault = 10 * 1000
 
 // ActiveHealthyCheckDefault 执行一个主动的健康检查，默认使用HEAD请求对给定的URL进行检查。
@@ -55,6 +56,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 		IsHealthy:               true,                                   // 初始状态设为健康
 		// RoundTripper:           transport,                   // 使用默认的传输器
 		UnHealthyFailDuration: UnHealthyFailDurationDefault,
+		UnHealthyFailMaxCount: UnHealthyFailMaxCountDefault,
 	}
 	for _, option := range options {
 		option(m)
@@ -64,6 +66,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP3ClientOfAddress struct {
+	UnHealthyFailMaxCount   int64
 	healthMutex             sync.Mutex
 	UnHealthyFailDuration   int64
 	HealthCheckInterval     int64
@@ -74,6 +77,16 @@ type SingleHostHTTP3ClientOfAddress struct {
 	PassiveUnHealthyChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	// RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
+}
+
+// GetUnHealthyFailMaxCount implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GetUnHealthyFailMaxCount() int64 {
+	return l.UnHealthyFailMaxCount
+}
+
+// SetUnHealthyFailMaxCount implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) SetUnHealthyFailMaxCount(count int64) {
+	l.UnHealthyFailMaxCount = count
 }
 
 // GetLoadBalanceService implements LoadBalanceAndUpStream.

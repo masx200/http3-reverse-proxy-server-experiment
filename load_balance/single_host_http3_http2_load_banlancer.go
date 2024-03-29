@@ -74,6 +74,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 		HealthCheckInterval:   HealthCheckIntervalDefault,
 		UpStreams:             (upstreammapinstance),
 		UnHealthyFailDuration: UnHealthyFailDurationDefault,
+		UnHealthyFailMaxCount: UnHealthyFailMaxCountDefault,
 	}
 	// m.IsHealthy.Store(true)
 	parsedURL2, err := url.Parse(UpStreamServerURL)
@@ -140,6 +141,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
+	UnHealthyFailMaxCount int64
 	//毫秒
 	HealthCheckInterval     int64
 	UnHealthyFailDuration   int64
@@ -155,6 +157,16 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	UpStreams generic.MapInterface[string, LoadBalanceAndUpStream]
 
 	LoadBalanceService *HTTP3HTTP2LoadBalancer
+}
+
+// GetUnHealthyFailMaxCount implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUnHealthyFailMaxCount() int64 {
+	return l.UnHealthyFailMaxCount
+}
+
+// SetUnHealthyFailMaxCount implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetUnHealthyFailMaxCount(count int64) {
+	l.UnHealthyFailMaxCount = count
 }
 
 // GetLoadBalanceService implements LoadBalanceAndUpStream.

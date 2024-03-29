@@ -72,6 +72,10 @@ type LoadBalanceAndUpStream interface {
 	// 返回值:
 	//   int64 - 健康状态的缓存的最大年龄（单位：毫秒）。
 	GetUnHealthyFailDuration() int64
+
+	SetUnHealthyFailMaxCount(int64)
+
+	GetUnHealthyFailMaxCount() int64
 	GetLoadBalanceService() optional.Option[LoadBalanceService]
 }
 

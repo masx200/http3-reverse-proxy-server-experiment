@@ -97,6 +97,7 @@ func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL str
 		// RoundTripper:           transport,                   // 使用默认的传输器
 		HealthCheckInterval:   HealthCheckIntervalDefault,
 		UnHealthyFailDuration: UnHealthyFailDurationDefault,
+		UnHealthyFailMaxCount: UnHealthyFailMaxCountDefault,
 	}
 	for _, option := range options {
 		option(m)
@@ -117,7 +118,18 @@ type SingleHostHTTP12ClientOfAddress struct {
 	IsHealthy               bool                                        // 健康状态，标识当前客户端是否被视为健康。
 	PassiveUnHealthyChecker func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	// RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
-	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
+	UpStreamServerURL     string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
+	UnHealthyFailMaxCount int64
+}
+
+// GetUnHealthyFailMaxCount implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) GetUnHealthyFailMaxCount() int64 {
+	return l.UnHealthyFailMaxCount
+}
+
+// SetUnHealthyFailMaxCount implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) SetUnHealthyFailMaxCount(count int64) {
+	l.UnHealthyFailMaxCount = count
 }
 
 // GetLoadBalanceService implements LoadBalanceAndUpStream.

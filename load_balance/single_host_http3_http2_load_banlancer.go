@@ -101,8 +101,12 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 	upstreammapinstance.Set(http2identifier, http2upstream)
 	upstreammapinstance.Set(http3identifier, http3upstream)
 
-	var LoadBalanceService *HTTP3HTTP2LoadBalancer = &HTTP3HTTP2LoadBalancer{}
-	m.LoadBalanceService = LoadBalanceService
+	var LoadBalanceServiceInstance *HTTP3HTTP2LoadBalancer = &HTTP3HTTP2LoadBalancer{UpStreams: upstreammapinstance}
+	m.LoadBalanceService = LoadBalanceServiceInstance
+	LoadBalanceServiceInstance.SelectorAvailableServer = func() (LoadBalanceAndUpStream, error) {
+
+		return m.SelectAvailableServer()
+	}
 	for _, option := range options {
 		option(m)
 	}
@@ -248,7 +252,8 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUpStreams() generic.MapIn
 }
 
 type HTTP3HTTP2LoadBalancer struct {
-	UpStreams generic.MapInterface[string, LoadBalanceAndUpStream]
+	UpStreams               generic.MapInterface[string, LoadBalanceAndUpStream]
+	SelectorAvailableServer func() (LoadBalanceAndUpStream, error)
 }
 
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
@@ -259,18 +264,18 @@ func (h *HTTP3HTTP2LoadBalancer) GetUpStreams() generic.MapInterface[string, Loa
 
 // 选择一个可用的上游服务器
 // 参数：
-func (HTTP3HTTP2LoadBalancer) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
+func (h *HTTP3HTTP2LoadBalancer) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
+func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
 	panic("not implemented") // TODO: Implement
 }
 
-func (HTTP3HTTP2LoadBalancer) HealthyCheckRunning() bool {
+func (h *HTTP3HTTP2LoadBalancer) HealthyCheckRunning() bool {
 	panic("not implemented") // TODO: Implement
 }
 
-func (HTTP3HTTP2LoadBalancer) HealthyCheckStop() {
+func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStop() {
 	panic("not implemented") // TODO: Implement
 }

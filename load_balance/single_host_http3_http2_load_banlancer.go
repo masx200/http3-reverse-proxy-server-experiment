@@ -100,10 +100,12 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 	}
 	upstreammapinstance.Set(http2identifier, http2upstream)
 	upstreammapinstance.Set(http3identifier, http3upstream)
+
+	var LoadBalanceService *HTTP3HTTP2LoadBalancer = &HTTP3HTTP2LoadBalancer{}
+	m.LoadBalanceService = LoadBalanceService
 	for _, option := range options {
 		option(m)
 	}
-
 	return m, nil
 }
 
@@ -120,11 +122,13 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 
 	UpStreams optional.Option[generic.MapInterface[string, LoadBalanceAndUpStream]]
+
+	LoadBalanceService *HTTP3HTTP2LoadBalancer
 }
 
 // GetLoadBalanceService implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetLoadBalanceService() optional.Option[LoadBalanceService] {
-	return optional.Some[LoadBalanceService](&HTTP3HTTP2LoadBalancer{})
+	return optional.Some[LoadBalanceService](l.LoadBalanceService)
 }
 
 // GetHealthyCheckInterval implements LoadBalanceAndUpStream.

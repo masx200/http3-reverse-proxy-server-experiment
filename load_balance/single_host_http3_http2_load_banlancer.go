@@ -404,19 +404,7 @@ func (h *HTTP3HTTP2LoadBalancer) runPeriodicHealthChecks() {
 					healthy, err := svc.GetServerConfigCommon().ActiveHealthyCheck()
 					results <- HealthCheckResult{key, healthy, err, svc}
 				}(key, upstreamSvc)
-				//var key = upstream.GetFirst()
-				// healthy, err := upstream.GetSecond().ActiveHealthyCheck()
-				// if err != nil || !healthy {
-				// 	log.Printf("上游服务 %s 在健康检查时发生错误: %v", key, err)
 
-				// 	log.Printf("上游服务 %s 不健康", upstream.GetSecond().GetIdentifier())
-				// 	// 根据实际情况更新健康状态并处理不健康的服务
-				// 	upstream.GetSecond().SetHealthy(false)
-				// 	// 可能需要从负载均衡中暂时移除不健康的服务
-				// } else {
-				// 	log.Printf("上游服务 %s 健康", key)
-				// 	upstream.GetSecond().SetHealthy(true)
-				// }
 			} else {
 				break
 			}

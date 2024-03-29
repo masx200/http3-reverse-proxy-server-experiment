@@ -118,6 +118,11 @@ type SingleHostHTTP12ClientOfAddress struct {
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 }
 
+// GetLoadBalanceService implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) GetLoadBalanceService() optional.Option[LoadBalanceService] {
+	return optional.None[LoadBalanceService]()
+}
+
 // GetHealthyCheckInterval implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP12ClientOfAddress) GetHealthyCheckInterval() int64 {
 	return l.HealthCheckInterval

@@ -67,17 +67,17 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 		UpStreams:             optional.Some(upstreammapinstance),
 		UnHealthyFailDuration: UnHealthyFailDurationDefault,
 	}
-	parsedURL, err := url.Parse(UpStreamServerURL)
+	parsedURL2, err := url.Parse(UpStreamServerURL)
 	if err != nil {
 		return nil, err
 	}
-	parsedURL.Scheme = "http2"
+	parsedURL2.Scheme = "http2"
 	parsedURL3, err := url.Parse(UpStreamServerURL)
 	if err != nil {
 		return nil, err
 	}
 	parsedURL3.Scheme = "http3"
-	var http2identifier = parsedURL.String()
+	var http2identifier = parsedURL2.String()
 	var http3identifier = parsedURL3.String()
 	var http2upstream, err1 = NewSingleHostHTTP12ClientOfAddress(http2identifier, UpStreamServerURL, func(shhcoa *SingleHostHTTP12ClientOfAddress) {
 		shhcoa.GetServerAddress = func() string {
@@ -120,6 +120,11 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 
 	UpStreams optional.Option[generic.MapInterface[string, LoadBalanceAndUpStream]]
+}
+
+// GetLoadBalanceService implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetLoadBalanceService() optional.Option[LoadBalanceService] {
+	return optional.Some[LoadBalanceService](&HTTP3HTTP2LoadBalancer{})
 }
 
 // GetHealthyCheckInterval implements LoadBalanceAndUpStream.
@@ -237,4 +242,30 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetHealthy(healthy bool) {
 // 返回值为上游服务集合的可选类型，此处始终返回None。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUpStreams() optional.Option[generic.MapInterface[string, LoadBalanceAndUpStream]] {
 	return l.UpStreams
+}
+
+type HTTP3HTTP2LoadBalancer struct{}
+
+// UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
+// 该接口包括发送HTTP请求、健康检查、标识服务和标记健康状态等方法。
+func (HTTP3HTTP2LoadBalancer) GetUpStreams() generic.MapInterface[string, LoadBalanceAndUpStream] {
+	panic("not implemented") // TODO: Implement
+}
+
+// 选择一个可用的上游服务器
+// 参数：
+func (HTTP3HTTP2LoadBalancer) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
+	panic("not implemented") // TODO: Implement
+}
+
+func (HTTP3HTTP2LoadBalancer) HealthyCheckRunning() bool {
+	panic("not implemented") // TODO: Implement
+}
+
+func (HTTP3HTTP2LoadBalancer) HealthyCheckStop() {
+	panic("not implemented") // TODO: Implement
 }

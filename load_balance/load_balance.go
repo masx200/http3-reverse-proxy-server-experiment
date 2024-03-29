@@ -21,11 +21,6 @@ type LoadBalanceAndUpStream interface {
 	// UpStreams 返回一个键值对映射，其中键是字符串类型，表示域名；
 	// 值是UpStream类型，表示对应域名的上游服务集群。
 	// 这个方法用于获取当前负载均衡器中配置的所有上游服务信息。
-	GetUpStreams() optional.Option[generic.MapInterface[string, LoadBalanceAndUpStream]]
-
-	//选择一个可用的上游服务器
-	// 参数：
-	SelectAvailableServer() (LoadBalanceAndUpStream, error)
 
 	// ActiveHealthyCheck 用于检查上游服务的健康状态，并返回健康状态及错误信息。
 	// 返回值：bool - 上游服务的主动健康状态（true为健康，false为不健康）；error - 错误信息（如果有）
@@ -66,7 +61,16 @@ type LoadBalanceAndUpStream interface {
 	// 返回值:
 	//   int64 - 健康状态的缓存的最大年龄（单位：毫秒）。
 	GetUnHealthyFailDuration() int64
+	GetLoadBalanceService() optional.Option[LoadBalanceService]
 }
 
-// UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
-// 该接口包括发送HTTP请求、健康检查、标识服务和标记健康状态等方法。
+type LoadBalanceService interface {
+	GetUpStreams() generic.MapInterface[string, LoadBalanceAndUpStream]
+
+	//选择一个可用的上游服务器
+	// 参数：
+	SelectAvailableServer() (LoadBalanceAndUpStream, error)
+	HealthyCheckStart()
+	HealthyCheckRunning() bool
+	HealthyCheckStop()
+}

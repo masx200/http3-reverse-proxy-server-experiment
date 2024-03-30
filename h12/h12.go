@@ -37,6 +37,7 @@ func CreateHTTP12TransportWithIP(ip string) http.RoundTripper {
 
 	// 返回配置好的http.Transport实例
 	return &http.Transport{
+		ForceAttemptHTTP2: true,
 		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			host, port, err := net.SplitHostPort(addr) // 从地址中分解出主机和端口
 			if err != nil {
@@ -76,7 +77,7 @@ func CreateHTTP12TransportWithIP(ip string) http.RoundTripper {
 // CreateHTTP12TransportWithIPGetter 创建一个自定义的http.Transport实例，该实例允许通过getter函数动态获取IP地址来进行连接，适用于需要手动指定连接IP的场景。
 // getter: 一个函数，用于获取要使用的IP地址。该函数会在每次建立连接时被调用。
 // 返回值: 配置好的http.RoundTripper接口，即http.Transport实例，可直接用于http.Client中。
-func CreateHTTP1TransportWithIPGetter(getter func() string) http.RoundTripper {
+func CreateHTTP12TransportWithIPGetter(getter func() string) http.RoundTripper {
 	/* 需要把connection保存起来,防止一个请求一个连接的情况速度会很慢 */
 	dialer := &net.Dialer{
 		Timeout:   30 * time.Second, // 设置拨号超时时间为30秒
@@ -85,6 +86,29 @@ func CreateHTTP1TransportWithIPGetter(getter func() string) http.RoundTripper {
 
 	// 返回配置好的http.Transport实例
 	return &http.Transport{
+		ForceAttemptHTTP2: true,
+		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+
+			host, port, err := net.SplitHostPort(addr) // TLS连接时同样分解地址
+			if err != nil {
+				return nil, err
+			}
+			var cfg *tls.Config = &tls.Config{NextProtos: []string{"h2", "http/1.1"}, ServerName: host}
+			// 拨号并配置TLS连接
+			var ip = getter()
+			conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
+			if err != nil {
+				fmt.Println("连接失败http2", host, port)
+				return nil, err
+			}
+			// 打印TLS连接成功信息
+			fmt.Println("连接成功http2", host, port, conn.LocalAddr(), conn.RemoteAddr())
+			// 返回配置好的TLS连接
+			return tls.Client(conn, cfg), /* &tls.Config{
+					ServerName: host, // 使用原始域名，而不是IP地址，这对于证书匹配很重要
+					// 如果需要，可以在这里配置TLS的其他选项，比如跳过证书验证
+				} */nil
+		},
 		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			host, port, err := net.SplitHostPort(addr) // 从地址中分解出主机和端口
 			if err != nil {
@@ -117,7 +141,7 @@ func CreateHTTP2TransportWithIPGetter(getter func() string) http.RoundTripper {
 
 	// 返回配置好的http.Transport实例
 	return &http2.Transport{
-
+		AllowHTTP: true,
 		DialTLSContext: func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
 			host, port, err := net.SplitHostPort(addr) // TLS连接时同样分解地址
 			if err != nil {

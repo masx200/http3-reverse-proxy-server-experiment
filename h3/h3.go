@@ -75,7 +75,7 @@ func CreateHTTP3TransportWithIP(ip string) http.RoundTripper {
 // 返回值:
 // http.RoundTripper - 符合HTTP运输接口的定制HTTP/3传输器。
 func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
-	var transport *quic.Transport
+	var transportquic *quic.Transport
 	var mutex sync.Mutex
 
 	var mapconnection map[string]quic.EarlyConnection
@@ -85,7 +85,7 @@ func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
 		// 创建UDP连接，作为QUIC协议的基础。
 
 		// 创建HTTP/3传输器，定制了Dial函数以使用指定的IP地址。
-		var transport = &http3.RoundTripper{
+		var roundTripper = &http3.RoundTripper{
 			Dial: func(ctx context.Context, addr string, tlsConf *tls.Config, quicConf *quic.Config) (quic.EarlyConnection, error) {
 
 				mutex.Lock()
@@ -95,17 +95,18 @@ func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
 					/* 需要初始化map */
 					mapconnection = map[string]quic.EarlyConnection{}
 				}
-				var tr *quic.Transport
-				if transport == nil {
+				// var tr *quic.Transport
+				if transportquic == nil {
 					udpConn, err := net.ListenUDP("udp", nil)
 					if err != nil {
 						return nil, err
 					}
-					tr = &quic.Transport{Conn: udpConn}
-					transport = tr
-				} else {
-					tr = transport
-				}
+					transportquic = &quic.Transport{Conn: udpConn}
+
+					// transportquic = tr
+				} /* else {
+					tr = transportquic
+				} */
 				var ServerName = tlsConf.ServerName
 
 				x := mapconnection[ServerName]
@@ -127,7 +128,7 @@ func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
 				}
 
 				// 使用替换后的地址尝试建立QUIC连接。
-				conn, err := tr.DialEarly(ctx, a, tlsConf, quicConf)
+				conn, err := transportquic.DialEarly(ctx, a, tlsConf, quicConf)
 				if err != nil {
 					fmt.Println("http3连接失败", ServerName, host, port /*  conn.LocalAddr(), conn.RemoteAddr() */)
 					return nil, err
@@ -139,7 +140,7 @@ func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
 		}
 
 		// 使用定制的HTTP/3传输器进行HTTP请求的传输。
-		return transport.RoundTrip(r)
+		return roundTripper.RoundTrip(r)
 	})
 
 }

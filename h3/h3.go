@@ -77,70 +77,72 @@ func CreateHTTP3TransportWithIP(ip string) http.RoundTripper {
 func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
 	var transportquic *quic.Transport
 	var mutex sync.Mutex
+	var roundTripper = &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error {
 
-	var mapconnection map[string]quic.EarlyConnection
+		return http.ErrUseLastResponse
+	}, Transport: &http3.RoundTripper{
+		Dial: func(ctx context.Context, addr string, tlsConf *tls.Config, quicConf *quic.Config) (quic.EarlyConnection, error) {
+
+			mutex.Lock()
+			defer mutex.Unlock()
+
+			// if mapconnection == nil {
+			// 	/* 需要初始化map */
+			// 	mapconnection = map[string]quic.EarlyConnection{}
+			// }
+			// var tr *quic.Transport
+			if transportquic == nil {
+				udpConn, err := net.ListenUDP("udp", nil)
+				if err != nil {
+					return nil, err
+				}
+				transportquic = &quic.Transport{Conn: udpConn}
+
+				// transportquic = tr
+			} /* else {
+				tr = transportquic
+			} */
+			var ServerName = tlsConf.ServerName
+
+			// x := mapconnection[ServerName]
+			// if x != nil {
+
+			// 	fmt.Println("使用quic缓存连接", ServerName, addr, x.LocalAddr(), x.RemoteAddr())
+			// 	return x, nil
+			// }
+			// 分解地址并替换为指定的IP地址。
+			host, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			var ip = getter()
+			addr2 := net.JoinHostPort(ip, port)
+			a, err := net.ResolveUDPAddr("udp", addr2)
+			if err != nil {
+				return nil, err
+			}
+
+			// 使用替换后的地址尝试建立QUIC连接。
+			conn, err := transportquic.DialEarly(ctx, a, tlsConf, quicConf)
+			if err != nil {
+				fmt.Println("http3连接失败", ServerName, host, port /*  conn.LocalAddr(), conn.RemoteAddr() */)
+				return nil, err
+			}
+			fmt.Println("http3连接成功", ServerName, host, port, conn.LocalAddr(), conn.RemoteAddr())
+			// mapconnection[ServerName] = conn
+			return conn, err
+		},
+	}}
+	// var mapconnection map[string]quic.EarlyConnection
 	/* 需要把connection保存起来,防止一个请求一个连接的情况速度会很慢 */
 	return adapter.RoundTripTransport(func(r *http.Request) (*http.Response, error) {
 
 		// 创建UDP连接，作为QUIC协议的基础。
 
 		// 创建HTTP/3传输器，定制了Dial函数以使用指定的IP地址。
-		var roundTripper = &http3.RoundTripper{
-			Dial: func(ctx context.Context, addr string, tlsConf *tls.Config, quicConf *quic.Config) (quic.EarlyConnection, error) {
-
-				mutex.Lock()
-				defer mutex.Unlock()
-
-				if mapconnection == nil {
-					/* 需要初始化map */
-					mapconnection = map[string]quic.EarlyConnection{}
-				}
-				// var tr *quic.Transport
-				if transportquic == nil {
-					udpConn, err := net.ListenUDP("udp", nil)
-					if err != nil {
-						return nil, err
-					}
-					transportquic = &quic.Transport{Conn: udpConn}
-
-					// transportquic = tr
-				} /* else {
-					tr = transportquic
-				} */
-				var ServerName = tlsConf.ServerName
-
-				x := mapconnection[ServerName]
-				if x != nil {
-
-					fmt.Println("使用quic缓存连接", ServerName, addr, x.LocalAddr(), x.RemoteAddr())
-					return x, nil
-				}
-				// 分解地址并替换为指定的IP地址。
-				host, port, err := net.SplitHostPort(addr)
-				if err != nil {
-					return nil, err
-				}
-				var ip = getter()
-				addr2 := net.JoinHostPort(ip, port)
-				a, err := net.ResolveUDPAddr("udp", addr2)
-				if err != nil {
-					return nil, err
-				}
-
-				// 使用替换后的地址尝试建立QUIC连接。
-				conn, err := transportquic.DialEarly(ctx, a, tlsConf, quicConf)
-				if err != nil {
-					fmt.Println("http3连接失败", ServerName, host, port /*  conn.LocalAddr(), conn.RemoteAddr() */)
-					return nil, err
-				}
-				fmt.Println("http3连接成功", ServerName, host, port, conn.LocalAddr(), conn.RemoteAddr())
-				mapconnection[ServerName] = conn
-				return conn, err
-			},
-		}
 
 		// 使用定制的HTTP/3传输器进行HTTP请求的传输。
-		return roundTripper.RoundTrip(r)
+		return roundTripper.Do(r)
 	})
 
 }

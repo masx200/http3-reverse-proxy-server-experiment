@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 
 	// "net/url"
@@ -102,9 +103,18 @@ func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL str
 	}
 	m.ServerConfigCommon = ServerConfigImplementConstructor(m.Identifier, m.UpStreamServerURL, m)
 	/* 需要把transport保存起来,防止一个请求一个连接的情况速度会很慢 */
-	m.RoundTripper = h12_experiment.CreateHTTP12TransportWithIPGetter(func() string {
-		return m.GetServerAddress()
-	})
+
+	if strings.HasPrefix(m.UpStreamServerURL, "https") {
+		/* 按照加密和不加密进行选择http2还是http1 */
+		m.RoundTripper = h12_experiment.CreateHTTP2TransportWithIPGetter(func() string {
+			return m.GetServerAddress()
+		})
+	} else {
+		m.RoundTripper = h12_experiment.CreateHTTP1TransportWithIPGetter(func() string {
+			return m.GetServerAddress()
+		})
+	}
+
 	for _, option := range options {
 		option(m)
 	}

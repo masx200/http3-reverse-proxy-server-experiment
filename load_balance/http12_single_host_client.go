@@ -57,7 +57,7 @@ func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool
 
 func HealthyResponseCheckSuccess(response *http.Response) (bool, error) {
 	// 检查响应状态码是否小于500
-	if response.StatusCode >= 200 && response.StatusCode < 300 {
+	if !(response.StatusCode >= 200 && response.StatusCode < 300) {
 		return false, fmt.Errorf("StatusCode %d   is not success", response.StatusCode)
 	}
 	return true, nil

@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
 	"github.com/miekg/dns"
@@ -64,15 +65,34 @@ func CreateHTTP3TransportWithIP(ip string) http.RoundTripper {
 	})
 
 }
+
+// CreateHTTP3TransportWithIPGetter 创建一个带有自定义IP获取器的HTTP/3传输器。
+// 此函数允许在每次HTTP请求时动态指定IP地址，用于建立QUIC连接。
+//
+// 参数:
+// getter func() string - 一个函数，返回一个字符串形式的IP地址。
+//
+// 返回值:
+// http.RoundTripper - 符合HTTP运输接口的定制HTTP/3传输器。
 func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
+	var transport *quic.Transport
+	var mutex sync.Mutex
 	/* 需要把connection保存起来,防止一个请求一个连接的情况速度会很慢 */
 	return adapter.RoundTripTransport(func(r *http.Request) (*http.Response, error) {
-		// 创建UDP连接，作为QUIC协议的基础。
-		udpConn, err := net.ListenUDP("udp", nil)
-		if err != nil {
-			return nil, err
+		mutex.Lock()
+		defer mutex.Unlock()
+		var tr *quic.Transport
+		if transport == nil {
+			udpConn, err := net.ListenUDP("udp", nil)
+			if err != nil {
+				return nil, err
+			}
+			tr = &quic.Transport{Conn: udpConn}
+			transport = tr
+		} else {
+			tr = transport
 		}
-		tr := quic.Transport{Conn: udpConn}
+		// 创建UDP连接，作为QUIC协议的基础。
 
 		// 创建HTTP/3传输器，定制了Dial函数以使用指定的IP地址。
 		var transport = &http3.RoundTripper{

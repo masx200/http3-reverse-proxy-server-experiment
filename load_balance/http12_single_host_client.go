@@ -29,14 +29,14 @@ func PrintResponse(resp *http.Response) {
 // - error: 执行过程中遇到的任何错误。
 func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool, error) {
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
+	// client := &http.Client{
+	// 	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+	// 		return http.ErrUseLastResponse
+	// 	},
+	// }
 
-	// 使用提供的RoundTripper设置HTTP客户端的传输层。
-	client.Transport = RoundTripper
+	// // 使用提供的RoundTripper设置HTTP客户端的传输层。
+	// client.Transport = RoundTripper
 	// 创建一个新的HEAD请求。
 	req, err := http.NewRequest("HEAD", url, nil)
 	if err != nil {
@@ -44,7 +44,7 @@ func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool
 	}
 	PrintRequest(req) // 打印请求信息，用于调试。
 
-	resp, err := client.Do(req) // 发送请求并获取响应。
+	resp, err := RoundTripper.RoundTrip(req) // 发送请求并获取响应。
 	if err != nil {
 		return false, err // 如果请求过程中有错误，则返回错误。
 	}

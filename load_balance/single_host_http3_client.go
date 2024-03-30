@@ -60,6 +60,10 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 		UnHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
 	}
 	m.ServerConfigCommon = ServerConfigImplementConstructor(m.Identifier, m.UpStreamServerURL, m)
+	/* 需要把transport保存起来,防止一个请求一个连接的情况速度会很慢 */
+	m.RoundTripper = h3_experiment.CreateHTTP3TransportWithIPGetter(func() string {
+		return m.GetServerAddress()
+	})
 	for _, option := range options {
 		option(m)
 	}
@@ -68,6 +72,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP3ClientOfAddress struct {
+	RoundTripper            http.RoundTripper
 	ServerConfigCommon      ServerConfigCommon
 	UnHealthyFailMaxCount   int64
 	HealthMutex             sync.Mutex
@@ -191,9 +196,10 @@ func (l *SingleHostHTTP3ClientOfAddress) RoundTrip(request *http.Request) (*http
 	req.URL.Scheme = upurl.Scheme
 	req.URL.Host = upurl.Host
 	req.Header.Set("Host", upurl.Host)
-	return h3_experiment.CreateHTTP3TransportWithIPGetter(func() string {
+	/* 需要把transport保存起来,防止一个请求一个连接的情况速度会很慢 */
+	return l.RoundTripper.RoundTrip(req) /* h3_experiment.CreateHTTP3TransportWithIPGetter(func() string {
 		return l.GetServerAddress()
-	}).RoundTrip(req)
+	}) */
 }
 
 // SelectAvailableServer 实现了LoadBalanceAndUpStream接口的SelectAvailableServer方法，

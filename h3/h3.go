@@ -91,7 +91,7 @@ func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
 				// 使用替换后的地址尝试建立QUIC连接。
 				conn, err := tr.DialEarly(ctx, a, tlsConf, quicConf)
 				if err != nil {
-					fmt.Println("http3连接失败", host, port, conn.LocalAddr(), conn.RemoteAddr())
+					fmt.Println("http3连接失败", host, port /*  conn.LocalAddr(), conn.RemoteAddr() */)
 					return nil, err
 				}
 				fmt.Println("http3连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())

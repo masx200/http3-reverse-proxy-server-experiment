@@ -86,6 +86,7 @@ func CreateHTTP12TransportWithIPGetter(getter func() string) http.RoundTripper {
 			// 使用指定的IP地址拨号连接
 			conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
 			if err != nil {
+				fmt.Println("连接失败http1", host, port)
 				return nil, err
 			}
 			// 打印连接成功信息
@@ -101,6 +102,7 @@ func CreateHTTP12TransportWithIPGetter(getter func() string) http.RoundTripper {
 			var ip = getter()
 			conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
 			if err != nil {
+				fmt.Println("连接失败http2", host, port)
 				return nil, err
 			}
 			// 打印TLS连接成功信息

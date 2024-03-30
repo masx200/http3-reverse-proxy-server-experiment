@@ -101,6 +101,10 @@ func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL str
 		UnHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
 	}
 	m.ServerConfigCommon = ServerConfigImplementConstructor(m.Identifier, m.UpStreamServerURL, m)
+	/* 需要把transport保存起来,防止一个请求一个连接的情况速度会很慢 */
+	m.RoundTripper = h12_experiment.CreateHTTP12TransportWithIPGetter(func() string {
+		return m.GetServerAddress()
+	})
 	for _, option := range options {
 		option(m)
 	}
@@ -120,9 +124,9 @@ type SingleHostHTTP12ClientOfAddress struct {
 	HealthMutex             sync.Mutex
 	IsHealthy               bool                                        // 健康状态，标识当前客户端是否被视为健康。
 	PassiveUnHealthyChecker func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
-	// RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
-	UpStreamServerURL     string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
-	UnHealthyFailMaxCount int64
+	RoundTripper            http.RoundTripper                           // HTTP传输，用于执行HTTP请求的实际传输。
+	UpStreamServerURL       string                                      // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
+	UnHealthyFailMaxCount   int64
 }
 
 // GetServerConfigCommon implements LoadBalanceAndUpStream.
@@ -243,9 +247,8 @@ func (l *SingleHostHTTP12ClientOfAddress) RoundTrip(request *http.Request) (*htt
 	req.URL.Host = upurl.Host
 	req.Header.Set("Host", upurl.Host)
 	// return l.RoundTripper.RoundTrip(request)
-	return h12_experiment.CreateHTTP12TransportWithIPGetter(func() string {
-		return l.GetServerAddress()
-	}).RoundTrip(req)
+	/* 需要把transport保存起来,防止一个请求一个连接的情况速度会很慢 */
+	return l.RoundTripper.RoundTrip(req)
 }
 
 // SelectAvailableServer 实现了LoadBalanceAndUpStream接口的SelectAvailableServer方法，

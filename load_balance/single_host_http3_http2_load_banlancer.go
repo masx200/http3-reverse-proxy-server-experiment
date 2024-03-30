@@ -112,6 +112,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 	upstreammapinstance.Set(http3identifier, http3upstream)
 
 	var LoadBalanceServiceInstance *HTTP3HTTP2LoadBalancer = &HTTP3HTTP2LoadBalancer{
+		Identifier: Identifier,
 		UpStreamsGetter: func() generic.MapInterface[string, LoadBalanceAndUpStream] {
 			return upstreammapinstance
 		},
@@ -343,6 +344,12 @@ type HTTP3HTTP2LoadBalancer struct {
 	HealthCheckIntervalMsTicker *time.Ticker
 	healthCheckRunning          bool
 	mu                          sync.Mutex // 添加互斥锁，确保并发安全
+	Identifier                  string
+}
+
+// GetIdentifier implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) GetIdentifier() string {
+	return h.Identifier
 }
 
 // UpStream 是一个上游服务接口，定义了如何与上游服务进行交互以及健康检查的方法。
@@ -362,7 +369,7 @@ func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
 	defer h.mu.Unlock()
 
 	if h.healthCheckRunning {
-		log.Println("健康检查已在运行，无需重新启动.")
+		log.Println("健康检查已在运行，无需重新启动.", h.GetIdentifier())
 		return
 	}
 
@@ -371,7 +378,7 @@ func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
 	go h.runPeriodicHealthChecks()
 
 	h.healthCheckRunning = true
-	log.Printf("健康检查已启动，间隔时间为 %v", interval)
+	log.Printf("健康检查已启动，间隔时间为 %v"+h.GetIdentifier(), interval)
 }
 
 // HealthCheckResult 是一个健康检查结果的结构体。
@@ -436,11 +443,11 @@ func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStop() {
 	defer h.mu.Unlock()
 
 	if !h.healthCheckRunning {
-		log.Println("健康检查并未运行，无需停止.")
+		log.Println("健康检查并未运行，无需停止.", h.GetIdentifier())
 		return
 	}
 
 	h.HealthCheckIntervalMsTicker.Stop()
 	h.healthCheckRunning = false
-	log.Println("健康检查已停止.")
+	log.Println("健康检查已停止.", h.GetIdentifier())
 }

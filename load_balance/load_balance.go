@@ -98,4 +98,5 @@ type LoadBalanceService interface {
 	HealthyCheckStart()
 	HealthyCheckRunning() bool
 	HealthyCheckStop()
+	GetIdentifier() string
 }

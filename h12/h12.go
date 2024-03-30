@@ -7,8 +7,7 @@ import (
 	"net"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/http2"
+	// "golang.org/x/net/http2"
 )
 
 func FetchHttp2WithIP(ip, url string) (*http.Response, error) {

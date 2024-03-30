@@ -77,10 +77,10 @@ func CreateHTTP3TransportWithIP(ip string) http.RoundTripper {
 func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
 	var transportquic *quic.Transport
 	var mutex sync.Mutex
-	var roundTripper = &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error {
+	var roundTripper = /*  &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error {
 
 		return http.ErrUseLastResponse
-	}, Transport: &http3.RoundTripper{
+	}, Transport: */&http3.RoundTripper{
 		Dial: func(ctx context.Context, addr string, tlsConf *tls.Config, quicConf *quic.Config) (quic.EarlyConnection, error) {
 
 			mutex.Lock()
@@ -131,8 +131,8 @@ func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
 			fmt.Println("http3连接成功", ServerName, host, port, conn.LocalAddr(), conn.RemoteAddr())
 			// mapconnection[ServerName] = conn
 			return conn, err
-		},
-	}}
+			// },
+		}}
 	// var mapconnection map[string]quic.EarlyConnection
 	/* 需要把connection保存起来,防止一个请求一个连接的情况速度会很慢 */
 	return adapter.RoundTripTransport(func(r *http.Request) (*http.Response, error) {
@@ -142,7 +142,7 @@ func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
 		// 创建HTTP/3传输器，定制了Dial函数以使用指定的IP地址。
 
 		// 使用定制的HTTP/3传输器进行HTTP请求的传输。
-		return roundTripper.Do(r)
+		return roundTripper.RoundTrip(r)
 	})
 
 }

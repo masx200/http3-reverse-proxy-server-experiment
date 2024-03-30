@@ -185,9 +185,8 @@ func (l *SingleHostHTTP3ClientOfAddress) PassiveUnHealthyCheck(response *http.Re
 // 用于执行HTTP请求。
 // 参数request为待发送的HTTP请求。
 // 返回值为执行请求后的HTTP响应及可能发生的错误。
-func (l *SingleHostHTTP3ClientOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
+func (l *SingleHostHTTP3ClientOfAddress) RoundTrip(req *http.Request) (*http.Response, error) {
 
-	var req = request.Clone(request.Context())
 	var upurl, err = url.Parse(l.UpStreamServerURL)
 	if err != nil {
 		return nil, err

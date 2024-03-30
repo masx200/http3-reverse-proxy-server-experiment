@@ -378,7 +378,7 @@ func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
 	go h.runPeriodicHealthChecks()
 
 	h.healthCheckRunning = true
-	log.Printf("健康检查已启动，间隔时间为 %v"+h.GetIdentifier(), interval)
+	log.Printf("健康检查已启动，间隔时间为 %v "+h.GetIdentifier(), interval)
 }
 
 // HealthCheckResult 是一个健康检查结果的结构体。

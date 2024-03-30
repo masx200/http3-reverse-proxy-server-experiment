@@ -247,7 +247,7 @@ func HealthyResponseCheckDefault(response *http.Response) (bool, error) {
 // 参数request为待发送的HTTP请求。
 // 返回值为执行请求后的HTTP响应及可能发生的错误。
 func (l *SingleHostHTTP12ClientOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
-	var req = request.Clone(request.Context())
+	var req = request
 	var upurl, err = url.Parse(l.UpStreamServerURL)
 	if err != nil {
 		return nil, err

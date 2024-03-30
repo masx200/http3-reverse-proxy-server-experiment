@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"sync"
 
 	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
@@ -180,9 +181,19 @@ func (l *SingleHostHTTP3ClientOfAddress) PassiveUnHealthyCheck(response *http.Re
 // 参数request为待发送的HTTP请求。
 // 返回值为执行请求后的HTTP响应及可能发生的错误。
 func (l *SingleHostHTTP3ClientOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
+
+	var req = request.Clone(request.Context())
+	var upurl, err = url.Parse(l.UpStreamServerURL)
+	if err != nil {
+		return nil, err
+	}
+	/* 要修改请求的URL和Header的Scheme和Host */
+	req.URL.Scheme = upurl.Scheme
+	req.URL.Host = upurl.Host
+	req.Header.Set("Host", upurl.Host)
 	return h3_experiment.CreateHTTP3TransportWithIPGetter(func() string {
 		return l.GetServerAddress()
-	}).RoundTrip(request)
+	}).RoundTrip(req)
 }
 
 // SelectAvailableServer 实现了LoadBalanceAndUpStream接口的SelectAvailableServer方法，

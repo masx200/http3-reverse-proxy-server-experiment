@@ -32,7 +32,7 @@ func main() {
 	// 定义上游服务器地址
 	/* 测试防环功能 */
 	/*  remote error: tls: no application protocol */
-	var upstreamServer = "https://assets.fastly.com/" // "https://quic.nginx.org/"
+	var upstreamServer = "https://quic.nginx.org/" //"https://assets.fastly.com/" //
 
 	var LoadBalanceAndUpStream, err = load_balance.NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(upstreamServer, upstreamServer)
 	if err != nil {

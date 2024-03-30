@@ -2,36 +2,44 @@ package main
 
 import (
 	"bufio"
-	"crypto/tls"
+	// "crypto/tls"
 	"fmt"
+	"log"
+
 	"github.com/gin-gonic/gin"
-	"github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
-	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
+	// "github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
+	// "github.com/masx200/http3-reverse-proxy-server-experiment/generic"
+	"github.com/masx200/http3-reverse-proxy-server-experiment/load_balance"
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
-	"log"
+
 	// "math/rand"
 	"net"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
+	// "net/http/httputil"
+	// "net/url"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
+	// "sync"
+	// "time"
 )
 
 // 主程序入口
 func main() {
 	//健康检查过期时间毫秒
-	var maxAge = int64(5 * 1000)
+	// var maxAge = int64(5 * 1000)
 	// 定义上游服务器地址
 	/* 测试防环功能 */
-	var upstreamServers = []string{"https://production.hello-word-worker-cloudflare.masx200.workers.dev/", "https://hello-world-deno-deploy.deno.dev/"}
+	var upstreamServer = "https://quic.nginx.org/"
+
+	var LoadBalanceAndUpStream, err = load_balance.NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(upstreamServer, upstreamServer)
+	if err != nil {
+		log.Fatal(err)
+	}
 	var httpsPort = 18443
 	var httpPort = 18080
-	var upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string] = map[string]generic.PairInterface[string, string]{}
+	// var upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string] = map[string]generic.PairInterface[string, string]{}
 	engine := gin.Default()
 	engine.Use(Forwarded(), LoopDetect())
 	engine.Use(func(c *gin.Context) {
@@ -49,44 +57,44 @@ func main() {
 	// // 定义上游服务器地址
 	// var upstreamServers = []string{"https://quic.nginx.org/", "https://hello-world-deno-deploy.deno.dev/", "https://production.hello-word-worker.masx200.workers.dev/"}
 	//打印上游
-	fmt.Println("Upstream servers:")
-	for _, server := range upstreamServers {
-		fmt.Println(server)
-	}
+	// fmt.Println("Upstream servers:")
+	// for _, server := range upstreamServers {
+	// 	fmt.Println(server)
+	// }
 
-	var expires = int64(0)
-	var upstreamServerOfName = map[string]string{}
-	var proxyServers map[string]func(*http.Request) (*http.Response, error) = map[string]func(*http.Request) (*http.Response, error){}
+	// var expires = int64(0)
+	// var upstreamServerOfName = map[string]string{}
+	// var proxyServers map[string]func(*http.Request) (*http.Response, error) = map[string]func(*http.Request) (*http.Response, error){}
 
-	for _, urlString := range upstreamServers {
-		upstreamURL, err := url.Parse(urlString)
-		if err != nil {
-			log.Fatalf("Failed to parse upstream server URL: %v", err)
-		}
-		if upstreamURL.Path != "/" && upstreamURL.Path != "" {
-			log.Fatalf("upstreamServer Path must be / or empty")
-		}
-		proxy, err := createReverseProxy(urlString, int64(maxAge))
+	// for _, urlString := range upstreamServers {
+	// 	upstreamURL, err := url.Parse(urlString)
+	// 	if err != nil {
+	// 		log.Fatalf("Failed to parse upstream server URL: %v", err)
+	// 	}
+	// 	if upstreamURL.Path != "/" && upstreamURL.Path != "" {
+	// 		log.Fatalf("upstreamServer Path must be / or empty")
+	// 	}
+	// 	proxy, err := createReverseProxy(urlString, int64(maxAge))
 
-		if err != nil {
-			log.Fatal(err)
-		}
-		proxyServers[urlString] = func(req *http.Request) (*http.Response, error) {
-			return proxy.Transport.RoundTrip(req)
-		}
-		upstreamServerOfName[urlString] = urlString
-		upStreamServerSchemeAndHostOfName[urlString] = generic.NewPairImplement[string, string](upstreamURL.Scheme, upstreamURL.Host)
-	}
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	proxyServers[urlString] = func(req *http.Request) (*http.Response, error) {
+	// 		return proxy.Transport.RoundTrip(req)
+	// 	}
+	// 	upstreamServerOfName[urlString] = urlString
+	// 	upStreamServerSchemeAndHostOfName[urlString] = generic.NewPairImplement[string, string](upstreamURL.Scheme, upstreamURL.Host)
+	// }
 	// 启动反向代理服务器
-	var healthyUpstream = proxyServers
-	var transportsUpstream = proxyServers
-	var mutex2 sync.Mutex
-	var getHealthyProxyServers = func() map[string]func(*http.Request) (*http.Response, error) {
-		return refreshHealthyUpStreams(func() int64 { return expires }, func() map[string]func(*http.Request) (*http.Response, error) { return healthyUpstream }, transportsUpstream, upstreamServerOfName, maxAge, func(i int64) { expires = i }, func(transportsUpstream map[string]func(*http.Request) (*http.Response, error)) {
-			healthyUpstream = transportsUpstream
-		}, &mutex2)
+	// var healthyUpstream = proxyServers
+	// var transportsUpstream = proxyServers
+	// var mutex2 sync.Mutex
+	// var getHealthyProxyServers = func() map[string]func(*http.Request) (*http.Response, error) {
+	// 	return refreshHealthyUpStreams(func() int64 { return expires }, func() map[string]func(*http.Request) (*http.Response, error) { return healthyUpstream }, transportsUpstream, upstreamServerOfName, maxAge, func(i int64) { expires = i }, func(transportsUpstream map[string]func(*http.Request) (*http.Response, error)) {
+	// 		healthyUpstream = transportsUpstream
+	// 	}, &mutex2)
 
-	}
+	// }
 	engine.Any("/*path", func(c *gin.Context) {
 		req := c.Request
 		if req.TLS != nil {
@@ -99,7 +107,7 @@ func main() {
 		PrintRequest(req) // 打印请求信息
 
 		// 使用随机负载均衡策略选择一个健康状态的传输函数，并执行请求
-		var resp, err = RandomLoadBalancer(getHealthyProxyServers(), req, upStreamServerSchemeAndHostOfName)
+		var resp, err = LoadBalanceAndUpStream.RoundTrip(req) //panic(req) // RandomLoadBalancer(getHealthyProxyServers(), req, upStreamServerSchemeAndHostOfName)
 
 		if err != nil {
 			log.Println("ERROR:", err) // 打印错误信息
@@ -179,7 +187,10 @@ func main() {
 	log.Printf("Starting https reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
 
 	errx := server.ListenAndServeTLS(certFile, keyFile)
-	log.Fatal(errx)
+	if errx != nil {
+		log.Fatal(errx)
+	}
+	// log.Fatal(errx)
 }
 
 // checkUpstreamHealth 检查上游服务的健康状态
@@ -187,50 +198,50 @@ func main() {
 // RoundTrip: 用于发送HTTP请求的函数，模拟HTTP客户端的行为
 // 返回值: 返回一个布尔值，表示上游服务的健康状态，true为健康，false为不健康
 
-func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Response, error)) (bool, error) {
+// func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Response, error)) (bool, error) {
 
-	// 发送HEAD请求并检查返回的状态码
-	statusCode, err := sendHeadRequestAndCheckStatus(url, RoundTrip)
-	if err != nil {
-		log.Printf("Error: %v\n", err)
-		return false, err
-	}
+// 	// 发送HEAD请求并检查返回的状态码
+// 	statusCode, err := sendHeadRequestAndCheckStatus(url, RoundTrip)
+// 	if err != nil {
+// 		log.Printf("Error: %v\n", err)
+// 		return false, err
+// 	}
 
-	// 打印状态码信息
-	fmt.Printf("health check Status code: %d\n", statusCode)
+// 	// 打印状态码信息
+// 	fmt.Printf("health check Status code: %d\n", statusCode)
 
-	// 根据状态码判断上游服务的健康状态
-	if statusCode < 500 {
-		fmt.Println("Status code is less than 500.")
-		return true, nil
-	} else {
-		log.Println("ERROR:"+"Status code is 500 or greater.", statusCode)
+// 	// 根据状态码判断上游服务的健康状态
+// 	if statusCode < 500 {
+// 		fmt.Println("Status code is less than 500.")
+// 		return true, nil
+// 	} else {
+// 		log.Println("ERROR:"+"Status code is 500 or greater.", statusCode)
 
-	}
-	return false, fmt.Errorf("ERROR:Status code is 500 or greater" + fmt.Sprint(statusCode))
-}
+// 	}
+// 	return false, fmt.Errorf("ERROR:Status code is 500 or greater" + fmt.Sprint(statusCode))
+// }
 
 // sendHeadRequestAndCheckStatus 发送一个HEAD请求并检查状态码。
 // url: 请求的目标URL。
 // RoundTrip: 自定义的HTTP.RoundTripper函数，用于发送请求。
 // 返回值: 请求的状态码和可能出现的错误。
-func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*http.Response, error)) (int, error) {
-	client := &http.Client{}
+// func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*http.Response, error)) (int, error) {
+// 	client := &http.Client{}
 
-	client.Transport = adapter.RoundTripTransport(RoundTrip)
-	req, err := http.NewRequest("HEAD", url, nil)
-	if err != nil {
-		return 0, err
-	}
-	PrintRequest(req)
-	resp, err := client.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-	PrintResponse(resp)
-	return resp.StatusCode, nil
-}
+// 	client.Transport = adapter.RoundTripTransport(RoundTrip)
+// 	req, err := http.NewRequest("HEAD", url, nil)
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	PrintRequest(req)
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	defer resp.Body.Close()
+// 	PrintResponse(resp)
+// 	return resp.StatusCode, nil
+// }
 
 // refreshHealthyUpStreams加锁操作
 // var mutex sync.Mutex
@@ -371,19 +382,19 @@ func LoopDetect() gin.HandlerFunc {
 // 返回更改协议后的URL字符串和一个error。
 // 如果解析原始URL或生成新URL时发生错误，将返回一个非空的error。
 
-func ChangeURLScheme(originalURLStr string, newScheme string) (string, error) {
-	// Parse the original URL
-	originalURL, err := url.Parse(originalURLStr)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse the original URL: %v", err)
-	}
+// func ChangeURLScheme(originalURLStr string, newScheme string) (string, error) {
+// 	// Parse the original URL
+// 	originalURL, err := url.Parse(originalURLStr)
+// 	if err != nil {
+// 		return "", fmt.Errorf("failed to parse the original URL: %v", err)
+// 	}
 
-	// Modify the scheme
-	originalURL.Scheme = newScheme
+// 	// Modify the scheme
+// 	originalURL.Scheme = newScheme
 
-	// Return the string representation of the modified URL
-	return originalURL.String(), nil
-}
+// 	// Return the string representation of the modified URL
+// 	return originalURL.String(), nil
+// }
 
 // createReverseProxy 创建一个反向代理，根据上游服务器的健康状况动态选择HTTP/3或HTTP/2进行通信。
 //
@@ -393,82 +404,82 @@ func ChangeURLScheme(originalURLStr string, newScheme string) (string, error) {
 // 返回值:
 // *httputil.ReverseProxy - 配置好的反向代理实例。
 // error - 创建过程中遇到的任何错误。
-func createReverseProxy(upstreamServer string, maxAge int64) (*httputil.ReverseProxy, error) {
-	// 解析上游服务器URL，确保其路径为根路径或为空
-	upstreamURL, err := url.Parse(upstreamServer)
-	if err != nil {
-		log.Printf("Failed to parse upstream server URL: %v", err)
-		return nil, err
-	}
-	if upstreamURL.Path != "/" && upstreamURL.Path != "" {
-		log.Printf("upstreamServer Path must be / or empty")
-		return nil, err
-	}
+// func createReverseProxy(upstreamServer string, maxAge int64) (*httputil.ReverseProxy, error) {
+// 	// 解析上游服务器URL，确保其路径为根路径或为空
+// 	upstreamURL, err := url.Parse(upstreamServer)
+// 	if err != nil {
+// 		log.Printf("Failed to parse upstream server URL: %v", err)
+// 		return nil, err
+// 	}
+// 	if upstreamURL.Path != "/" && upstreamURL.Path != "" {
+// 		log.Printf("upstreamServer Path must be / or empty")
+// 		return nil, err
+// 	}
 
-	// 初始化HTTP/3客户端
-	http3Client := &http.Client{
-		Transport: &http3.RoundTripper{
-			TLSClientConfig: &tls.Config{},
-			QuicConfig:      &quic.Config{},
-		},
-	}
-	// 初始化HTTP/2客户端，使用默认传输
-	http2Client := &http.Client{
-		Transport: http.DefaultTransport,
-	}
-	http3url, err := ChangeURLScheme(upstreamServer, "http3")
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse upstream server URL: %v", err)
-	}
-	var http12url string
-	if upstreamURL.Scheme == "http" {
-		http12urlll, err := ChangeURLScheme(upstreamServer, "http1")
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse upstream server URL: %v", err)
-		}
-		http12url = http12urlll
-	} else {
-		http12urlll, err := ChangeURLScheme(upstreamServer, "http2")
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse upstream server URL: %v", err)
-		}
-		http12url = http12urlll
-	}
+// 	// 初始化HTTP/3客户端
+// 	http3Client := &http.Client{
+// 		Transport: &http3.RoundTripper{
+// 			TLSClientConfig: &tls.Config{},
+// 			QuicConfig:      &quic.Config{},
+// 		},
+// 	}
+// 	// 初始化HTTP/2客户端，使用默认传输
+// 	http2Client := &http.Client{
+// 		Transport: http.DefaultTransport,
+// 	}
+// 	http3url, err := ChangeURLScheme(upstreamServer, "http3")
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to parse upstream server URL: %v", err)
+// 	}
+// 	var http12url string
+// 	if upstreamURL.Scheme == "http" {
+// 		http12urlll, err := ChangeURLScheme(upstreamServer, "http1")
+// 		if err != nil {
+// 			return nil, fmt.Errorf("failed to parse upstream server URL: %v", err)
+// 		}
+// 		http12url = http12urlll
+// 	} else {
+// 		http12urlll, err := ChangeURLScheme(upstreamServer, "http2")
+// 		if err != nil {
+// 			return nil, fmt.Errorf("failed to parse upstream server URL: %v", err)
+// 		}
+// 		http12url = http12urlll
+// 	}
 
-	// 定义上游服务器的传输方式，包括HTTP/3和HTTP/2
-	var transportsUpstream = map[string]func(*http.Request) (*http.Response, error){
-		http3url: func(req *http.Request) (*http.Response, error) { return http3Client.Transport.RoundTrip(req) },
+// 	// 定义上游服务器的传输方式，包括HTTP/3和HTTP/2
+// 	var transportsUpstream = map[string]func(*http.Request) (*http.Response, error){
+// 		http3url: func(req *http.Request) (*http.Response, error) { return http3Client.Transport.RoundTrip(req) },
 
-		http12url: func(req *http.Request) (*http.Response, error) { return http2Client.Transport.RoundTrip(req) },
-	}
-	var upstreamServerOfName = map[string]string{}
+// 		http12url: func(req *http.Request) (*http.Response, error) { return http2Client.Transport.RoundTrip(req) },
+// 	}
+// 	var upstreamServerOfName = map[string]string{}
 
-	for k := range transportsUpstream {
-		upstreamServerOfName[k] = upstreamServer
-	}
-	// 设置健康检查的超时时间毫秒
+// 	for k := range transportsUpstream {
+// 		upstreamServerOfName[k] = upstreamServer
+// 	}
+// 	// 设置健康检查的超时时间毫秒
 
-	var expires = int64(0)
-	var healthyUpstream = transportsUpstream
-	var mutex2 sync.Mutex
-	// 自定义负载均衡的传输器，根据上游服务器的健康状况选择传输方式
-	customTransport := &customRoundTripperLoadBalancer{
-		upstreamURL: upstreamURL,
-		getTransportHealthy: func() map[string]func(*http.Request) (*http.Response, error) {
-			// 对上游服务器进行健康检查，选择健康的传输方式
-			return refreshHealthyUpStreams(func() int64 { return expires }, func() map[string]func(*http.Request) (*http.Response, error) { return healthyUpstream }, transportsUpstream, upstreamServerOfName, maxAge, func(i int64) { expires = i }, func(transportsUpstream map[string]func(*http.Request) (*http.Response, error)) {
-				healthyUpstream = transportsUpstream
-			}, &mutex2)
-		},
-	}
+// 	var expires = int64(0)
+// 	var healthyUpstream = transportsUpstream
+// 	var mutex2 sync.Mutex
+// 	// 自定义负载均衡的传输器，根据上游服务器的健康状况选择传输方式
+// 	customTransport := &customRoundTripperLoadBalancer{
+// 		upstreamURL: upstreamURL,
+// 		getTransportHealthy: func() map[string]func(*http.Request) (*http.Response, error) {
+// 			// 对上游服务器进行健康检查，选择健康的传输方式
+// 			return refreshHealthyUpStreams(func() int64 { return expires }, func() map[string]func(*http.Request) (*http.Response, error) { return healthyUpstream }, transportsUpstream, upstreamServerOfName, maxAge, func(i int64) { expires = i }, func(transportsUpstream map[string]func(*http.Request) (*http.Response, error)) {
+// 				healthyUpstream = transportsUpstream
+// 			}, &mutex2)
+// 		},
+// 	}
 
-	// 初始化反向代理
-	proxy := httputil.NewSingleHostReverseProxy(upstreamURL)
+// 	// 初始化反向代理
+// 	proxy := httputil.NewSingleHostReverseProxy(upstreamURL)
 
-	// 设置反向代理的传输器为自定义的负载均衡传输器
-	proxy.Transport = customTransport
-	return proxy, err
-}
+// 	// 设置反向代理的传输器为自定义的负载均衡传输器
+// 	proxy.Transport = customTransport
+// 	return proxy, err
+// }
 
 // refreshHealthyUpStreams 刷新健康状态的上游服务器。
 // 此函数会根据上游服务器的当前健康状态和过期时间来更新健康的上游服务器列表。
@@ -483,80 +494,80 @@ func createReverseProxy(upstreamServer string, maxAge int64) (*httputil.ReverseP
 //
 // 返回值:
 // - 返回更新后的健康上游服务器映射。
-func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() map[string]func(*http.Request) (*http.Response, error), transportsUpstream map[string]func(*http.Request) (*http.Response, error), upstreamServerOfName map[string]string, maxAge int64, setExpires func(int64), setHealthyUpstream func(transportsUpstream map[string]func(*http.Request) (*http.Response, error)), mutex2 *sync.Mutex) map[string]func(*http.Request) (*http.Response, error) {
-	// mutex.Lock()
-	// defer mutex.Unlock()
+// func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() map[string]func(*http.Request) (*http.Response, error), transportsUpstream map[string]func(*http.Request) (*http.Response, error), upstreamServerOfName map[string]string, maxAge int64, setExpires func(int64), setHealthyUpstream func(transportsUpstream map[string]func(*http.Request) (*http.Response, error)), mutex2 *sync.Mutex) map[string]func(*http.Request) (*http.Response, error) {
+// 	// mutex.Lock()
+// 	// defer mutex.Unlock()
 
-	// 检查当前上游服务器列表是否已过期。
-	if getExpires() > time.Now().UnixMilli() {
-		fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
-		fmt.Println("健康的上游服务器", getHealthyUpstream())
-		return getHealthyUpstream()
-	}
+// 	// 检查当前上游服务器列表是否已过期。
+// 	if getExpires() > time.Now().UnixMilli() {
+// 		fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
+// 		fmt.Println("健康的上游服务器", getHealthyUpstream())
+// 		return getHealthyUpstream()
+// 	}
 
-	// 在后台进行健康检查更新。
-	go func() {
+// 	// 在后台进行健康检查更新。
+// 	go func() {
 
-		mutex2.Lock()
-		defer mutex2.Unlock()
-		if getExpires() > time.Now().UnixMilli() {
-			fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
-			fmt.Println("健康的上游服务器", getHealthyUpstream())
-			return
-		}
-		var healthy = map[string]func(*http.Request) (*http.Response, error){}
-		fmt.Println("需要进行健康检查", "已经过期的时间毫秒", -getExpires()+time.Now().UnixMilli())
-		//需要并行检查
-		// 遍历所有上游服务器进行健康检查。
-		var promises = make(chan struct{}, len(transportsUpstream))
-		for key, roundTrip := range transportsUpstream {
-			keyi0 := key
-			roundTripi0 := roundTrip
+// 		mutex2.Lock()
+// 		defer mutex2.Unlock()
+// 		if getExpires() > time.Now().UnixMilli() {
+// 			fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
+// 			fmt.Println("健康的上游服务器", getHealthyUpstream())
+// 			return
+// 		}
+// 		var healthy = map[string]func(*http.Request) (*http.Response, error){}
+// 		fmt.Println("需要进行健康检查", "已经过期的时间毫秒", -getExpires()+time.Now().UnixMilli())
+// 		//需要并行检查
+// 		// 遍历所有上游服务器进行健康检查。
+// 		var promises = make(chan struct{}, len(transportsUpstream))
+// 		for key, roundTrip := range transportsUpstream {
+// 			keyi0 := key
+// 			roundTripi0 := roundTrip
 
-			go func() {
-				defer func() {
-					promises <- struct{}{}
-				}()
-				var upstreamServer = upstreamServerOfName[keyi0]
-				//loop variable roundTrip captured by func literal loop closure
-				if ok, err := checkUpstreamHealth(upstreamServer, roundTripi0); ok {
-					healthy[keyi0] = roundTripi0
-					fmt.Println("健康检查成功", keyi0, upstreamServer)
-				} else {
+// 			go func() {
+// 				defer func() {
+// 					promises <- struct{}{}
+// 				}()
+// 				var upstreamServer = upstreamServerOfName[keyi0]
+// 				//loop variable roundTrip captured by func literal loop closure
+// 				if ok, err := checkUpstreamHealth(upstreamServer, roundTripi0); ok {
+// 					healthy[keyi0] = roundTripi0
+// 					fmt.Println("健康检查成功", keyi0, upstreamServer)
+// 				} else {
 
-					log.Println("健康检查失败", keyi0, upstreamServer, err)
-				}
+// 					log.Println("健康检查失败", keyi0, upstreamServer, err)
+// 				}
 
-			}()
+// 			}()
 
-		}
-		for range transportsUpstream {
-			<-promises
-		}
-		// 根据健康检查结果更新健康上游服务器列表。
-		if len(healthy) == 0 {
-			setHealthyUpstream(transportsUpstream)
-			fmt.Println("没有健康的上游服务器", getHealthyUpstream())
-		} else {
-			setHealthyUpstream(healthy)
-			fmt.Println("找到健康的上游服务器", getHealthyUpstream())
-		}
+// 		}
+// 		for range transportsUpstream {
+// 			<-promises
+// 		}
+// 		// 根据健康检查结果更新健康上游服务器列表。
+// 		if len(healthy) == 0 {
+// 			setHealthyUpstream(transportsUpstream)
+// 			fmt.Println("没有健康的上游服务器", getHealthyUpstream())
+// 		} else {
+// 			setHealthyUpstream(healthy)
+// 			fmt.Println("找到健康的上游服务器", getHealthyUpstream())
+// 		}
 
-		// 设置上游服务器列表的新过期时间。
-		var expires = time.Now().UnixMilli() + int64(maxAge)
-		setExpires(expires)
-	}()
+// 		// 设置上游服务器列表的新过期时间。
+// 		var expires = time.Now().UnixMilli() + int64(maxAge)
+// 		setExpires(expires)
+// 	}()
 
-	// 返回当前的健康上游服务器列表。
-	return getHealthyUpstream()
-}
+// 	// 返回当前的健康上游服务器列表。
+// 	return getHealthyUpstream()
+// }
 
 // customRoundTripperLoadBalancer 是一个自定义的负载均衡器，
 // 用于在多个上游服务之间进行请求的负载均衡。
-type customRoundTripperLoadBalancer struct {
-	upstreamURL         *url.URL                                                      // upstreamURL 指定了上游服务的URL
-	getTransportHealthy func() map[string]func(*http.Request) (*http.Response, error) // getTransportHealthy 函数返回一个健康状态的传输函数列表
-}
+// type customRoundTripperLoadBalancer struct {
+// 	upstreamURL         *url.URL                                                      // upstreamURL 指定了上游服务的URL
+// 	getTransportHealthy func() map[string]func(*http.Request) (*http.Response, error) // getTransportHealthy 函数返回一个健康状态的传输函数列表
+// }
 
 // RoundTrip 是自定义负载均衡器的.RoundTrip方法，实现了http.RoundTripper接口。
 // 它负责将HTTP请求发送到上游服务，并返回响应。
@@ -567,47 +578,47 @@ type customRoundTripperLoadBalancer struct {
 // 返回值:
 // *http.Response - 上游服务返回的HTTP响应
 // error - 如果在发送请求过程中出现错误，则返回错误信息
-func (c *customRoundTripperLoadBalancer) RoundTrip(req *http.Request) (*http.Response, error) {
-	var roundTripper = c.getTransportHealthy()
-	var upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string] = map[string]generic.PairInterface[string, string]{}
-	for k := range roundTripper {
-		upStreamServerSchemeAndHostOfName[k] = generic.NewPairImplement[string, string](c.upstreamURL.Scheme, c.upstreamURL.Host)
-	}
-	// 设置请求的Host为上游服务的Host
-	req.Host = c.upstreamURL.Host
+// func (c *customRoundTripperLoadBalancer) RoundTrip(req *http.Request) (*http.Response, error) {
+// 	var roundTripper = c.getTransportHealthy()
+// 	var upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string] = map[string]generic.PairInterface[string, string]{}
+// 	for k := range roundTripper {
+// 		upStreamServerSchemeAndHostOfName[k] = generic.NewPairImplement[string, string](c.upstreamURL.Scheme, c.upstreamURL.Host)
+// 	}
+// 	// 设置请求的Host为上游服务的Host
+// 	req.Host = c.upstreamURL.Host
 
-	PrintRequest(req) // 打印请求信息
+// 	PrintRequest(req) // 打印请求信息
 
-	// 使用随机负载均衡策略选择一个健康状态的传输函数，并执行请求
-	var rs, err = RandomLoadBalancer(roundTripper, req, upStreamServerSchemeAndHostOfName)
+// 	// 使用随机负载均衡策略选择一个健康状态的传输函数，并执行请求
+// 	var rs, err = RandomLoadBalancer(roundTripper, req, upStreamServerSchemeAndHostOfName)
 
-	if err != nil {
-		log.Println("ERROR:", err) // 打印错误信息
-	} else {
-		PrintResponse(rs) // 打印响应信息
-	}
-	return rs, err
-}
+// 	if err != nil {
+// 		log.Println("ERROR:", err) // 打印错误信息
+// 	} else {
+// 		PrintResponse(rs) // 打印响应信息
+// 	}
+// 	return rs, err
+// }
 
 // randomShuffle 函数用于对指定的切片进行随机打乱。
 // [T any] 表示该函数适用于任意类型的切片。
 // arr []T 是输入的切片，函数会对其原地打乱顺序。
 // 返回值 []T 是打乱后的切片。
-func randomShuffle[T any](arr []T) []T {
-	// 使用当前时间的纳秒级种子初始化随机数生成器，以确保每次运行结果都不同。
-	return generic.RandomShuffle(arr)
-} // mapToArray 将一个映射（map）转换为包含键值对（Pair）的切片（slice）。
+// func randomShuffle[T any](arr []T) []T {
+// 	// 使用当前时间的纳秒级种子初始化随机数生成器，以确保每次运行结果都不同。
+// 	return generic.RandomShuffle(arr)
+// } // mapToArray 将一个映射（map）转换为包含键值对（Pair）的切片（slice）。
 // 参数 m 是一个类型为 map[T]Y 的映射，其中 T 是可比较的类型，Y 是任意类型。
 // 返回值是一个类型为 []Pair[T, Y] 的切片，其中 Pair 是一个包含两个字段 First 和 Second 的结构体。
 // 这个函数主要用于将映射的键值对形式转换为切片形式，方便后续处理。
 
-func mapToArray[T comparable, Y any](m map[T]Y) []generic.PairInterface[T, Y] {
-	result := make([]generic.PairInterface[T, Y], 0, len(m))
-	for key := range m {
-		result = append(result, generic.NewPairImplement[T, Y](key, m[key]))
-	}
-	return result
-}
+// func mapToArray[T comparable, Y any](m map[T]Y) []generic.PairInterface[T, Y] {
+// 	result := make([]generic.PairInterface[T, Y], 0, len(m))
+// 	for key := range m {
+// 		result = append(result, generic.NewPairImplement[T, Y](key, m[key]))
+// 	}
+// 	return result
+// }
 
 // RandomLoadBalancer 是一个通过随机算法从提供的运输函数列表中选择一个来执行HTTP请求的负载均衡器。
 // 参数：
@@ -616,45 +627,45 @@ func mapToArray[T comparable, Y any](m map[T]Y) []generic.PairInterface[T, Y] {
 // 返回值：
 // - *http.Response：从运输函数中返回的HTTP响应指针，如果所有运输函数都失败，则为nil。
 // - error：如果在发送请求时遇到错误，则返回错误信息；否则为nil。
-func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Response, error), req *http.Request, upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string]) (*http.Response, error) {
-	// 打印传入的运输函数列表
-	fmt.Println("接收到的可用上游服务器:", roundTripper)
+// func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Response, error), req *http.Request, upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string]) (*http.Response, error) {
+// 	// 打印传入的运输函数列表
+// 	fmt.Println("接收到的可用上游服务器:", roundTripper)
 
-	PrintRequest(req)
-	var roundTripperArray = mapToArray(roundTripper)
-	// 使用随机算法对运输函数列表进行洗牌，以实现随机选择运输函数的效果
-	var healthRoundTripper = randomShuffle(roundTripperArray)
-	var rer error = nil
+// 	PrintRequest(req)
+// 	var roundTripperArray = mapToArray(roundTripper)
+// 	// 使用随机算法对运输函数列表进行洗牌，以实现随机选择运输函数的效果
+// 	var healthRoundTripper = randomShuffle(roundTripperArray)
+// 	var rer error = nil
 
-	// 遍历洗牌后的运输函数列表，尝试发送HTTP请求
-	for _, transport := range healthRoundTripper {
-		var name = transport.GetFirst()
-		var Scheme = upStreamServerSchemeAndHostOfName[name].GetFirst()
-		var Host = upStreamServerSchemeAndHostOfName[name].GetSecond()
-		req.URL.Scheme = Scheme
-		req.Host = Host
-		req.URL.Host = Host
-		var rs, err = transport.GetSecond()(req) // 执行运输函数
-		if err != nil {
-			// 如果请求发送失败，打印错误信息，并更新错误变量
-			log.Println("ERROR:", err)
-			rer = err
+// 	// 遍历洗牌后的运输函数列表，尝试发送HTTP请求
+// 	for _, transport := range healthRoundTripper {
+// 		var name = transport.GetFirst()
+// 		var Scheme = upStreamServerSchemeAndHostOfName[name].GetFirst()
+// 		var Host = upStreamServerSchemeAndHostOfName[name].GetSecond()
+// 		req.URL.Scheme = Scheme
+// 		req.Host = Host
+// 		req.URL.Host = Host
+// 		var rs, err = transport.GetSecond()(req) // 执行运输函数
+// 		if err != nil {
+// 			// 如果请求发送失败，打印错误信息，并更新错误变量
+// 			log.Println("ERROR:", err)
+// 			rer = err
 
-		} else if rs.StatusCode >= 500 {
-			// 如果请求发送成功，打印响应信息，并返回响应和错误
-			log.Println("ERROR:", "Status code is 500 or greater.", rs.StatusCode)
-			PrintResponse(rs)
-			rer = fmt.Errorf("ERROR:Status code is 500 or greater" + fmt.Sprint(rs.StatusCode))
-		} else {
-			// 如果请求发送成功，打印响应信息，并返回响应和错误
-			PrintResponse(rs)
-			return rs, err
-		}
+// 		} else if rs.StatusCode >= 500 {
+// 			// 如果请求发送成功，打印响应信息，并返回响应和错误
+// 			log.Println("ERROR:", "Status code is 500 or greater.", rs.StatusCode)
+// 			PrintResponse(rs)
+// 			rer = fmt.Errorf("ERROR:Status code is 500 or greater" + fmt.Sprint(rs.StatusCode))
+// 		} else {
+// 			// 如果请求发送成功，打印响应信息，并返回响应和错误
+// 			PrintResponse(rs)
+// 			return rs, err
+// 		}
 
-	}
-	// 如果所有运输函数尝试都失败，返回nil和错误信息
-	return nil, rer
-}
+// 	}
+// 	// 如果所有运输函数尝试都失败，返回nil和错误信息
+// 	return nil, rer
+// }
 
 func PrintRequest(req *http.Request) {
 	print_experiment.PrintRequest(req)

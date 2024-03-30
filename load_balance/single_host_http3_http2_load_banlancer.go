@@ -397,38 +397,43 @@ type HealthCheckResult struct {
 // runPeriodicHealthChecks 开启周期性健康检查。
 // 此函数为循环执行，不断对上游服务进行健康检查，并根据检查结果更新服务的健康状态。
 func (h *HTTP3HTTP2LoadBalancer) runPeriodicHealthChecks() {
+	RunHealthCheckOnce(h)
 	for range h.HealthCheckIntervalMsTicker.C {
 		// 对每个上游服务执行健康检查
-		upstreams := h.UpStreamsGetter()
-		iterator := upstreams.Iterator()
-		size := (upstreams).Size()
-		results := make(chan HealthCheckResult, size)
-		for {
-			var upstream, o = iterator.Next()
-			if o {
-				key := upstream.GetFirst()
-				upstreamSvc := upstream.GetSecond()
+		RunHealthCheckOnce(h)
+	}
+}
 
-				go func(key string, svc LoadBalanceAndUpStream) {
-					healthy, err := svc.GetServerConfigCommon().ActiveHealthyCheck()
-					results <- HealthCheckResult{key, healthy, err, svc}
-				}(key, upstreamSvc)
+func RunHealthCheckOnce(h *HTTP3HTTP2LoadBalancer) {
+	upstreams := h.UpStreamsGetter()
+	iterator := upstreams.Iterator()
+	size := (upstreams).Size()
+	results := make(chan HealthCheckResult, size)
+	for {
+		var upstream, o = iterator.Next()
+		if o {
+			key := upstream.GetFirst()
+			upstreamSvc := upstream.GetSecond()
 
-			} else {
-				break
-			}
+			go func(key string, svc LoadBalanceAndUpStream) {
+				healthy, err := svc.GetServerConfigCommon().ActiveHealthyCheck()
+				results <- HealthCheckResult{key, healthy, err, svc}
+			}(key, upstreamSvc)
+
+		} else {
+			break
 		}
-		for i := int64(0); i < size; i++ {
-			result := <-results
-			if result.err != nil || !result.healthy {
-				log.Printf("上游服务 %s 在健康检查时发生错误: %v", result.key, result.err)
-				log.Printf("上游服务 %s 不健康", result.svc.GetServerConfigCommon().GetIdentifier())
+	}
+	for i := int64(0); i < size; i++ {
+		result := <-results
+		if result.err != nil || !result.healthy {
+			log.Printf("上游服务 %s 在健康检查时发生错误: %v", result.key, result.err)
+			log.Printf("上游服务 %s 不健康", result.svc.GetServerConfigCommon().GetIdentifier())
 
-				result.svc.GetServerConfigCommon().SetHealthy(false)
-			} else {
-				log.Printf("上游服务 %s 健康", result.key)
-				result.svc.GetServerConfigCommon().SetHealthy(true)
-			}
+			result.svc.GetServerConfigCommon().SetHealthy(false)
+		} else {
+			log.Printf("上游服务 %s 健康", result.key)
+			result.svc.GetServerConfigCommon().SetHealthy(true)
 		}
 	}
 }

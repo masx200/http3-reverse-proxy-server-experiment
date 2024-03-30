@@ -134,22 +134,24 @@ func TestMain(t *testing.T) {
 
 	})
 	engineMock := engine
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	w := httptest.NewRecorder()
+	LoadBalanceAndUpStream.GetLoadBalanceService().Unwrap().HealthyCheckStart()
+	for i := 0; i < 5; i++ {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		w := httptest.NewRecorder()
 
-	// 调用自定义处理器
-	engineMock.Handler().ServeHTTP(w, req)
-	var expectedStatus = 200
-	// 验证响应状态码、响应头或响应体
-	if w.Code != expectedStatus {
-		t.Errorf("Expected status code %d, got %d", expectedStatus, w.Code)
+		// 调用自定义处理器
+		engineMock.Handler().ServeHTTP(w, req)
+		var expectedStatus = 200
+		// 验证响应状态码、响应头或响应体
+		if w.Code != expectedStatus {
+			t.Errorf("Expected status code %d, got %d", expectedStatus, w.Code)
+		}
+		PrintResponse(w.Result())
+
+		w.Body.WriteTo(os.Stdout)
 	}
-	PrintResponse(w.Result())
 
 	LoadBalanceAndUpStream.GetLoadBalanceService().Unwrap().HealthyCheckStop()
-
-	w.Body.WriteTo(os.Stdout)
-
 	// var hostname = "0.0.0.0"
 	// server := &http.Server{
 	// 	Addr: hostname + ":" + strconv.Itoa(httpsPort),

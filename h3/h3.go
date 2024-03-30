@@ -65,6 +65,7 @@ func CreateHTTP3TransportWithIP(ip string) http.RoundTripper {
 
 }
 func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
+	/* 需要把connection保存起来,防止一个请求一个连接的情况速度会很慢 */
 	return adapter.RoundTripTransport(func(r *http.Request) (*http.Response, error) {
 		// 创建UDP连接，作为QUIC协议的基础。
 		udpConn, err := net.ListenUDP("udp", nil)

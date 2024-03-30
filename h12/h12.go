@@ -70,6 +70,7 @@ func CreateHTTP12TransportWithIP(ip string) http.RoundTripper {
 
 }
 func CreateHTTP12TransportWithIPGetter(getter func() string) http.RoundTripper {
+	/* 需要把connection保存起来,防止一个请求一个连接的情况速度会很慢 */
 	dialer := &net.Dialer{
 		Timeout:   30 * time.Second, // 设置拨号超时时间为30秒
 		KeepAlive: 30 * time.Second, // 设置保持活动状态的间隔为30秒

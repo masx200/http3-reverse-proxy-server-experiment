@@ -9,11 +9,12 @@ type DnsResolverOptions struct {
 	HttpsPort int
 }
 
-func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain string, optionsCallBacks ...func(*DnsResolverOptions)) {
+func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain string, optionsCallBacks ...func(*DnsResolverOptions)) []string {
 
 	var options = &DnsResolverOptions{QueryCallback: queryCallback, Domain: domain, HttpsPort: 443}
 
 	for _, optionsCallBack := range optionsCallBacks {
 		optionsCallBack(options)
 	}
+	return []string{}
 }

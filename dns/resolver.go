@@ -2,6 +2,8 @@ package dns
 
 import (
 	"fmt"
+	"log"
+	"strings"
 	"sync"
 
 	"github.com/miekg/dns"
@@ -27,14 +29,16 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 	var tasks = []func(){
 		func() {
 			defer wg.Done()
+
 			res, err := resolve(options, dns.TypeA)
 			if err != nil {
 				fmt.Printf("Error querying A record for %s: %v\n", options.Domain, err)
 				return
 			}
 			resultsMutex.Lock()
+			defer resultsMutex.Unlock()
 			results = append(results, res...)
-			resultsMutex.Unlock()
+
 		}, func() {
 			defer wg.Done()
 			res, err := resolve(options, dns.TypeAAAA)
@@ -43,8 +47,8 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 				return
 			}
 			resultsMutex.Lock()
+			defer resultsMutex.Unlock()
 			results = append(results, res...)
-			resultsMutex.Unlock()
 		}, func() {
 			defer wg.Done()
 			res, err := resolve(options, dns.TypeHTTPS)
@@ -53,8 +57,8 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 				return
 			}
 			resultsMutex.Lock()
+			defer resultsMutex.Unlock()
 			results = append(results, res...)
-			resultsMutex.Unlock()
 		},
 	}
 	wg.Add(len(tasks))
@@ -79,13 +83,23 @@ func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
 	}
 
 	fmt.Println(m)
-	r, err := options.QueryCallback(m)
+	resp, err := options.QueryCallback(m)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(r)
+	if resp.Rcode != dns.RcodeSuccess {
+		log.Println(dns.RcodeToString[resp.Rcode])
+		return nil, fmt.Errorf("dns server  response error not success")
+	}
+	if len(resp.Answer) == 0 {
+		log.Println("dns server-No  records found")
+		return nil, fmt.Errorf(
+			"dns server  response error No  records found",
+		)
+	}
+	fmt.Println(resp)
 	var results []string
-	for _, answer := range r.Answer {
+	for _, answer := range resp.Answer {
 		switch record := answer.(type) {
 		case *dns.A:
 			results = append(results, (record.A.String()))
@@ -93,7 +107,18 @@ func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
 			results = append(results, (record.AAAA.String()))
 		case *dns.HTTPS:
 			{
+				if record.Priority != 0 {
+					for _, value := range record.Value {
+						if value.Key().String() == "ipv4hint" {
+							var addresses = strings.Split(value.String(), ",")
+							results = append(results, addresses...)
 
+						} else if value.Key().String() == "ipv6hint" {
+							var addresses = strings.Split(value.String(), ",")
+							results = append(results, addresses...)
+						}
+					}
+				}
 			}
 		case *dns.CNAME:
 			// results = append(results, fmt.Sprintf("CNAME: %s", record.Target))

@@ -9,13 +9,19 @@ import (
 	"github.com/miekg/dns"
 )
 
+// DnsResolverOptions 是DNS解析器的配置选项。
 type DnsResolverOptions struct {
-	QueryCallback func(m *dns.Msg) (r *dns.Msg, err error)
-	Domain        string
+	QueryCallback func(m *dns.Msg) (r *dns.Msg, err error) // QueryCallback 是一个回调函数，用于自定义DNS查询逻辑。接收一个dns.Msg类型的参数，返回一个dns.Msg类型和error类型的值。
+	Domain        string                                   // Domain 是需要进行DNS解析的域名。
 
-	HttpsPort int
+	HttpsPort int // HttpsPort 是HTTPS服务监听的端口号。
 }
 
+// DnsResolver 是一个用于解析特定域名下多种类型记录的函数，例如A记录、AAAA记录和HTTPS记录。
+// queryCallback 是一个回调函数，用于执行DNS查询并返回结果。
+// domain 是需要查询的域名。
+// optionsCallBacks 是一个可选参数列表，用于修改查询选项。
+// 返回解析到的地址列表和可能发生的错误。
 func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain string, optionsCallBacks ...func(*DnsResolverOptions)) ([]string, error) {
 
 	var options = &DnsResolverOptions{QueryCallback: queryCallback, Domain: domain, HttpsPort: 443}
@@ -72,7 +78,10 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 	}
 	return removeDuplicates(results), nil
 
-}
+} // resolve 是一个用于解析特定域名下指定类型记录的函数。
+// options: 指定DNS解析器的选项，包含域名、端口和其他配置。
+// recordType: 指定需要查询的记录类型（如A记录、AAAA记录等）。
+// 返回值为解析到的记录值字符串数组和可能发生的错误。
 func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
 	m := &dns.Msg{}
 	if recordType == dns.TypeHTTPS && options.HttpsPort != 443 {

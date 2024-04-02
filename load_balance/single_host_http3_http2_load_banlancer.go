@@ -365,6 +365,9 @@ func (h *HTTP3HTTP2LoadBalancer) SelectAvailableServer() (LoadBalanceAndUpStream
 }
 
 func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	go func() {
 		h.UpStreamsGetter().ForEach(func(lbaus LoadBalanceAndUpStream, s string, mi generic.MapInterface[string, LoadBalanceAndUpStream]) {
 
@@ -376,9 +379,6 @@ func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
 		})
 
 	}()
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
 	if h.healthCheckRunning {
 		log.Println("健康检查已在运行，无需重新启动.", h.GetIdentifier())
 		return
@@ -457,7 +457,17 @@ func (h *HTTP3HTTP2LoadBalancer) HealthyCheckRunning() bool {
 func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStop() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	go func() {
+		h.UpStreamsGetter().ForEach(func(lbaus LoadBalanceAndUpStream, s string, mi generic.MapInterface[string, LoadBalanceAndUpStream]) {
 
+			var glbs = lbaus.GetLoadBalanceService()
+			/* 如果还有上游负载均衡器,那也启动上游负载均衡器的健康检查 */
+			glbs.IfSome(func(v LoadBalanceService) {
+				go v.HealthyCheckStop()
+			})
+		})
+
+	}()
 	if !h.healthCheckRunning {
 		log.Println("健康检查并未运行，无需停止.", h.GetIdentifier())
 		return

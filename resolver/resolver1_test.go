@@ -120,3 +120,29 @@ func TestResolver4224(t *testing.T) {
 		fmt.Println(x, result)
 	}
 }
+func TestResolver_www_github(t *testing.T) {
+	x := "www.github.com"
+	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks14(), x)
+
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	for _, result := range results {
+		fmt.Println(x, result)
+	}
+}
+func TestResolver_github(t *testing.T) {
+	x := "github.com"
+	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks14(), x)
+
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	for _, result := range results {
+		fmt.Println(x, result)
+	}
+}

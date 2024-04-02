@@ -2,14 +2,15 @@ package resolver
 
 import (
 	"fmt"
+	"testing"
+
 	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
 	"github.com/miekg/dns"
-	"testing"
 )
 
 func TestResolver9(t *testing.T) {
 	x := "hello-word-worker-cloudflare.masx200.workers.dev"
-	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks(), x)
+	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks2(), x)
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -22,7 +23,7 @@ func TestResolver9(t *testing.T) {
 }
 func TestResolver28(t *testing.T) {
 	x := "nextjs-doh-reverse-proxy.onrender.com"
-	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks(), x)
+	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks2(), x)
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -35,7 +36,7 @@ func TestResolver28(t *testing.T) {
 }
 func TestResolver37(t *testing.T) {
 	x := "www.bilibili.com"
-	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks(), x)
+	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks2(), x)
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -59,7 +60,7 @@ func GetQueryCallbacks1() []func(m *dns.Msg) (r *dns.Msg, err error) {
 }
 func TestResolver42(t *testing.T) {
 	x := "www.bilibili.com"
-	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks(), x)
+	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks2(), x)
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -72,7 +73,7 @@ func TestResolver42(t *testing.T) {
 }
 func TestResolverMultipleServers2(t *testing.T) {
 	x := "hello-word-worker-cloudflare.masx200.workers.dev"
-	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks(), x)
+	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks2(), x)
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)

@@ -12,7 +12,7 @@ import (
 func DoHTTP3Client(m *dns.Msg, s string) (r *dns.Msg, err error) {
 	return h3_experiment.DoHTTP3Client(m, s)
 }
-func GetQueryCallbacks() []func(m *dns.Msg) (r *dns.Msg, err error) {
+func GetQueryCallbacks2() []func(m *dns.Msg) (r *dns.Msg, err error) {
 	return []func(m *dns.Msg) (r *dns.Msg, err error){func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DohClient(m, "https://cloudflare-dns.com/dns-query")
 	}, func(m *dns.Msg) (r *dns.Msg, err error) {

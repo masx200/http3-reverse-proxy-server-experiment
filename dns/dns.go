@@ -106,6 +106,8 @@ func setPortIfMissing(rawURL string) (string, error) {
 // r: 代表DNS应答消息的dns.Msg对象。
 // err: 如果过程中发生错误，则返回错误信息。
 func DohClient(msg *dns.Msg, dohServerURL string) (r *dns.Msg, err error) {
+	/* 为了doh的缓存,需要设置id为0 ,可以缓存*/
+	msg.Id = 0
 	body, err := msg.Pack()
 	if err != nil {
 		log.Println(dohServerURL, err)

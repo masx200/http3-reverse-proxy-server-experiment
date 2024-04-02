@@ -1,11 +1,13 @@
 package dns
 
+import "github.com/fanjindong/go-cache"
 import (
 	"fmt"
 	"log"
 	"strings"
 	"sync"
 
+	// "github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	"github.com/miekg/dns"
 )
 
@@ -15,6 +17,7 @@ import (
 // optionsCallBacks: 可选的一组函数，用于定制DNS解析器的选项。
 // 返回值: 解析到的IP地址字符串切片（去重后），如果没有任何解析结果，则返回错误。
 func DnsResolverMultipleServers(queryCallbacks []func(m *dns.Msg) (r *dns.Msg, err error), domain string, optionsCallBacks ...func(*DnsResolverOptions)) ([]string, error) {
+	c := cache.NewMemCache()
 	var wg sync.WaitGroup
 	var resultsMutex sync.Mutex
 	var results []string
@@ -25,7 +28,12 @@ func DnsResolverMultipleServers(queryCallbacks []func(m *dns.Msg) (r *dns.Msg, e
 		wg.Add(1)
 		go func(queryCallback func(m *dns.Msg) (r *dns.Msg, err error)) {
 			defer wg.Done()
-			res, err := DnsResolver(queryCallback, domain, optionsCallBacks...)
+			res, err := DnsResolver(queryCallback, domain, func(dro *DnsResolverOptions) {
+				dro.DnsCache = c
+				for _, callback := range optionsCallBacks {
+					callback(dro)
+				}
+			})
 			if err != nil {
 				fmt.Printf("Error resolving domain %s: %v\n", domain, err)
 				return
@@ -47,8 +55,8 @@ func DnsResolverMultipleServers(queryCallbacks []func(m *dns.Msg) (r *dns.Msg, e
 type DnsResolverOptions struct {
 	QueryCallback func(m *dns.Msg) (r *dns.Msg, err error) // QueryCallback 是一个回调函数，用于自定义DNS查询逻辑。接收一个dns.Msg类型的参数，返回一个dns.Msg类型和error类型的值。
 	Domain        string                                   // Domain 是需要进行DNS解析的域名。
-
-	HttpsPort int // HttpsPort 是HTTPS服务监听的端口号。
+	DnsCache      cache.ICache
+	HttpsPort     int // HttpsPort 是HTTPS服务监听的端口号。
 }
 
 // DnsResolver 是一个用于解析特定域名下多种类型记录的函数，例如A记录、AAAA记录和HTTPS记录。
@@ -58,7 +66,7 @@ type DnsResolverOptions struct {
 // 返回解析到的地址列表和可能发生的错误。
 func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain string, optionsCallBacks ...func(*DnsResolverOptions)) ([]string, error) {
 
-	var options = &DnsResolverOptions{QueryCallback: queryCallback, Domain: domain, HttpsPort: 443}
+	var options = &DnsResolverOptions{QueryCallback: queryCallback, Domain: domain, HttpsPort: 443, DnsCache: cache.NewMemCache()}
 
 	for _, optionsCallBack := range optionsCallBacks {
 		optionsCallBack(options)

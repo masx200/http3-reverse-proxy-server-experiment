@@ -64,6 +64,7 @@ func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterfa
 				var c, d = a.Get(hash)
 
 				if c != nil && d {
+					log.Println(s, "cache hit", hash)
 					return c.(*dns.Msg), nil
 				}
 				result, err := queryCallback(m)
@@ -72,6 +73,7 @@ func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterfa
 					return nil, err
 				}
 				a.Set(hash, result)
+				log.Println(s, "cache miss", hash)
 				return result, nil
 			}, domain, options.HttpsPort)
 			if err != nil {

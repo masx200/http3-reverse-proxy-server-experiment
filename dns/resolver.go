@@ -21,47 +21,46 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 	for _, optionsCallBack := range optionsCallBacks {
 		optionsCallBack(options)
 	}
-	var wg sync.WaitGroup
-	wg.Add(3)
-
-	var results []string
 	var resultsMutex sync.Mutex
-
-	go func() {
-		defer wg.Done()
-		res, err := resolve(options, dns.TypeA)
-		if err != nil {
-			fmt.Printf("Error querying A record for %s: %v\n", options.Domain, err)
-			return
-		}
-		resultsMutex.Lock()
-		results = append(results, res...)
-		resultsMutex.Unlock()
-	}()
-
-	go func() {
-		defer wg.Done()
-		res, err := resolve(options, dns.TypeAAAA)
-		if err != nil {
-			fmt.Printf("Error querying AAAA record for %s: %v\n", options.Domain, err)
-			return
-		}
-		resultsMutex.Lock()
-		results = append(results, res...)
-		resultsMutex.Unlock()
-	}()
-
-	go func() {
-		defer wg.Done()
-		res, err := resolve(options, dns.TypeHTTPS)
-		if err != nil {
-			fmt.Printf("Error querying HTTPS record for %s: %v\n", options.Domain, err)
-			return
-		}
-		resultsMutex.Lock()
-		results = append(results, res...)
-		resultsMutex.Unlock()
-	}()
+	var results []string
+	var wg sync.WaitGroup
+	var tasks = []func(){
+		func() {
+			defer wg.Done()
+			res, err := resolve(options, dns.TypeA)
+			if err != nil {
+				fmt.Printf("Error querying A record for %s: %v\n", options.Domain, err)
+				return
+			}
+			resultsMutex.Lock()
+			results = append(results, res...)
+			resultsMutex.Unlock()
+		}, func() {
+			defer wg.Done()
+			res, err := resolve(options, dns.TypeAAAA)
+			if err != nil {
+				fmt.Printf("Error querying AAAA record for %s: %v\n", options.Domain, err)
+				return
+			}
+			resultsMutex.Lock()
+			results = append(results, res...)
+			resultsMutex.Unlock()
+		}, func() {
+			defer wg.Done()
+			res, err := resolve(options, dns.TypeHTTPS)
+			if err != nil {
+				fmt.Printf("Error querying HTTPS record for %s: %v\n", options.Domain, err)
+				return
+			}
+			resultsMutex.Lock()
+			results = append(results, res...)
+			resultsMutex.Unlock()
+		},
+	}
+	wg.Add(len(tasks))
+	for _, task := range tasks {
+		go task()
+	}
 
 	wg.Wait()
 	if len(results) == 0 {
@@ -72,7 +71,13 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 }
 func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
 	m := &dns.Msg{}
-	m.SetQuestion(dns.Fqdn(options.Domain), recordType)
+	if recordType == dns.TypeHTTPS && options.HttpsPort != 443 {
+
+		m.SetQuestion(fmt.Sprintf("_%s._https.", fmt.Sprint(options.HttpsPort))+dns.Fqdn(options.Domain), recordType)
+	} else {
+		m.SetQuestion(dns.Fqdn(options.Domain), recordType)
+	}
+
 	fmt.Println(m)
 	r, err := options.QueryCallback(m)
 	if err != nil {
@@ -98,6 +103,9 @@ func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
 			}
 			results = append(results, res...)
 		}
+	}
+	if len(results) == 0 {
+		return nil, fmt.Errorf("no results found for %s", options.Domain)
 	}
 	return results, nil
 }

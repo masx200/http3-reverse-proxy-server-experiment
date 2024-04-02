@@ -11,7 +11,9 @@ import (
 
 func TestResolver7(t *testing.T) {
 	x := "www.google.com"
-	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks7())
+	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks7(), func(dro *dns_experiment.DnsResolverOptions) {
+		dro.DnsCache = DnsCache
+	})
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -24,7 +26,9 @@ func TestResolver7(t *testing.T) {
 }
 func TestResolver27(t *testing.T) {
 	x := "www.render.com"
-	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks7())
+	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks7(), func(dro *dns_experiment.DnsResolverOptions) {
+		dro.DnsCache = DnsCache
+	})
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -37,7 +41,9 @@ func TestResolver27(t *testing.T) {
 }
 func TestResolver73(t *testing.T) {
 	x := "www.so.com"
-	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks7())
+	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks7(), func(dro *dns_experiment.DnsResolverOptions) {
+		dro.DnsCache = DnsCache
+	})
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -62,7 +68,9 @@ func GetQueryCallbacks7() generic.MapInterface[string, func(m *dns.Msg) (r *dns.
 }
 func TestResolver47(t *testing.T) {
 	x := "www.cloudflare.com"
-	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks7())
+	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks7(), func(dro *dns_experiment.DnsResolverOptions) {
+		dro.DnsCache = DnsCache
+	})
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -75,7 +83,9 @@ func TestResolver47(t *testing.T) {
 }
 func TestResolverMultipleServers7(t *testing.T) {
 	x := "www.360.cn"
-	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks7())
+	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks7(), func(dro *dns_experiment.DnsResolverOptions) {
+		dro.DnsCache = DnsCache
+	})
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)

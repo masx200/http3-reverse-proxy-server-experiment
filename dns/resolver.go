@@ -1,28 +1,39 @@
 package dns
 
-import "github.com/fanjindong/go-cache"
 import (
 	"fmt"
 	"log"
 	"strings"
 	"sync"
 
-	// "github.com/masx200/http3-reverse-proxy-server-experiment/generic"
+	"crypto/sha512"
+	"encoding/hex"
+
+	"github.com/fanjindong/go-cache"
+	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	"github.com/miekg/dns"
 )
+
+// "github.com/masx200/http3-reverse-proxy-server-experiment/generic"
+
+// Sha512 计算给定字节切片的SHA-512哈希值，并以字符串形式返回
+func Sha512(input []byte) string {
+	hash := sha512.Sum512(input)
+	return hex.EncodeToString(hash[:])
+}
 
 // DnsResolverMultipleServers 使用多个DNS查询回调函数来解析给定域名，并返回解析结果的去重列表。
 // queryCallbacks: 一个包含多个DNS查询回调函数的切片，每个函数尝试解析指定的域名。
 // domain: 需要解析的域名。
 // optionsCallBacks: 可选的一组函数，用于定制DNS解析器的选项。
 // 返回值: 解析到的IP地址字符串切片（去重后），如果没有任何解析结果，则返回错误。
-func DnsResolverMultipleServers(domain string, queryCallbacks []func(m *dns.Msg) (r *dns.Msg, err error), optionsCallBacks ...func(*DnsResolverOptions)) ([]string, error) {
-	c := cache.NewMemCache()
+func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterface[string, func(m *dns.Msg) (r *dns.Msg, err error)], optionsCallBacks ...func(*DnsResolverOptions)) ([]string, error) {
+	// c := cache.NewMemCache()
 	var options = &DnsResolverOptions{
 		HttpsPort:     443,
 		QueryCallback: queryCallbacks,
 		Domain:        domain,
-		DnsCache:      c,
+		DnsCache:      generic.NewMapImplement[string, cache.ICache](),
 	}
 	for _, optionsCallBack := range optionsCallBacks {
 		optionsCallBack(options)
@@ -30,14 +41,39 @@ func DnsResolverMultipleServers(domain string, queryCallbacks []func(m *dns.Msg)
 	var wg sync.WaitGroup
 	var resultsMutex sync.Mutex
 	var results []string
-	if len(queryCallbacks) == 0 {
+	if (queryCallbacks).Size() == 0 {
 		return nil, fmt.Errorf("no query callbacks provided")
 	}
-	for _, queryCallback := range queryCallbacks {
+	queryCallbacks.ForEach(func(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), s string, mi generic.MapInterface[string, func(m *dns.Msg) (r *dns.Msg, err error)]) {
 		wg.Add(1)
 		go func(queryCallback func(m *dns.Msg) (r *dns.Msg, err error)) {
 			defer wg.Done()
-			res, err := DnsResolver(queryCallback, domain, options.HttpsPort)
+			res, err := DnsResolver(func(m *dns.Msg) (*dns.Msg, error) {
+				var a, b = options.DnsCache.Get(s)
+				if !(a != nil && b) {
+					a = cache.NewMemCache()
+					options.DnsCache.Set(s, a)
+				}
+				var buffer, err = m.Pack()
+				if err != nil {
+					log.Println(s, err)
+					return nil, err
+				}
+				var hash = Sha512(buffer)
+
+				var c, d = a.Get(hash)
+
+				if c != nil && d {
+					return c.(*dns.Msg), nil
+				}
+				result, err := queryCallback(m)
+				if err != nil {
+					log.Println(s, err)
+					return nil, err
+				}
+				a.Set(hash, result)
+				return result, nil
+			}, domain, options.HttpsPort)
 			if err != nil {
 				fmt.Printf("Error resolving domain %s: %v\n", domain, err)
 				return
@@ -46,7 +82,8 @@ func DnsResolverMultipleServers(domain string, queryCallbacks []func(m *dns.Msg)
 			defer resultsMutex.Unlock()
 			results = append(results, res...)
 		}(queryCallback)
-	}
+
+	})
 
 	wg.Wait()
 	if len(results) == 0 {
@@ -57,9 +94,9 @@ func DnsResolverMultipleServers(domain string, queryCallbacks []func(m *dns.Msg)
 
 // DnsResolverOptions 是DNS解析器的配置选项。
 type DnsResolverOptions struct {
-	QueryCallback []func(m *dns.Msg) (r *dns.Msg, err error) // QueryCallback 是一个回调函数，用于自定义DNS查询逻辑。接收一个dns.Msg类型的参数，返回一个dns.Msg类型和error类型的值。
-	Domain        string                                     // Domain 是需要进行DNS解析的域名。
-	DnsCache      cache.ICache
+	QueryCallback generic.MapInterface[string, func(m *dns.Msg) (r *dns.Msg, err error)] // QueryCallback 是一个回调函数，用于自定义DNS查询逻辑。接收一个dns.Msg类型的参数，返回一个dns.Msg类型和error类型的值。
+	Domain        string                                                                 // Domain 是需要进行DNS解析的域名。
+	DnsCache      generic.MapInterface[string, cache.ICache]
 	HttpsPort     int // HttpsPort 是HTTPS服务监听的端口号。
 }
 

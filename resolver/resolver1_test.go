@@ -42,6 +42,7 @@ func TestResolver77(t *testing.T) {
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 
@@ -59,6 +60,7 @@ func TestResolver2(t *testing.T) {
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 
@@ -76,6 +78,7 @@ func TestResolver3(t *testing.T) {
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 
@@ -95,6 +98,7 @@ func TestResolver4(t *testing.T) {
 		})
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 
@@ -115,6 +119,7 @@ func TestResolverMultipleServers77(t *testing.T) {
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 
@@ -130,6 +135,7 @@ func TestResolver4224(t *testing.T) {
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 
@@ -145,6 +151,7 @@ func TestResolver_www_github(t *testing.T) {
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 
@@ -160,6 +167,7 @@ func TestResolver_github(t *testing.T) {
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 
@@ -172,6 +180,7 @@ func TestResolver_github(t *testing.T) {
 	})
 
 	if err != nil {
+		t.Error(err)
 		fmt.Printf("Error: %v\n", err)
 		return
 	}

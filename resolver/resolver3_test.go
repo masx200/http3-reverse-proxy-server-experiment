@@ -17,6 +17,7 @@ func TestResolver7(t *testing.T) {
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 
@@ -32,6 +33,7 @@ func TestResolver27(t *testing.T) {
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 
@@ -47,6 +49,7 @@ func TestResolver73(t *testing.T) {
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 
@@ -74,6 +77,7 @@ func TestResolver47(t *testing.T) {
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 
@@ -89,6 +93,7 @@ func TestResolverMultipleServers7(t *testing.T) {
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		t.Error(err)
 		return
 	}
 

@@ -133,7 +133,9 @@ func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
 		return nil, fmt.Errorf("no results found for %s", options.Domain)
 	}
 	return removeDuplicates(results), nil
-}
+} // removeDuplicates 函数用于移除一个可比较类型切片中的重复元素。
+// 参数 arr 是待处理的切片，函数返回一个不包含重复元素的新切片。
+// [T comparable] 使用了泛型 T，限制 T 必须是可比较的类型。
 func removeDuplicates[T comparable](arr []T) []T {
 	seen := make(map[T]bool)
 	var result []T

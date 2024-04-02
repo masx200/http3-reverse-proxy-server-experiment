@@ -78,11 +78,11 @@ type SingleHostHTTP3ClientOfAddress struct {
 	HealthMutex             sync.Mutex
 	unHealthyFailDurationMs int64
 	HealthCheckIntervalMs   int64
-	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
-	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
-	Identifier              string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
-	IsHealthy               bool                                                           // 健康状态，标识当前客户端是否被视为健康。
-	PassiveUnHealthyChecker func(response *http.Response) (bool, error)                    // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
+	GetServerAddress        func() string                                                                                                       // 服务器地址，指定客户端要连接的HTTP服务器的地址。
+	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string, method string, statusCodeMin int, statusCodeMax int) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
+	Identifier              string                                                                                                              // 标识符，用于标识此HTTP客户端的唯一字符串。
+	IsHealthy               bool                                                                                                                // 健康状态，标识当前客户端是否被视为健康。
+	PassiveUnHealthyChecker func(response *http.Response) (bool, error)                                                                         // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	// RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 }
@@ -141,7 +141,7 @@ func (l *SingleHostHTTP3ClientOfAddress) SetHealthCheckIntervalMs(maxAge int64) 
 // 实现了 LoadBalanceAndUpStream 接口。
 // 返回值：检查是否成功（bool类型）和可能发生的错误（error类型）。
 func (l *SingleHostHTTP3ClientOfAddress) ActiveHealthyCheck() (bool, error) {
-	return l.ActiveHealthyChecker(l, l.UpStreamServerURL)
+	return l.ActiveHealthyChecker(l, l.ServerConfigCommon.GetActiveHealthyCheckURL(), l.ServerConfigCommon.GetActiveHealthyCheckMethod(), l.ServerConfigCommon.GetActiveHealthyCheckStatusCodeRange().GetFirst(), l.ServerConfigCommon.GetActiveHealthyCheckStatusCodeRange().GetSecond())
 }
 
 // GetIdentifier 获取标识符。

@@ -162,38 +162,38 @@ func DoHTTP3Client(msg *dns.Msg, dohttp3ServerURL string) (r *dns.Msg, err error
 	}
 	body, err := msg.Pack()
 	if err != nil {
-		log.Println(err)
+		log.Println(dohttp3ServerURL, err)
 		return nil, err
 	}
 	//http request doh
 	res, err := client.Post(dohttp3ServerURL, "application/dns-message", strings.NewReader(string(body)))
 	if err != nil {
-		log.Println(err)
+		log.Println(dohttp3ServerURL, err)
 		return nil, err
 	}
 	//res.status check
 	if res.StatusCode != 200 {
-		log.Println("http status code is not 200 " + fmt.Sprintf("status code is %d", res.StatusCode))
+		log.Println(dohttp3ServerURL, "http status code is not 200 "+fmt.Sprintf("status code is %d", res.StatusCode))
 		return nil, fmt.Errorf("http status code is not 200" + fmt.Sprintf("status code is %d", res.StatusCode))
 	}
 
 	//check content-type
 	if res.Header.Get("Content-Type") != "application/dns-message" {
-		log.Println("content-type is not application/dns-message " + res.Header.Get("Content-Type"))
+		log.Println(dohttp3ServerURL, "content-type is not application/dns-message "+res.Header.Get("Content-Type"))
 		return nil, fmt.Errorf("content-type is not application/dns-message " + res.Header.Get("Content-Type"))
 	}
 	//利用ioutil包读取百度服务器返回的数据
 	data, err := io.ReadAll(res.Body)
 	defer res.Body.Close() //一定要记得关闭连接
 	if err != nil {
-		log.Println(err)
+		log.Println(dohttp3ServerURL, err)
 		return nil, err
 	}
 	// log.Printf("%s", data)
 	resp := &dns.Msg{}
 	err = resp.Unpack(data)
 	if err != nil {
-		log.Println(err)
+		log.Println(dohttp3ServerURL, err)
 		return nil, err
 	}
 	return resp, nil

@@ -108,38 +108,38 @@ func setPortIfMissing(rawURL string) (string, error) {
 func DohClient(msg *dns.Msg, dohServerURL string) (r *dns.Msg, err error) {
 	body, err := msg.Pack()
 	if err != nil {
-		log.Println(err)
+		log.Println(dohServerURL, err)
 		return nil, err
 	}
 	//http request doh
 	res, err := http.Post(dohServerURL, "application/dns-message", strings.NewReader(string(body)))
 	if err != nil {
-		log.Println(err)
+		log.Println(dohServerURL, err)
 		return nil, err
 	}
 	//res.status check
 	if res.StatusCode != 200 {
-		log.Println("http status code is not 200 " + fmt.Sprintf("status code is %d", res.StatusCode))
+		log.Println(dohServerURL, "http status code is not 200 "+fmt.Sprintf("status code is %d", res.StatusCode))
 		return nil, fmt.Errorf("http status code is not 200" + fmt.Sprintf("status code is %d", res.StatusCode))
 	}
 
 	//check content-type
 	if res.Header.Get("Content-Type") != "application/dns-message" {
-		log.Println("content-type is not application/dns-message " + res.Header.Get("Content-Type"))
-		return nil, fmt.Errorf("content-type is not application/dns-message " + res.Header.Get("Content-Type"))
+		log.Println(dohServerURL, "content-type is not application/dns-message "+res.Header.Get("Content-Type"))
+		return nil, fmt.Errorf(dohServerURL, "content-type is not application/dns-message "+res.Header.Get("Content-Type"))
 	}
 	//利用ioutil包读取百度服务器返回的数据
 	data, err := io.ReadAll(res.Body)
 	defer res.Body.Close() //一定要记得关闭连接
 	if err != nil {
-		log.Println(err)
+		log.Println(dohServerURL, err)
 		return nil, err
 	}
 	// log.Printf("%s", data)
 	resp := &dns.Msg{}
 	err = resp.Unpack(data)
 	if err != nil {
-		log.Println(err)
+		log.Println(dohServerURL, err)
 		return nil, err
 	}
 	return resp, nil
@@ -162,19 +162,19 @@ func DoQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
 	fmt.Println("doQServerURL", doQServerURL)
 	urlWithPort, err := setPortIfMissing(doQServerURL)
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println(doQServerURL, "Error:", err)
 		return nil, err
 	}
 	doQServerURL = urlWithPort
 	if !strings.HasPrefix(doQServerURL, "quic://") {
-
-		return nil, errors.New("DOQ server URL must start with 'quic://'")
+		log.Println(doQServerURL, "DOQ server URL must start with 'quic://'")
+		return nil, errors.New(doQServerURL + "DOQ server URL must start with 'quic://'")
 	}
 	// 从DOH服务器URL中提取服务器名称和端口信息。
 	serverName, port, err := ExtractDOQServerDetails(doQServerURL)
 	if err != nil {
-		log.Println(err) // 记录提取详情时的错误
-		return nil, err  // 如果有错误，返回nil和错误信息
+		log.Println(doQServerURL, err) // 记录提取详情时的错误
+		return nil, err                // 如果有错误，返回nil和错误信息
 	}
 	var addr = fmt.Sprintf("%s:%s", serverName, port) // 格式化服务器地址
 	fmt.Println("addr", addr)
@@ -182,6 +182,10 @@ func DoQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
 	client := doq.NewClient(addr, doq.Options{})
 	// 发送DNS查询并获取应答
 	respA, err := client.Send(context.Background(), msg)
+	if err != nil {
+		log.Println(doQServerURL, err) // 记录发送时的错误
+		return nil, err                // 如果有错误，返回nil和错误信息
+	}
 	return respA, err // 返回DNS应答和可能的错误信息
 }
 
@@ -212,19 +216,19 @@ func DoTClient(msg *dns.Msg, doTServerURL string) (qA *dns.Msg, err error) {
 	fmt.Println("doTServerURL", doTServerURL)
 	urlWithPort, err := setPortIfMissing(doTServerURL)
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println(doTServerURL, "Error:", err)
 		return nil, err
 	}
 	doTServerURL = urlWithPort
 	if !strings.HasPrefix(doTServerURL, "tls://") {
-
-		return nil, errors.New("DOT server URL must start with 'tls://'")
+		log.Println(doTServerURL, "DOT server URL must start with 'tls://'")
+		return nil, errors.New(doTServerURL + "DOT server URL must start with 'tls://'")
 	}
 	// 从DOH服务器URL中解析出服务器名称和端口。
 	serverName, port, err := ExtractDOQServerDetails(doTServerURL)
 	if err != nil {
-		log.Println(err) // 记录解析服务器详情时的错误
-		return nil, err  // 如果解析出错，则返回nil和错误信息
+		log.Println(doTServerURL, err) // 记录解析服务器详情时的错误
+		return nil, err                // 如果解析出错，则返回nil和错误信息
 	}
 	var addr = fmt.Sprintf("%s:%s", serverName, port) // 拼接服务器的地址信息
 	fmt.Println("addr", addr)
@@ -233,5 +237,9 @@ func DoTClient(msg *dns.Msg, doTServerURL string) (qA *dns.Msg, err error) {
 	client.Net = "tcp-tls"
 	// 向指定的DNS服务器发送查询请求，并接收应答。
 	respA, _, err := client.Exchange(msg, addr)
+	if err != nil {
+		log.Println(doTServerURL, err) // 记录发送时的错误
+		return nil, err                // 如果有错误，返回nil和错误信息
+	}
 	return respA, err // 返回查询应答和可能存在的错误信息
 }

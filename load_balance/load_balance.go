@@ -30,6 +30,9 @@ type LoadBalanceAndUpStream interface {
 	GetServerConfigCommon() ServerConfigCommon
 }
 type ServerConfigCommon interface {
+	GetActiveHealthyCheckURL() string
+	GetActiveHealthyCheckMethod() string
+	GetActiveHealthyCheckStatusCodeRange() generic.PairInterface[int64, int64]
 	IncrementUnHealthyFailCount()
 	ResetUnHealthyFailCount()
 	GetUnHealthyFailCount() int64

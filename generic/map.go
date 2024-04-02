@@ -43,6 +43,15 @@ func NewMapImplement[T comparable, Y any](entries ...PairInterface[T, Y]) MapInt
 	}
 	return m
 }
+func MapImplementFromMap[T comparable, Y any](entries map[T]Y) MapInterface[T, Y] {
+	var m = &MapImplement[T, Y]{
+		data: make(map[T]Y),
+	}
+	for k, entry := range entries {
+		m.Set(k, entry)
+	}
+	return m
+}
 
 type MapIterator[T comparable, Y any] struct {
 	entries []PairInterface[T, Y]

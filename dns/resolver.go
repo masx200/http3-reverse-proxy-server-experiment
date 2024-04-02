@@ -98,12 +98,12 @@ func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
 	}
 	if resp.Rcode != dns.RcodeSuccess {
 		log.Println(dns.RcodeToString[resp.Rcode])
-		return nil, fmt.Errorf("dns server  response error not success")
+		return nil, fmt.Errorf("dns server  response error not success:" + m.Question[0].String())
 	}
 	if len(resp.Answer) == 0 {
-		log.Println("dns server-No  records found")
+		log.Println("dns server-No  records found:" + m.Question[0].String())
 		return nil, fmt.Errorf(
-			"dns server  response error No  records found",
+			"dns server  response error No  records found:" + m.Question[0].String(),
 		)
 	}
 	fmt.Println(resp)
@@ -131,7 +131,9 @@ func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
 			}
 		case *dns.CNAME:
 			// results = append(results, fmt.Sprintf("CNAME: %s", record.Target))
-			res, err := DnsResolver(options.QueryCallback, record.Target)
+			res, err := DnsResolver(options.QueryCallback, record.Target, func(dro *DnsResolverOptions) {
+				dro.HttpsPort = options.HttpsPort
+			})
 			if err != nil {
 				return nil, err
 			}

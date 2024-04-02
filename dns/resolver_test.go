@@ -37,3 +37,18 @@ func TestResolver2(t *testing.T) {
 		fmt.Println(x, result)
 	}
 }
+func TestResolver3(t *testing.T) {
+	x := "www.bilibili.com"
+	results, err := DnsResolver(func(m *dns.Msg) (r *dns.Msg, err error) {
+		return DohClient(m, "https://cloudflare-dns.com/dns-query")
+	}, x)
+
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	for _, result := range results {
+		fmt.Println(x, result)
+	}
+}

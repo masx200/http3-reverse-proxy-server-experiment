@@ -37,7 +37,7 @@ type ServerConfigCommon interface {
 	// GetActiveHealthyCheckMethod 返回主动健康检查的方法（如GET、POST）
 	GetActiveHealthyCheckMethod() string
 	// GetActiveHealthyCheckStatusCodeRange 返回主动健康检查接受的状态码范围
-	GetActiveHealthyCheckStatusCodeRange() generic.PairInterface[int64, int64]
+	GetActiveHealthyCheckStatusCodeRange() generic.PairInterface[int, int]
 	// IncrementUnHealthyFailCount 增加不健康失败计数
 	IncrementUnHealthyFailCount()
 	// ResetUnHealthyFailCount 重置不健康失败计数

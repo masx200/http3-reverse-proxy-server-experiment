@@ -2,6 +2,7 @@ package load_balance
 
 import (
 	"fmt"
+	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	"net/http"
 	"sync"
 	"time"
@@ -9,19 +10,37 @@ import (
 )
 
 type ServerConfigImplement struct {
-	Identifier              string
-	HealthMutex             sync.Mutex
-	FailureMutex            sync.Mutex
-	FailCountMutex          sync.Mutex
-	UpstreamServerURL       string
-	IsHealthy               bool
-	HealthCheckIntervalMs   int64
-	unHealthyFailDurationMs int64
-	unHealthyFailMaxCount   int64
-	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
-	RoundTripper            http.RoundTripper
-	PassiveUnHealthyChecker func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
-	UnHealthyFailCount      int64
+	ActiveHealthyCheckStatusCodeRange generic.PairInterface[int, int]
+	ActiveHealthyCheckMethod          string
+	Identifier                        string
+	HealthMutex                       sync.Mutex
+	FailureMutex                      sync.Mutex
+	FailCountMutex                    sync.Mutex
+	UpStreamServerURL                 string
+	IsHealthy                         bool
+	HealthCheckIntervalMs             int64
+	unHealthyFailDurationMs           int64
+	unHealthyFailMaxCount             int64
+	ActiveHealthyChecker              func(RoundTripper http.RoundTripper, url string, method string, statusCodeMin int, statusCodeMax int) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
+	RoundTripper                      http.RoundTripper
+	PassiveUnHealthyChecker           func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
+	UnHealthyFailCount                int64
+	ActiveHealthyCheckURL             string
+}
+
+// GetActiveHealthyCheckMethod implements ServerConfigCommon.
+func (s *ServerConfigImplement) GetActiveHealthyCheckMethod() string {
+	return s.ActiveHealthyCheckMethod
+}
+
+// GetActiveHealthyCheckStatusCodeRange implements ServerConfigCommon.
+func (s *ServerConfigImplement) GetActiveHealthyCheckStatusCodeRange() generic.PairInterface[int, int] {
+	return s.ActiveHealthyCheckStatusCodeRange
+}
+
+// GetActiveHealthyCheckURL implements ServerConfigCommon.
+func (s *ServerConfigImplement) GetActiveHealthyCheckURL() string {
+	return s.ActiveHealthyCheckURL
 }
 
 // OnUpstreamFailure implements ServerConfigCommon.
@@ -48,6 +67,10 @@ func (s *ServerConfigImplement) OnUpstreamFailure() {
 
 }
 
+const ActiveHealthyCheckStatusCodeRangeDefaultStart = 200
+const ActiveHealthyCheckStatusCodeRangeDefaultEnd = 300
+const ActiveHealthyCheckMethodDefault = "HEAD"
+
 // ServerConfigImplementConstructor 是用于构造ServerConfigImplement对象的函数。
 // Identifier: 用于标识服务器的唯一字符串。
 // UpStreamServerURL: 指定上游服务器的URL。
@@ -55,16 +78,20 @@ func (s *ServerConfigImplement) OnUpstreamFailure() {
 // option: 可选参数，一系列函数，可用于修改ServerConfigImplement对象的配置。
 // 返回值为配置好的ServerConfigCommon接口，实现了服务器配置的通用接口。
 func ServerConfigImplementConstructor(Identifier string, UpStreamServerURL string, RoundTripper http.RoundTripper, option ...func(*ServerConfigImplement)) ServerConfigCommon {
+
 	var s = &ServerConfigImplement{
-		Identifier:              Identifier,
-		HealthCheckIntervalMs:   HealthCheckIntervalMsDefault,
-		UpstreamServerURL:       UpStreamServerURL,
-		IsHealthy:               true,
-		unHealthyFailDurationMs: unHealthyFailDurationMsDefault,
-		unHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
-		ActiveHealthyChecker:    ActiveHealthyCheckDefault,
-		RoundTripper:            RoundTripper,
-		PassiveUnHealthyChecker: HealthyResponseCheckDefault}
+		ActiveHealthyCheckStatusCodeRange: generic.NewPairImplement(ActiveHealthyCheckStatusCodeRangeDefaultStart, ActiveHealthyCheckStatusCodeRangeDefaultEnd),
+		ActiveHealthyCheckMethod:          ActiveHealthyCheckMethodDefault,
+		ActiveHealthyCheckURL:             UpStreamServerURL,
+		Identifier:                        Identifier,
+		HealthCheckIntervalMs:             HealthCheckIntervalMsDefault,
+		UpStreamServerURL:                 UpStreamServerURL,
+		IsHealthy:                         true,
+		unHealthyFailDurationMs:           unHealthyFailDurationMsDefault,
+		unHealthyFailMaxCount:             UnHealthyFailMaxCountDefault,
+		ActiveHealthyChecker:              ActiveHealthyCheckDefault,
+		RoundTripper:                      RoundTripper,
+		PassiveUnHealthyChecker:           HealthyResponseCheckDefault}
 	for _, callback := range option {
 		callback(s)
 
@@ -94,13 +121,13 @@ func (s *ServerConfigImplement) ResetUnHealthyFailCount() {
 }
 
 func (s *ServerConfigImplement) GetUpStreamServerURL() string {
-	return s.UpstreamServerURL
+	return s.UpStreamServerURL
 }
 
-func (s *ServerConfigImplement) ActiveHealthyCheck() (bool, error) {
+func (l *ServerConfigImplement) ActiveHealthyCheck() (bool, error) {
 	// 这里应实现主动健康检查的逻辑
 	// 示例仅返回健康状态和空错误
-	return s.ActiveHealthyChecker(s.RoundTripper, s.UpstreamServerURL)
+	return l.ActiveHealthyChecker(l.RoundTripper, l.GetActiveHealthyCheckURL(), l.GetActiveHealthyCheckMethod(), l.GetActiveHealthyCheckStatusCodeRange().GetFirst(), l.GetActiveHealthyCheckStatusCodeRange().GetSecond())
 }
 
 func (s *ServerConfigImplement) GetIdentifier() string {

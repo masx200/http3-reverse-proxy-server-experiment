@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+
 	// "strings"
 	"sync"
 
@@ -27,7 +28,7 @@ func PrintResponse(resp *http.Response) {
 // 返回值:
 // - bool: 检查结果，如果服务被认为是健康的则返回true，否则返回false。
 // - error: 执行过程中遇到的任何错误。
-func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool, error) {
+func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string, method string, statusCodeMin int, statusCodeMax int) (bool, error) {
 
 	// client := &http.Client{
 	// 	CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -38,7 +39,7 @@ func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool
 	// // 使用提供的RoundTripper设置HTTP客户端的传输层。
 	// client.Transport = RoundTripper
 	// 创建一个新的HEAD请求。
-	req, err := http.NewRequest("HEAD", url, nil)
+	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return false, err // 如果请求创建失败，则返回错误。
 	}
@@ -53,13 +54,13 @@ func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string) (bool
 	PrintResponse(resp) // 打印响应信息，用于调试。
 
 	// 检查响应是否表明服务是健康的。
-	return HealthyResponseCheckSuccess(resp)
+	return HealthyResponseCheckSuccess(resp, statusCodeMin, statusCodeMax)
 	// 如果服务健康，则返回true，否则返回false。
 }
 
-func HealthyResponseCheckSuccess(response *http.Response) (bool, error) {
+func HealthyResponseCheckSuccess(response *http.Response, statusCodeMin int, statusCodeMax int) (bool, error) {
 	// 检查响应状态码是否小于500
-	if !(response.StatusCode >= 200 && response.StatusCode < 300) {
+	if !(response.StatusCode >= statusCodeMin && response.StatusCode < statusCodeMax) {
 		return false, fmt.Errorf("StatusCode %d   is not success", response.StatusCode)
 	}
 	return true, nil
@@ -128,9 +129,9 @@ type SingleHostHTTP12ClientOfAddress struct {
 	ServerConfigCommon      ServerConfigCommon
 	unHealthyFailDurationMs int64
 	HealthCheckIntervalMs   int64
-	GetServerAddress        func() string                                                  // 服务器地址，指定客户端要连接的HTTP服务器的地址。
-	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
-	Identifier              string                                                         // 标识符，用于标识此HTTP客户端的唯一字符串。
+	GetServerAddress        func() string                                                                                                       // 服务器地址，指定客户端要连接的HTTP服务器的地址。
+	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string, method string, statusCodeMin int, statusCodeMax int) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
+	Identifier              string                                                                                                              // 标识符，用于标识此HTTP客户端的唯一字符串。
 	HealthMutex             sync.Mutex
 	IsHealthy               bool                                        // 健康状态，标识当前客户端是否被视为健康。
 	PassiveUnHealthyChecker func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
@@ -195,7 +196,7 @@ func (l *SingleHostHTTP12ClientOfAddress) SetHealthCheckIntervalMs(maxAge int64)
 // 实现了 LoadBalanceAndUpStream 接口。
 // 返回值：检查是否成功（bool类型）和可能发生的错误（error类型）。
 func (l *SingleHostHTTP12ClientOfAddress) ActiveHealthyCheck() (bool, error) {
-	return l.ActiveHealthyChecker(l, l.UpStreamServerURL)
+	return l.ActiveHealthyChecker(l, l.ServerConfigCommon.GetActiveHealthyCheckURL(), l.ServerConfigCommon.GetActiveHealthyCheckMethod(), l.ServerConfigCommon.GetActiveHealthyCheckStatusCodeRange().GetFirst(), l.ServerConfigCommon.GetActiveHealthyCheckStatusCodeRange().GetSecond())
 }
 
 // GetIdentifier 获取标识符。

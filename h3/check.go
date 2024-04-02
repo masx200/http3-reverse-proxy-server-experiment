@@ -5,6 +5,7 @@ import (
 	// "crypto/tls"
 	"fmt"
 	"log"
+
 	// "net"
 	"net/http"
 	"strings"
@@ -91,7 +92,7 @@ func CheckHttp3ViaHttp2(domain string, port string) (bool, error) {
 // DOHServer: DNS-over-HTTPS服务器的地址。
 // 返回值: 支持H3协议返回true，否则返回false。如果出现错误，将返回错误信息。
 func CheckHttp3ViaDNS(domain string, port string, DOHServer string) (bool, error) {
-	var records, err = DNSQueryHTTPS(domain, port, DOHServer)
+	var records, err = dns_experiment.DNSQueryHTTPS(domain, port, DOHServer)
 
 	if err != nil {
 		log.Println(err)
@@ -130,58 +131,6 @@ func ContainsGeneric[T comparable](slice []T, element T) bool {
 	}
 
 	return false
-}
-
-// DNSQueryHTTPS 执行DNS查询以获取HTTPS服务记录。
-//
-// 参数:
-// - domain: 需要查询的域名。
-// - port: 目标端口，如果不为"443"，则会构建特定端口的查询域名。
-// - DOHServer: DNS-over-HTTPS服务器地址。
-//
-// 返回值:
-// - []dns.SVCB: 查询到的HTTPS服务记录列表。
-// - error: 查询过程中发生的任何错误。
-func DNSQueryHTTPS(domain string, port string, DOHServer string) ([]dns.SVCB, error) {
-	var msg = new(dns.Msg)
-	var service_domain = domain
-	if port != "443" {
-		service_domain = fmt.Sprintf("_%s._https.", port) + domain
-	}
-	msg.SetQuestion(service_domain+".", dns.TypeHTTPS)
-
-	resp, err := DohClient(msg, DOHServer)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	if resp.Rcode != dns.RcodeSuccess {
-		log.Printf("DNS query failed: %s ", dns.RcodeToString[resp.Rcode]+" "+DOHServer+"\n")
-		return nil, fmt.Errorf(
-			"DNS query failed: %s ", dns.RcodeToString[resp.Rcode]+" "+DOHServer)
-	}
-	if len(resp.Answer) == 0 {
-		log.Println(DOHServer + "-No HTTPS records found")
-		return nil, fmt.Errorf(
-			"No HTTPS records found" + " " + DOHServer)
-	}
-	log.Println(DOHServer + "-" + resp.String())
-	var result []dns.SVCB
-	for _, answer := range resp.Answer {
-		log.Println(answer)
-		if a, ok := answer.(*dns.HTTPS); ok {
-			fmt.Printf(DOHServer+"-https record for %s: \n", domain)
-			result = append(result, a.SVCB)
-
-		}
-	}
-	if len(result) == 0 {
-		log.Println(DOHServer + "-No HTTPS records found")
-		return nil, fmt.Errorf(
-			"No HTTPS records found" + " " + DOHServer)
-	}
-	return result, nil
-
 }
 
 // DohClient 是一个通过DOH（DNS over HTTPS）协议与DNS服务器进行通信的函数。

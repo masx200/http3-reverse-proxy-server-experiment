@@ -29,7 +29,7 @@ func DohClient(m *dns.Msg, s string) (r *dns.Msg, err error) {
 	return dns_experiment.DohClient(m, s)
 }
 
-func TestResolver(t *testing.T) {
+func TestResolver77(t *testing.T) {
 	x := "hello-word-worker-cloudflare.masx200.workers.dev"
 	results, err := dns_experiment.DnsResolverMultipleServers(x, generic.MapImplementFromMap(map[string]func(m *dns.Msg) (r *dns.Msg, err error){"https://cloudflare-dns.com/dns-query": func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DohClient(m, "https://cloudflare-dns.com/dns-query")
@@ -91,7 +91,7 @@ func TestResolver4(t *testing.T) {
 		fmt.Println(x, result)
 	}
 }
-func TestResolverMultipleServers(t *testing.T) {
+func TestResolverMultipleServers77(t *testing.T) {
 	x := "hello-word-worker-cloudflare.masx200.workers.dev"
 	results, err := dns_experiment.DnsResolverMultipleServers(x,
 		generic.MapImplementFromMap(map[string]func(m *dns.Msg) (r *dns.Msg, err error){"https://cloudflare-dns.com/dns-query": func(m *dns.Msg) (r *dns.Msg, err error) {

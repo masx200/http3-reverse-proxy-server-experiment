@@ -365,6 +365,17 @@ func (h *HTTP3HTTP2LoadBalancer) SelectAvailableServer() (LoadBalanceAndUpStream
 }
 
 func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
+	go func() {
+		h.UpStreamsGetter().ForEach(func(lbaus LoadBalanceAndUpStream, s string, mi generic.MapInterface[string, LoadBalanceAndUpStream]) {
+
+			var glbs = lbaus.GetLoadBalanceService()
+			/* 如果还有上游负载均衡器,那也启动上游负载均衡器的健康检查 */
+			glbs.IfSome(func(v LoadBalanceService) {
+				go v.HealthyCheckStart()
+			})
+		})
+
+	}()
 	h.mu.Lock()
 	defer h.mu.Unlock()
 

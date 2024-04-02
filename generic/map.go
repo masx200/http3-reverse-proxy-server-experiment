@@ -21,6 +21,13 @@ type MapInterface[T comparable, Y any] interface {
 	Size() int64
 	// Entries 返回映射中所有键值对的切片。
 	Entries() []PairInterface[T, Y]
+	ForEach(func(Y, T, MapInterface[T, Y]))
+}
+
+func (m *MapImplement[T, Y]) ForEach(callback func(Y, T, MapInterface[T, Y])) {
+	for key, value := range m.data {
+		callback(value, key, m)
+	}
 }
 
 type MapImplement[T comparable, Y any] struct {

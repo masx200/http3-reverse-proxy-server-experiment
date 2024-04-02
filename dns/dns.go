@@ -22,11 +22,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/miekg/dns"
-)
-import (
 	"fmt"
 	"net/url"
+
+	"github.com/miekg/dns"
 )
 
 // DNSQueryHTTPS 执行DNS查询以获取HTTPS服务记录。
@@ -150,7 +149,7 @@ func PrintResponse(resp *http.Response) {
 	print_experiment.PrintResponse(resp)
 }
 
-// DOQClient 是一个通过DOQ（DNS over QUIC）协议与DNS服务器进行通信的函数。
+// DoQClient 是一个通过DOQ（DNS over QUIC）协议与DNS服务器进行通信的函数。
 //
 // 参数:
 // msg 是一个包含DNS查询信息的dns.Msg结构体指针。
@@ -159,7 +158,7 @@ func PrintResponse(resp *http.Response) {
 // 返回值:
 // 返回一个包含DNS应答信息的dns.Msg结构体指针和一个错误信息。
 // 如果成功，错误信息为nil；如果发生错误，则返回相应的错误信息。
-func DOQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
+func DoQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
 	fmt.Println("doQServerURL", doQServerURL)
 	urlWithPort, err := setPortIfMissing(doQServerURL)
 	if err != nil {
@@ -204,12 +203,12 @@ func ExtractDOQServerDetails(doqServer string) (string, string, error) {
 	return serverName, port, nil
 }
 
-// DOTClient 是一个通过DOH（DNS over HTTPS）协议与DNS服务器进行通信的函数。
+// DoTClient 是一个通过DOH（DNS over HTTPS）协议与DNS服务器进行通信的函数。
 // msg: 包含要发送的DNS查询信息的dns.Msg对象。
 // doTServerURL: DOH服务器的URL，用于指定通信的目标DNS服务器。
 // 返回值 qA: 发送查询后收到的应答消息，为dns.Msg对象。
 // 返回值 err: 如果在进行DNS查询过程中遇到错误，则返回错误信息。
-func DOTClient(msg *dns.Msg, doTServerURL string) (qA *dns.Msg, err error) {
+func DoTClient(msg *dns.Msg, doTServerURL string) (qA *dns.Msg, err error) {
 	fmt.Println("doTServerURL", doTServerURL)
 	urlWithPort, err := setPortIfMissing(doTServerURL)
 	if err != nil {

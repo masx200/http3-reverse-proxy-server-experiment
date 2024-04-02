@@ -24,7 +24,7 @@ func TestDOT2(t *testing.T) {
 		// 查询 A 记录
 		qA := dns.Msg{}
 		qA.SetQuestion(domain+".", dns.TypeA)
-		respA, err := DOTClient(&qA, doqServer) //client.Send(context.Background(), &qA)
+		respA, err := DoTClient(&qA, doqServer) //client.Send(context.Background(), &qA)
 		if err != nil {
 			fmt.Println("Error querying A record:", err)
 			t.Fatal(err)
@@ -47,7 +47,7 @@ func TestDOT2(t *testing.T) {
 		func() {
 			qAAAA := dns.Msg{}
 			qAAAA.SetQuestion(domain+".", dns.TypeAAAA)
-			respAAAA, err := DOTClient(&qAAAA, doqServer) //client.Send(context.Background(), &qAAAA)
+			respAAAA, err := DoTClient(&qAAAA, doqServer) //client.Send(context.Background(), &qAAAA)
 			if err != nil {
 				fmt.Println("Error querying AAAA record:", err)
 				t.Fatal(err)
@@ -71,7 +71,7 @@ func TestDOT2(t *testing.T) {
 		func() {
 			qHTTPS := dns.Msg{}
 			qHTTPS.SetQuestion(domain+".", dns.TypeHTTPS)
-			respHTTPS, err := DOTClient(&qHTTPS, doqServer) //client.Send(context.Background(), &qHTTPS)
+			respHTTPS, err := DoTClient(&qHTTPS, doqServer) //client.Send(context.Background(), &qHTTPS)
 			if err != nil {
 				fmt.Println("Error querying HTTPS record:", err)
 				t.Fatal(err)
@@ -112,7 +112,7 @@ func TestDOT(t *testing.T) {
 		// 查询 A 记录
 		qA := dns.Msg{}
 		qA.SetQuestion(domain+".", dns.TypeA)
-		respA, err := DOTClient(&qA, doqServer) //client.Send(context.Background(), &qA)
+		respA, err := DoTClient(&qA, doqServer) //client.Send(context.Background(), &qA)
 		if err != nil {
 			fmt.Println("Error querying A record:", err)
 			t.Fatal(err)
@@ -135,7 +135,7 @@ func TestDOT(t *testing.T) {
 		func() {
 			qAAAA := dns.Msg{}
 			qAAAA.SetQuestion(domain+".", dns.TypeAAAA)
-			respAAAA, err := DOTClient(&qAAAA, doqServer) //client.Send(context.Background(), &qAAAA)
+			respAAAA, err := DoTClient(&qAAAA, doqServer) //client.Send(context.Background(), &qAAAA)
 			if err != nil {
 				fmt.Println("Error querying AAAA record:", err)
 				t.Fatal(err)
@@ -159,7 +159,7 @@ func TestDOT(t *testing.T) {
 		func() {
 			qHTTPS := dns.Msg{}
 			qHTTPS.SetQuestion(domain+".", dns.TypeHTTPS)
-			respHTTPS, err := DOTClient(&qHTTPS, doqServer) //client.Send(context.Background(), &qHTTPS)
+			respHTTPS, err := DoTClient(&qHTTPS, doqServer) //client.Send(context.Background(), &qHTTPS)
 			if err != nil {
 				fmt.Println("Error querying HTTPS record:", err)
 				t.Fatal(err)

@@ -18,7 +18,9 @@ func DnsResolverMultipleServers(queryCallbacks []func(m *dns.Msg) (r *dns.Msg, e
 	var wg sync.WaitGroup
 	var resultsMutex sync.Mutex
 	var results []string
-
+	if len(queryCallbacks) == 0 {
+		return nil, fmt.Errorf("no query callbacks provided")
+	}
 	for _, queryCallback := range queryCallbacks {
 		wg.Add(1)
 		go func(queryCallback func(m *dns.Msg) (r *dns.Msg, err error)) {
@@ -114,7 +116,7 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 // options: 指定DNS解析器的选项，包含域名、端口和其他配置。
 // recordType: 指定需要查询的记录类型（如A记录、AAAA记录等）。
 // 返回值为解析到的记录值字符串数组和可能发生的错误。
-func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
+func resolve(options *DnsResolverOptions, recordType uint16, optionsCallBacks ...func(*DnsResolverOptions)) ([]string, error) {
 	m := &dns.Msg{}
 	if recordType == dns.TypeHTTPS && options.HttpsPort != 443 {
 
@@ -163,9 +165,7 @@ func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
 			}
 		case *dns.CNAME:
 			// results = append(results, fmt.Sprintf("CNAME: %s", record.Target))
-			res, err := DnsResolver(options.QueryCallback, record.Target, func(dro *DnsResolverOptions) {
-				dro.HttpsPort = options.HttpsPort
-			})
+			res, err := DnsResolver(options.QueryCallback, record.Target, optionsCallBacks...)
 			if err != nil {
 				return nil, err
 			}

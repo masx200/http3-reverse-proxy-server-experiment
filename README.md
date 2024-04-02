@@ -28,6 +28,8 @@ http3反向代理服务器实验golang
 
 添加了主动健康检查功能和dns over https负载均衡功能
 
+实现了通过A,AAAA,HTTPS,CNAME记录解析域名的功能
+
 #### 安装教程
 
 1. xxxx

@@ -75,8 +75,8 @@ func DoQClient(m *dns.Msg, s string) (r *dns.Msg, err error) {
 	return dns_experiment.DoQClient(m, s)
 }
 func TestResolver42(t *testing.T) {
-	x := "www.bilibili.com"
-	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks2(), x)
+	x := "www.baidu.com"
+	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks14(), x)
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)

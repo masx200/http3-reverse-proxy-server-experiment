@@ -107,3 +107,16 @@ func TestResolverMultipleServers(t *testing.T) {
 		fmt.Println(x, result)
 	}
 }
+func TestResolver4224(t *testing.T) {
+	x := "www.ithome.com"
+	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks14(), x)
+
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	for _, result := range results {
+		fmt.Println(x, result)
+	}
+}

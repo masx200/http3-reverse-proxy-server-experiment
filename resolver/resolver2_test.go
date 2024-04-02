@@ -62,6 +62,8 @@ func GetQueryCallbacks14() []func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DoQClient(m, "quic://family.adguard-dns.com")
 	}, func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DoTClient(m, "tls://dot.pub")
+	}, func(m *dns.Msg) (r *dns.Msg, err error) {
+		return DoTClient(m, "tls://family.adguard-dns.com")
 	}}
 }
 

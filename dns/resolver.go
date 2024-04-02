@@ -73,22 +73,25 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
 	m := &dns.Msg{}
 	m.SetQuestion(dns.Fqdn(options.Domain), recordType)
+	fmt.Println(m)
 	r, err := options.QueryCallback(m)
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println(r)
 	var results []string
 	for _, answer := range r.Answer {
 		switch record := answer.(type) {
 		case *dns.A:
-			results = append(results, fmt.Sprintf("A: %s", record.A))
+			results = append(results, (record.A.String()))
 		case *dns.AAAA:
-			results = append(results, fmt.Sprintf("AAAA: %s", record.AAAA))
+			results = append(results, (record.AAAA.String()))
 		case *dns.HTTPS:
-			results = append(results, fmt.Sprintf("HTTPS: %s", record.Target))
+			{
+
+			}
 		case *dns.CNAME:
-			results = append(results, fmt.Sprintf("CNAME: %s", record.Target))
+			// results = append(results, fmt.Sprintf("CNAME: %s", record.Target))
 			res, err := DnsResolver(options.QueryCallback, record.Target)
 			if err != nil {
 				return nil, err

@@ -9,6 +9,38 @@ import (
 	"github.com/miekg/dns"
 )
 
+// DnsResolverMultipleServers 使用多个DNS查询回调函数来解析给定域名，并返回解析结果的去重列表。
+// queryCallbacks: 一个包含多个DNS查询回调函数的切片，每个函数尝试解析指定的域名。
+// domain: 需要解析的域名。
+// optionsCallBacks: 可选的一组函数，用于定制DNS解析器的选项。
+// 返回值: 解析到的IP地址字符串切片（去重后），如果没有任何解析结果，则返回错误。
+func DnsResolverMultipleServers(queryCallbacks []func(m *dns.Msg) (r *dns.Msg, err error), domain string, optionsCallBacks ...func(*DnsResolverOptions)) ([]string, error) {
+	var wg sync.WaitGroup
+	var resultsMutex sync.Mutex
+	var results []string
+
+	for _, queryCallback := range queryCallbacks {
+		wg.Add(1)
+		go func(queryCallback func(m *dns.Msg) (r *dns.Msg, err error)) {
+			defer wg.Done()
+			res, err := DnsResolver(queryCallback, domain, optionsCallBacks...)
+			if err != nil {
+				fmt.Printf("Error resolving domain %s: %v\n", domain, err)
+				return
+			}
+			resultsMutex.Lock()
+			defer resultsMutex.Unlock()
+			results = append(results, res...)
+		}(queryCallback)
+	}
+
+	wg.Wait()
+	if len(results) == 0 {
+		return nil, fmt.Errorf("no results found for %s", domain)
+	}
+	return removeDuplicates(results), nil
+}
+
 // DnsResolverOptions 是DNS解析器的配置选项。
 type DnsResolverOptions struct {
 	QueryCallback func(m *dns.Msg) (r *dns.Msg, err error) // QueryCallback 是一个回调函数，用于自定义DNS查询逻辑。接收一个dns.Msg类型的参数，返回一个dns.Msg类型和error类型的值。

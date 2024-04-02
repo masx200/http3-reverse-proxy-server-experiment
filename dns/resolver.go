@@ -70,7 +70,7 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 	if len(results) == 0 {
 		return nil, fmt.Errorf("no results found for %s", options.Domain)
 	}
-	return results, nil
+	return removeDuplicates(results), nil
 
 }
 func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
@@ -132,5 +132,18 @@ func resolve(options *DnsResolverOptions, recordType uint16) ([]string, error) {
 	if len(results) == 0 {
 		return nil, fmt.Errorf("no results found for %s", options.Domain)
 	}
-	return results, nil
+	return removeDuplicates(results), nil
+}
+func removeDuplicates[T comparable](arr []T) []T {
+	seen := make(map[T]bool)
+	var result []T
+
+	for _, value := range arr {
+		if _, ok := seen[value]; !ok {
+			seen[value] = true
+			result = append(result, value)
+		}
+	}
+
+	return result
 }

@@ -54,7 +54,11 @@ func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterfa
 					a = cache.NewMemCache()
 					options.DnsCache.Set(s, a)
 				}
-				var buffer, err = m.Pack()
+
+				var copy = m.Copy()
+				/* 为了缓存,需要设置id为0,计算的hash会相同 */
+				copy.Id = 0
+				var buffer, err = copy.Pack()
 				if err != nil {
 					log.Println(s, err)
 					return nil, err

@@ -30,9 +30,9 @@ func DohClient(m *dns.Msg, s string) (r *dns.Msg, err error) {
 
 func TestResolver(t *testing.T) {
 	x := "hello-word-worker-cloudflare.masx200.workers.dev"
-	results, err := dns_experiment.DnsResolver(func(m *dns.Msg) (r *dns.Msg, err error) {
+	results, err := dns_experiment.DnsResolverMultipleServers(x, []func(m *dns.Msg) (r *dns.Msg, err error){func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DohClient(m, "https://cloudflare-dns.com/dns-query")
-	}, x)
+	}})
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -45,9 +45,9 @@ func TestResolver(t *testing.T) {
 }
 func TestResolver2(t *testing.T) {
 	x := "nextjs-doh-reverse-proxy.onrender.com"
-	results, err := dns_experiment.DnsResolver(func(m *dns.Msg) (r *dns.Msg, err error) {
+	results, err := dns_experiment.DnsResolverMultipleServers(x, []func(m *dns.Msg) (r *dns.Msg, err error){func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DohClient(m, "https://cloudflare-dns.com/dns-query")
-	}, x)
+	}})
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -60,9 +60,9 @@ func TestResolver2(t *testing.T) {
 }
 func TestResolver3(t *testing.T) {
 	x := "www.bilibili.com"
-	results, err := dns_experiment.DnsResolver(func(m *dns.Msg) (r *dns.Msg, err error) {
+	results, err := dns_experiment.DnsResolverMultipleServers(x, []func(m *dns.Msg) (r *dns.Msg, err error){func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DohClient(m, "https://cloudflare-dns.com/dns-query")
-	}, x)
+	}})
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -75,11 +75,11 @@ func TestResolver3(t *testing.T) {
 }
 func TestResolver4(t *testing.T) {
 	x := "www.bilibili.com"
-	results, err := dns_experiment.DnsResolverMultipleServers([]func(m *dns.Msg) (r *dns.Msg, err error){func(m *dns.Msg) (r *dns.Msg, err error) {
+	results, err := dns_experiment.DnsResolverMultipleServers(x, []func(m *dns.Msg) (r *dns.Msg, err error){func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DohClient(m, "https://cloudflare-dns.com/dns-query")
 	}, func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DohClient(m, "https://dns.alidns.com/dns-query")
-	}}, x)
+	}})
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -92,11 +92,11 @@ func TestResolver4(t *testing.T) {
 }
 func TestResolverMultipleServers(t *testing.T) {
 	x := "hello-word-worker-cloudflare.masx200.workers.dev"
-	results, err := dns_experiment.DnsResolverMultipleServers([]func(m *dns.Msg) (r *dns.Msg, err error){func(m *dns.Msg) (r *dns.Msg, err error) {
+	results, err := dns_experiment.DnsResolverMultipleServers(x, []func(m *dns.Msg) (r *dns.Msg, err error){func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DohClient(m, "https://cloudflare-dns.com/dns-query")
 	}, func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DohClient(m, "https://dns.alidns.com/dns-query")
-	}}, x)
+	}})
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -109,7 +109,7 @@ func TestResolverMultipleServers(t *testing.T) {
 }
 func TestResolver4224(t *testing.T) {
 	x := "www.ithome.com"
-	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks14(), x)
+	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks14())
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -122,7 +122,7 @@ func TestResolver4224(t *testing.T) {
 }
 func TestResolver_www_github(t *testing.T) {
 	x := "www.github.com"
-	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks14(), x)
+	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks14())
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -135,7 +135,7 @@ func TestResolver_www_github(t *testing.T) {
 }
 func TestResolver_github(t *testing.T) {
 	x := "github.com"
-	results, err := dns_experiment.DnsResolverMultipleServers(GetQueryCallbacks14(), x)
+	results, err := dns_experiment.DnsResolverMultipleServers(x, GetQueryCallbacks14())
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)

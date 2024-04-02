@@ -2,9 +2,10 @@ package h3
 
 import (
 	"fmt"
+	"testing"
+
 	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
 	"github.com/miekg/dns"
-	"testing"
 )
 
 func TestResolver(t *testing.T) {

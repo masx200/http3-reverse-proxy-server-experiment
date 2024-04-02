@@ -16,8 +16,17 @@ import (
 // domain: 需要解析的域名。
 // optionsCallBacks: 可选的一组函数，用于定制DNS解析器的选项。
 // 返回值: 解析到的IP地址字符串切片（去重后），如果没有任何解析结果，则返回错误。
-func DnsResolverMultipleServers(queryCallbacks []func(m *dns.Msg) (r *dns.Msg, err error), domain string, optionsCallBacks ...func(*DnsResolverOptions)) ([]string, error) {
+func DnsResolverMultipleServers(domain string, queryCallbacks []func(m *dns.Msg) (r *dns.Msg, err error), optionsCallBacks ...func(*DnsResolverOptions)) ([]string, error) {
 	c := cache.NewMemCache()
+	var options = &DnsResolverOptions{
+		HttpsPort:     443,
+		QueryCallback: queryCallbacks,
+		Domain:        domain,
+		DnsCache:      c,
+	}
+	for _, optionsCallBack := range optionsCallBacks {
+		optionsCallBack(options)
+	}
 	var wg sync.WaitGroup
 	var resultsMutex sync.Mutex
 	var results []string
@@ -28,12 +37,7 @@ func DnsResolverMultipleServers(queryCallbacks []func(m *dns.Msg) (r *dns.Msg, e
 		wg.Add(1)
 		go func(queryCallback func(m *dns.Msg) (r *dns.Msg, err error)) {
 			defer wg.Done()
-			res, err := DnsResolver(queryCallback, domain, func(dro *DnsResolverOptions) {
-				dro.DnsCache = c
-				for _, callback := range optionsCallBacks {
-					callback(dro)
-				}
-			})
+			res, err := DnsResolver(queryCallback, domain, options.HttpsPort)
 			if err != nil {
 				fmt.Printf("Error resolving domain %s: %v\n", domain, err)
 				return
@@ -53,8 +57,8 @@ func DnsResolverMultipleServers(queryCallbacks []func(m *dns.Msg) (r *dns.Msg, e
 
 // DnsResolverOptions 是DNS解析器的配置选项。
 type DnsResolverOptions struct {
-	QueryCallback func(m *dns.Msg) (r *dns.Msg, err error) // QueryCallback 是一个回调函数，用于自定义DNS查询逻辑。接收一个dns.Msg类型的参数，返回一个dns.Msg类型和error类型的值。
-	Domain        string                                   // Domain 是需要进行DNS解析的域名。
+	QueryCallback []func(m *dns.Msg) (r *dns.Msg, err error) // QueryCallback 是一个回调函数，用于自定义DNS查询逻辑。接收一个dns.Msg类型的参数，返回一个dns.Msg类型和error类型的值。
+	Domain        string                                     // Domain 是需要进行DNS解析的域名。
 	DnsCache      cache.ICache
 	HttpsPort     int // HttpsPort 是HTTPS服务监听的端口号。
 }
@@ -64,13 +68,8 @@ type DnsResolverOptions struct {
 // domain 是需要查询的域名。
 // optionsCallBacks 是一个可选参数列表，用于修改查询选项。
 // 返回解析到的地址列表和可能发生的错误。
-func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain string, optionsCallBacks ...func(*DnsResolverOptions)) ([]string, error) {
+func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain string, HttpsPort int) ([]string, error) {
 
-	var options = &DnsResolverOptions{QueryCallback: queryCallback, Domain: domain, HttpsPort: 443, DnsCache: cache.NewMemCache()}
-
-	for _, optionsCallBack := range optionsCallBacks {
-		optionsCallBack(options)
-	}
 	var resultsMutex sync.Mutex
 	var results []string
 	var wg sync.WaitGroup
@@ -78,9 +77,9 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 		func() {
 			defer wg.Done()
 
-			res, err := resolve(options, dns.TypeA)
+			res, err := resolve(dns.TypeA, queryCallback, domain, HttpsPort)
 			if err != nil {
-				fmt.Printf("Error querying A record for %s: %v\n", options.Domain, err)
+				fmt.Printf("Error querying A record for %s: %v\n", domain, err)
 				return
 			}
 			resultsMutex.Lock()
@@ -89,9 +88,9 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 
 		}, func() {
 			defer wg.Done()
-			res, err := resolve(options, dns.TypeAAAA)
+			res, err := resolve(dns.TypeAAAA, queryCallback, domain, HttpsPort)
 			if err != nil {
-				fmt.Printf("Error querying AAAA record for %s: %v\n", options.Domain, err)
+				fmt.Printf("Error querying AAAA record for %s: %v\n", domain, err)
 				return
 			}
 			resultsMutex.Lock()
@@ -99,9 +98,9 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 			results = append(results, res...)
 		}, func() {
 			defer wg.Done()
-			res, err := resolve(options, dns.TypeHTTPS)
+			res, err := resolve(dns.TypeHTTPS, queryCallback, domain, HttpsPort)
 			if err != nil {
-				fmt.Printf("Error querying HTTPS record for %s: %v\n", options.Domain, err)
+				fmt.Printf("Error querying HTTPS record for %s: %v\n", domain, err)
 				return
 			}
 			resultsMutex.Lock()
@@ -116,7 +115,7 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 
 	wg.Wait()
 	if len(results) == 0 {
-		return nil, fmt.Errorf("no results found for %s", options.Domain)
+		return nil, fmt.Errorf("no results found for %s", domain)
 	}
 	return removeDuplicates(results), nil
 
@@ -124,17 +123,17 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 // options: 指定DNS解析器的选项，包含域名、端口和其他配置。
 // recordType: 指定需要查询的记录类型（如A记录、AAAA记录等）。
 // 返回值为解析到的记录值字符串数组和可能发生的错误。
-func resolve(options *DnsResolverOptions, recordType uint16, optionsCallBacks ...func(*DnsResolverOptions)) ([]string, error) {
+func resolve(recordType uint16, QueryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain string, HttpsPort int) ([]string, error) {
 	m := &dns.Msg{}
-	if recordType == dns.TypeHTTPS && options.HttpsPort != 443 {
+	if recordType == dns.TypeHTTPS && HttpsPort != 443 {
 
-		m.SetQuestion(fmt.Sprintf("_%s._https.", fmt.Sprint(options.HttpsPort))+dns.Fqdn(options.Domain), recordType)
+		m.SetQuestion(fmt.Sprintf("_%s._https.", fmt.Sprint(HttpsPort))+dns.Fqdn(domain), recordType)
 	} else {
-		m.SetQuestion(dns.Fqdn(options.Domain), recordType)
+		m.SetQuestion(dns.Fqdn(domain), recordType)
 	}
 
 	fmt.Println(m)
-	resp, err := options.QueryCallback(m)
+	resp, err := QueryCallback(m)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +172,7 @@ func resolve(options *DnsResolverOptions, recordType uint16, optionsCallBacks ..
 			}
 		case *dns.CNAME:
 			// results = append(results, fmt.Sprintf("CNAME: %s", record.Target))
-			res, err := DnsResolver(options.QueryCallback, record.Target, optionsCallBacks...)
+			res, err := DnsResolver(QueryCallback, record.Target, HttpsPort)
 			if err != nil {
 				return nil, err
 			}
@@ -181,7 +180,7 @@ func resolve(options *DnsResolverOptions, recordType uint16, optionsCallBacks ..
 		}
 	}
 	if len(results) == 0 {
-		return nil, fmt.Errorf("no results found for %s", options.Domain)
+		return nil, fmt.Errorf("no results found for %s", domain)
 	}
 	return removeDuplicates(results), nil
 } // removeDuplicates 函数用于移除一个可比较类型切片中的重复元素。

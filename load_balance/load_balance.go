@@ -29,14 +29,24 @@ type LoadBalanceAndUpStream interface {
 
 	GetServerConfigCommon() ServerConfigCommon
 }
+
+// ServerConfigCommon 定义了服务配置的公共接口
 type ServerConfigCommon interface {
+	// GetActiveHealthyCheckURL 返回主动健康检查的URL
 	GetActiveHealthyCheckURL() string
+	// GetActiveHealthyCheckMethod 返回主动健康检查的方法（如GET、POST）
 	GetActiveHealthyCheckMethod() string
+	// GetActiveHealthyCheckStatusCodeRange 返回主动健康检查接受的状态码范围
 	GetActiveHealthyCheckStatusCodeRange() generic.PairInterface[int64, int64]
+	// IncrementUnHealthyFailCount 增加不健康失败计数
 	IncrementUnHealthyFailCount()
+	// ResetUnHealthyFailCount 重置不健康失败计数
 	ResetUnHealthyFailCount()
+	// GetUnHealthyFailCount 返回不健康失败计数
 	GetUnHealthyFailCount() int64
+	// GetUpStreamServerURL 返回上游服务器的URL
 	GetUpStreamServerURL() string
+	// ActiveHealthyCheck 执行主动健康检查，返回检查是否通过和可能的错误
 	ActiveHealthyCheck() (bool, error)
 
 	// Identifier 用于返回上游服务的唯一标识符。

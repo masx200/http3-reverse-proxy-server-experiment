@@ -166,4 +166,17 @@ func TestResolver_github(t *testing.T) {
 	for _, result := range results {
 		fmt.Println(x, result)
 	}
+	x2 := "github.com"
+	results2, err := dns_experiment.DnsResolverMultipleServers(x2, GetQueryCallbacks2(), func(dro *dns_experiment.DnsResolverOptions) {
+		dro.DnsCache = DnsCache
+	})
+
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	for _, result := range results2 {
+		fmt.Println(x, result)
+	}
 }

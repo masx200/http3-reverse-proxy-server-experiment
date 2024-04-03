@@ -32,7 +32,7 @@ func main() {
 	var maxAge = int64(5 * 1000)
 	// 定义上游服务器地址
 	/* 测试防环功能 */
-	var upstreamServers = []string{"https://production.hello-word-worker-cloudflare.masx200.workers.dev/", "https://hello-world-deno-deploy.deno.dev/"}
+	var upstreamServers = []string{"https://production.hello-word-worker-cloudflare.masx200.workers.dev/", "https://fastly-compute-hello-world-javascript.edgecompute.app/"}
 	var httpsPort = 18443
 	var httpPort = 18080
 	var upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string] = map[string]generic.PairInterface[string, string]{}

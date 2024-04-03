@@ -23,7 +23,7 @@ func main() {
 		},
 	}
 
-	resp, err := client.Get("http://localhost:8080")
+	resp, err := client.Get("http://localhost:18080")
 	if err != nil {
 		log.Fatalf("请求失败: %s", err)
 	}
@@ -36,6 +36,6 @@ func main() {
 		log.Fatalf("读取响应失败: %s", err)
 	}
 
-	fmt.Printf("获取响应 %d: %s\n", resp.StatusCode, string(body))
-
+	fmt.Printf("StatusCode"+"获取响应 %d: \nbody: %s\n", resp.StatusCode, string(body))
+	fmt.Println("headers", resp.Header)
 }

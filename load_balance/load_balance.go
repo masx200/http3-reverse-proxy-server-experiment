@@ -32,6 +32,7 @@ type LoadBalanceAndUpStream interface {
 
 // ServerConfigCommon 定义了服务配置的公共接口
 type ServerConfigCommon interface {
+	GetPassiveUnHealthyCheckStatusCodeRange() generic.PairInterface[int, int]
 	// GetActiveHealthyCheckURL 返回主动健康检查的URL
 	GetActiveHealthyCheckURL() string
 	// GetActiveHealthyCheckMethod 返回主动健康检查的方法（如GET、POST）

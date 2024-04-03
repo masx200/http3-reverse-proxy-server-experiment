@@ -82,7 +82,7 @@ type SingleHostHTTP3ClientOfAddress struct {
 	ActiveHealthyChecker    func(RoundTripper http.RoundTripper, url string, method string, statusCodeMin int, statusCodeMax int) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	Identifier              string                                                                                                              // 标识符，用于标识此HTTP客户端的唯一字符串。
 	IsHealthy               bool                                                                                                                // 健康状态，标识当前客户端是否被视为健康。
-	PassiveUnHealthyChecker func(response *http.Response) (bool, error)                                                                         // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
+	PassiveUnHealthyChecker func(response *http.Response, UnHealthyStatusMin int, UnHealthyStatusMax int) (bool, error)                         // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	// RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 }
@@ -165,7 +165,7 @@ func (l *SingleHostHTTP3ClientOfAddress) GetHealthy() bool {
 // 参数：HTTP响应（*http.Response类型）。
 // 返回值：检查结果是否健康（bool类型）和可能发生的错误（error类型）。
 func (l *SingleHostHTTP3ClientOfAddress) PassiveUnHealthyCheck(response *http.Response) (bool, error) {
-	return l.PassiveUnHealthyChecker(response)
+	return l.PassiveUnHealthyChecker(response, l.ServerConfigCommon.GetPassiveUnHealthyCheckStatusCodeRange().GetFirst(), l.ServerConfigCommon.GetPassiveUnHealthyCheckStatusCodeRange().GetSecond())
 }
 
 // HealthyResponseCheckDefault 检查HTTP响应是否表示服务健康。

@@ -9,6 +9,9 @@ import (
 	// "time"
 )
 
+const PassiveUnHealthyCheckStatusCodeRangeDefaultStart = 500
+const PassiveUnHealthyCheckStatusCodeRangeDefaultEnd = 600
+
 type ServerConfigImplement struct {
 	ActiveHealthyCheckStatusCodeRange generic.PairInterface[int, int]
 	ActiveHealthyCheckMethod          string
@@ -23,9 +26,16 @@ type ServerConfigImplement struct {
 	unHealthyFailMaxCount             int64
 	ActiveHealthyChecker              func(RoundTripper http.RoundTripper, url string, method string, statusCodeMin int, statusCodeMax int) (bool, error) // 活跃健康检查函数，用于检查给定的传输和URL是否健康。
 	RoundTripper                      http.RoundTripper
-	PassiveUnHealthyChecker           func(response *http.Response) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
+	PassiveUnHealthyChecker           func(response *http.Response, UnHealthyStatusMin int, UnHealthyStatusMax int) (bool, error) // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	UnHealthyFailCount                int64
 	ActiveHealthyCheckURL             string
+
+	PassiveUnHealthyCheckStatusCodeRange generic.PairInterface[int, int]
+}
+
+// GetPassiveUnHealthyCheckStatusCodeRange implements ServerConfigCommon.
+func (s *ServerConfigImplement) GetPassiveUnHealthyCheckStatusCodeRange() generic.PairInterface[int, int] {
+	return s.PassiveUnHealthyCheckStatusCodeRange
 }
 
 // GetActiveHealthyCheckMethod implements ServerConfigCommon.
@@ -80,18 +90,24 @@ const ActiveHealthyCheckMethodDefault = "HEAD"
 func ServerConfigImplementConstructor(Identifier string, UpStreamServerURL string, RoundTripper http.RoundTripper, option ...func(*ServerConfigImplement)) ServerConfigCommon {
 
 	var s = &ServerConfigImplement{
-		ActiveHealthyCheckStatusCodeRange: generic.NewPairImplement(ActiveHealthyCheckStatusCodeRangeDefaultStart, ActiveHealthyCheckStatusCodeRangeDefaultEnd),
-		ActiveHealthyCheckMethod:          ActiveHealthyCheckMethodDefault,
-		ActiveHealthyCheckURL:             UpStreamServerURL,
-		Identifier:                        Identifier,
-		HealthCheckIntervalMs:             HealthCheckIntervalMsDefault,
-		UpStreamServerURL:                 UpStreamServerURL,
-		IsHealthy:                         true,
-		unHealthyFailDurationMs:           unHealthyFailDurationMsDefault,
-		unHealthyFailMaxCount:             UnHealthyFailMaxCountDefault,
-		ActiveHealthyChecker:              ActiveHealthyCheckDefault,
-		RoundTripper:                      RoundTripper,
-		PassiveUnHealthyChecker:           HealthyResponseCheckDefault}
+		ActiveHealthyCheckStatusCodeRange:    generic.NewPairImplement(ActiveHealthyCheckStatusCodeRangeDefaultStart, ActiveHealthyCheckStatusCodeRangeDefaultEnd),
+		ActiveHealthyCheckMethod:             ActiveHealthyCheckMethodDefault,
+		Identifier:                           Identifier,
+		HealthMutex:                          sync.Mutex{},
+		FailureMutex:                         sync.Mutex{},
+		FailCountMutex:                       sync.Mutex{},
+		UpStreamServerURL:                    UpStreamServerURL,
+		IsHealthy:                            true,
+		HealthCheckIntervalMs:                HealthCheckIntervalMsDefault,
+		unHealthyFailDurationMs:              unHealthyFailDurationMsDefault,
+		unHealthyFailMaxCount:                UnHealthyFailMaxCountDefault,
+		ActiveHealthyChecker:                 ActiveHealthyCheckDefault,
+		RoundTripper:                         RoundTripper,
+		PassiveUnHealthyChecker:              HealthyResponseCheckDefault,
+		UnHealthyFailCount:                   0,
+		ActiveHealthyCheckURL:                UpStreamServerURL,
+		PassiveUnHealthyCheckStatusCodeRange: generic.NewPairImplement(PassiveUnHealthyCheckStatusCodeRangeDefaultStart, PassiveUnHealthyCheckStatusCodeRangeDefaultEnd),
+	}
 	for _, callback := range option {
 		callback(s)
 
@@ -151,7 +167,7 @@ func (s *ServerConfigImplement) PassiveUnHealthyCheck(response *http.Response) (
 	// 这里应根据HTTP响应判断服务是否健康
 	// 示例仅返回一个假设的结果和空错误
 	// 实际情况可能基于HTTP状态码、响应体或其他响应数据来判断
-	return s.PassiveUnHealthyChecker(response)
+	return s.PassiveUnHealthyChecker(response, s.PassiveUnHealthyCheckStatusCodeRange.GetFirst(), s.PassiveUnHealthyCheckStatusCodeRange.GetSecond())
 }
 
 func (s *ServerConfigImplement) SetHealthyCheckInterval(intervalMs int64) {

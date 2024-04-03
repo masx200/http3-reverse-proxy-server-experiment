@@ -4,13 +4,17 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
 	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
-	"log"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+
 	// "math/rand"
 	"net"
 	"net/http"
@@ -138,12 +142,14 @@ func main() {
 		log.Printf("http reverse proxy server started on port %s", listener.Addr())
 
 		// 设置自定义处理器
-		http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		var handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			engine.Handler().ServeHTTP(w, req)
 		})
-
+		h2s := &http2.Server{
+			// ...
+		}
 		// 开始服务
-		err = http.Serve(listener, nil)
+		err = http.Serve(listener, h2c.NewHandler(handler, h2s))
 		if err != nil {
 			log.Fatal("Serve: ", err)
 		}

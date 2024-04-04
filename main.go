@@ -44,7 +44,7 @@ func main() {
 			"h3=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-29=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-27=\":"+fmt.Sprint(httpsPort)+"\";ma=86400",
 		)
 		c.Writer.Header().Add("Alt-Svc",
-			"h2c=\":"+fmt.Sprint(httpPort)+"\"",
+			"h2c=\":"+fmt.Sprint(httpPort)+"\";ma=86400",
 		)
 		c.Next()
 	},

@@ -62,7 +62,7 @@ func TestMain(t *testing.T) {
 			ctx.Next()
 		})
 	// // 定义上游服务器地址
-	// var upstreamServers = []string{"https://quic.nginx.org/", "https://hello-world-deno-deploy.deno.dev/", "https://production.hello-word-worker.masx200.workers.dev/"}
+	// var upstreamServers = []string{"https://quic.nginx.org/", "https://production.hello-word-worker.masx200.workers.dev/"}
 	//打印上游
 	// fmt.Println("Upstream servers:")
 	// for _, server := range upstreamServers {

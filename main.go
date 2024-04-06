@@ -59,7 +59,7 @@ func main() {
 	int2Arg := flag.Int("https-port", 18443, "https-port")
 	boolArg := flag.String("upstream-protocol", "h3", "upstream-protocol")
 	tlscertArg := flag.String("tls-cert", "cert.crt", "tls-cert")
-	tlskeyArg := flag.String("tls-key", "h3", "tls-key")
+	tlskeyArg := flag.String("tls-key", "key.pem", "tls-key")
 	tlsboolArg := flag.Bool("listen-tls", true, "listen-tls")
 
 	// 解析命令行参数

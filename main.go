@@ -294,11 +294,11 @@ func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTP
 		return upstreamServerURL.Hostname(), nil
 	})
 	var oldH3rt optional.Option[adapter.HTTPRoundTripperAndCloserInterface] = nil
-	x := time.Tick(time.Minute)
+	ticker := time.NewTicker(time.Minute)
 	// 每分钟更换一个新的 http3.RoundTripper 并关闭旧的
 	go func() {
 
-		for range x {
+		for range ticker.C {
 			oldH3rt = optional.Some(h3rt)
 			h3rt = h3_experiment.CreateHTTP3TransportWithIPGetter(func() (string, error) {
 				upstreamServerURL, err := url.Parse(upstreamServer)
@@ -319,9 +319,11 @@ func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTP
 		})
 
 	}), Closer: func() error {
+		ticker.Stop()
 		if oldH3rt != nil && oldH3rt.IsSome() {
 			oldH3rt.Unwrap().Close()
 		}
+
 		return h3rt.Close()
 	}}
 	return upstreamServerDefaultTransport

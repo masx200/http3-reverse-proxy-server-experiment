@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"time"
 	// "crypto/tls"
 	"fmt"
 	"log"
@@ -51,7 +52,7 @@ func CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServerURL strin
 
 // 主程序入口
 func main() {
-	var upstreamServer =  "https://workers.cloudflare.com/"
+	var upstreamServer = "https://workers.cloudflare.com/"
 	upstreamServerDefaultTransport := CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
 
 	//健康检查过期时间毫秒
@@ -222,7 +223,21 @@ func main() {
 }
 
 func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) HTTPRoundTripper {
+	//为了防止udp被限速,需要定时更换端口
 	h3rt := &http3.RoundTripper{}
+	var oldH3rt *http3.RoundTripper
+
+	// 每分钟更换一个新的 http3.RoundTripper 并关闭旧的
+	go func() {
+		for range time.Tick(time.Minute) {
+			oldH3rt = h3rt
+			h3rt = &http3.RoundTripper{}
+
+			if oldH3rt != nil {
+				oldH3rt.Close()
+			}
+		}
+	}()
 	upstreamServerDefaultTransport := HTTPRoundTripper(func(req *http.Request) (*http.Response, error) {
 		return CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServer)(req, func(req *http.Request) (*http.Response, error) {
 			return h3rt.RoundTrip(req)

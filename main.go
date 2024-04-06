@@ -60,6 +60,7 @@ func main() {
 	StringArgprotocol := flag.String("upstream-protocol", "h3", "upstream-protocol")
 	tlscertArg := flag.String("tls-cert", "cert.crt", "tls-cert")
 	tlskeyArg := flag.String("tls-key", "key.pem", "tls-key")
+	Arglistenhostname := flag.String("listen-hostname", "0.0.0.0", "listen-hostname")
 	tlsboolArg := flag.Bool("listen-tls", true, "listen-tls")
 	Arglistenhttp := flag.Bool("listen-http", true, "listen-http")
 
@@ -67,6 +68,7 @@ func main() {
 	flag.Parse()
 
 	// 输出解析后的参数值
+	fmt.Printf("Arglistenhostname argument: %v\n", *Arglistenhostname)
 	fmt.Printf("listen-http argument: %v\n", *Arglistenhttp)
 	fmt.Printf("tls-cert argument: %s\n", *tlscertArg)
 	fmt.Printf("tls-key argument: %s\n", *tlskeyArg)
@@ -182,17 +184,7 @@ func main() {
 		bufio.NewReader(resp.Body).WriteTo(c.Writer)
 
 	})
-	var hostname = "0.0.0.0"
-	server := &http.Server{
-		Addr: hostname + ":" + strconv.Itoa(httpsPort),
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-
-			engine.Handler().ServeHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
-
-		}), /*  &LoadBalanceHandler{
-			engine: engine,
-		}, */
-	}
+	var hostname = *Arglistenhostname //"0.0.0.0"
 
 	go func() {
 		listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(httpPort))
@@ -243,7 +235,16 @@ func main() {
 		}
 	}()
 	log.Printf("Starting https reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
+	server := &http.Server{
+		Addr: hostname + ":" + strconv.Itoa(httpsPort),
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
+			engine.Handler().ServeHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
+
+		}), /*  &LoadBalanceHandler{
+			engine: engine,
+		}, */
+	}
 	errx := server.ListenAndServeTLS(certFile, keyFile)
 	if errx != nil {
 		log.Fatal(errx)

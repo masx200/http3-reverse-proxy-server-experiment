@@ -55,12 +55,12 @@ func CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServerURLstring
 // 主程序入口
 func main() {
 	strArgupstreamServer := flag.String("upstream-server", "https://workers.cloudflare.com/", "upstream-server")
-	intArg := flag.Int("http-port", 18080, "http-port")
-	int2Arg := flag.Int("https-port", 18443, "https-port")
-	boolArg := flag.String("upstream-protocol", "h3", "upstream-protocol")
+	intArghttpPort := flag.Int("http-port", 18080, "http-port")
+	int2ArghttpsPort := flag.Int("https-port", 18443, "https-port")
+	StringArgprotocol := flag.String("upstream-protocol", "h3", "upstream-protocol")
 	tlscertArg := flag.String("tls-cert", "cert.crt", "tls-cert")
 	tlskeyArg := flag.String("tls-key", "key.pem", "tls-key")
-	tlsboolArg := flag.Bool("listen-tls", true, "listen-tls")
+	tlsboolArg := flag.Bool("listen-tls", false, "listen-tls")
 
 	// 解析命令行参数
 	flag.Parse()
@@ -69,9 +69,9 @@ func main() {
 	fmt.Printf("tls-cert argument: %s\n", *tlscertArg)
 	fmt.Printf("tls-key argument: %s\n", *tlskeyArg)
 	fmt.Printf("upstream-server argument: %s\n", *strArgupstreamServer)
-	fmt.Printf("http-port argument: %d\n", *intArg)
-	fmt.Printf("https-port argument: %d\n", *int2Arg)
-	fmt.Printf("upstream-protocol argument: %v\n", *boolArg)
+	fmt.Printf("http-port argument: %d\n", *intArghttpPort)
+	fmt.Printf("https-port argument: %d\n", *int2ArghttpsPort)
+	fmt.Printf("upstream-protocol argument: %v\n", *StringArgprotocol)
 	fmt.Printf("listen-tls argument: %v\n", *tlsboolArg)
 	var upstreamServer = *strArgupstreamServer
 	upstreamServerDefaultTransport := CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
@@ -81,8 +81,8 @@ func main() {
 	// 定义上游服务器地址
 	/* 测试防环功能 */
 	// var upstreamServers = []string{ /* "https://production.hello-word-worker-cloudflare.masx200.workers.dev/", "https://fastly-compute-hello-world-javascript.edgecompute.app/" */ }
-	var httpsPort = 18443
-	var httpPort = 18080
+	var httpsPort = int2ArghttpsPort
+	var httpPort = intArghttpPort
 	// var upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string] = map[string]generic.PairInterface[string, string]{}
 	engine := gin.Default()
 	engine.Use(Forwarded(), LoopDetect())

@@ -61,8 +61,8 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 	}
 	m.ServerConfigCommon = ServerConfigImplementConstructor(m.Identifier, m.UpStreamServerURL, m)
 	/* 需要把transport保存起来,防止一个请求一个连接的情况速度会很慢 */
-	m.RoundTripper = h3_experiment.CreateHTTP3TransportWithIPGetter(func() string {
-		return m.GetServerAddress()
+	m.RoundTripper = h3_experiment.CreateHTTP3TransportWithIPGetter(func() (string, error) {
+		return m.GetServerAddress(), nil
 	})
 	for _, option := range options {
 		option(m)

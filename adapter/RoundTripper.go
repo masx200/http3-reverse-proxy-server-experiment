@@ -11,3 +11,24 @@ type RoundTripTransport func(*http.Request) (*http.Response, error) // roundTrip
 func (r RoundTripTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return r(req)
 }
+
+type HTTPRoundTripperAndCloserImplement struct {
+	RoundTripper func(req *http.Request) (*http.Response, error)
+	Closer       func() error
+}
+
+func (m *HTTPRoundTripperAndCloserImplement) RoundTrip(req *http.Request) (*http.Response, error) {
+	return m.RoundTripper(req)
+}
+func (m *HTTPRoundTripperAndCloserImplement) Close() error {
+	return m.Closer()
+}
+
+// func init() {
+// 	var _ HTTPRoundTripperAndCloserInterface = &HTTPRoundTripperAndCloserImplement{}
+// }
+
+type HTTPRoundTripperAndCloserInterface interface {
+	RoundTrip(req *http.Request) (*http.Response, error)
+	Close() error
+}

@@ -74,7 +74,7 @@ func CreateHTTP3TransportWithIP(ip string) http.RoundTripper {
 //
 // 返回值:
 // http.RoundTripper - 符合HTTP运输接口的定制HTTP/3传输器。
-func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
+func CreateHTTP3TransportWithIPGetter(getter func() (string, error)) adapter.HTTPRoundTripperAndCloserInterface {
 	var transportquic *quic.Transport
 	var mutex sync.Mutex
 	var roundTripper = /*  &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -115,7 +115,10 @@ func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
 			if err != nil {
 				return nil, err
 			}
-			var ip = getter()
+			var ip, err2 = getter()
+			if err2 != nil {
+				return nil, err
+			}
 			addr2 := net.JoinHostPort(ip, port)
 			a, err := net.ResolveUDPAddr("udp", addr2)
 			if err != nil {
@@ -135,7 +138,7 @@ func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
 		}}
 	// var mapconnection map[string]quic.EarlyConnection
 	/* 需要把connection保存起来,防止一个请求一个连接的情况速度会很慢 */
-	return adapter.RoundTripTransport(func(r *http.Request) (*http.Response, error) {
+	return &adapter.HTTPRoundTripperAndCloserImplement{RoundTripper: (func(r *http.Request) (*http.Response, error) {
 
 		// 创建UDP连接，作为QUIC协议的基础。
 
@@ -143,7 +146,10 @@ func CreateHTTP3TransportWithIPGetter(getter func() string) http.RoundTripper {
 
 		// 使用定制的HTTP/3传输器进行HTTP请求的传输。
 		return roundTripper.RoundTrip(r)
-	})
+	}), Closer: func() error {
+		transportquic.Close()
+		return roundTripper.Close()
+	}}
 
 }
 

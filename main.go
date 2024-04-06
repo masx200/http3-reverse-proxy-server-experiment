@@ -2,14 +2,20 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"time"
+
 	// "crypto/tls"
 	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/moznion/go-optional"
+
 	// "github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
 	// "github.com/masx200/http3-reverse-proxy-server-experiment/generic"
+	"github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
+	h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -30,16 +36,11 @@ import (
 )
 
 type HTTPRoundTripperMiddleWare = func(req *http.Request, next func(req *http.Request) (*http.Response, error)) (*http.Response, error)
-type HTTPRoundTripper func(req *http.Request) (*http.Response, error)
 
-func (m HTTPRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	return m(req)
-}
-
-func CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServerURL string) HTTPRoundTripperMiddleWare {
+func CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServerURLstring string) HTTPRoundTripperMiddleWare {
 	return func(req *http.Request, next func(req *http.Request) (*http.Response, error)) (*http.Response, error) {
 		//parse url of upstreamServerURL
-		upstreamServerURL, err := url.Parse(upstreamServerURL)
+		upstreamServerURL, err := url.Parse(upstreamServerURLstring)
 		if err != nil {
 			return nil, err
 		}
@@ -53,7 +54,26 @@ func CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServerURL strin
 
 // 主程序入口
 func main() {
-	var upstreamServer = "https://workers.cloudflare.com/"
+	strArgupstreamServer := flag.String("upstream-server", "https://workers.cloudflare.com/", "upstream-server")
+	intArg := flag.Int("http-port", 18080, "http-port")
+	int2Arg := flag.Int("https-port", 18443, "https-port")
+	boolArg := flag.String("upstream-protocol", "h3", "upstream-protocol")
+	tlscertArg := flag.String("tls-cert", "cert.crt", "tls-cert")
+	tlskeyArg := flag.String("tls-key", "h3", "tls-key")
+	tlsboolArg := flag.Bool("listen-tls", true, "listen-tls")
+
+	// 解析命令行参数
+	flag.Parse()
+
+	// 输出解析后的参数值
+	fmt.Printf("tls-cert argument: %s\n", *tlscertArg)
+	fmt.Printf("tls-key argument: %s\n", *tlskeyArg)
+	fmt.Printf("upstream-server argument: %s\n", *strArgupstreamServer)
+	fmt.Printf("http-port argument: %d\n", *intArg)
+	fmt.Printf("https-port argument: %d\n", *int2Arg)
+	fmt.Printf("upstream-protocol argument: %v\n", *boolArg)
+	fmt.Printf("listen-tls argument: %v\n", *tlsboolArg)
+	var upstreamServer = *strArgupstreamServer
 	upstreamServerDefaultTransport := CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
 
 	//健康检查过期时间毫秒
@@ -223,29 +243,46 @@ func main() {
 	}
 }
 
-func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) HTTPRoundTripper {
+func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTPRoundTripperAndCloserInterface {
 	//为了防止udp被限速,需要定时更换端口
-	h3rt := &http3.RoundTripper{}
-	var oldH3rt *http3.RoundTripper
+	var h3rt = h3_experiment.CreateHTTP3TransportWithIPGetter(func() (string, error) {
+		upstreamServerURL, err := url.Parse(upstreamServer)
+		if err != nil {
+			return "", err
+		}
+		return upstreamServerURL.Hostname(), nil
+	})
+	var oldH3rt optional.Option[adapter.HTTPRoundTripperAndCloserInterface] = nil
 	x := time.Tick(time.Minute)
 	// 每分钟更换一个新的 http3.RoundTripper 并关闭旧的
 	go func() {
 
 		for range x {
-			oldH3rt = h3rt
-			h3rt = &http3.RoundTripper{}
+			oldH3rt = optional.Some(h3rt)
+			h3rt = h3_experiment.CreateHTTP3TransportWithIPGetter(func() (string, error) {
+				upstreamServerURL, err := url.Parse(upstreamServer)
+				if err != nil {
+					return "", err
+				}
+				return upstreamServerURL.Hostname(), nil
+			})
 
-			if oldH3rt != nil {
-				oldH3rt.Close()
+			if oldH3rt != nil && oldH3rt.IsSome() {
+				oldH3rt.Unwrap().Close()
 			}
 		}
 	}()
-	upstreamServerDefaultTransport := HTTPRoundTripper(func(req *http.Request) (*http.Response, error) {
+	upstreamServerDefaultTransport := &adapter.HTTPRoundTripperAndCloserImplement{RoundTripper: (func(req *http.Request) (*http.Response, error) {
 		return CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServer)(req, func(req *http.Request) (*http.Response, error) {
 			return h3rt.RoundTrip(req)
 		})
 
-	})
+	}), Closer: func() error {
+		if oldH3rt != nil && oldH3rt.IsSome() {
+			oldH3rt.Unwrap().Close()
+		}
+		return h3rt.Close()
+	}}
 	return upstreamServerDefaultTransport
 }
 

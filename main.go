@@ -35,6 +35,7 @@ type HTTPRoundTripper func(req *http.Request) (*http.Response, error)
 func (m HTTPRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	return m(req)
 }
+
 func CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServerURL string) HTTPRoundTripperMiddleWare {
 	return func(req *http.Request, next func(req *http.Request) (*http.Response, error)) (*http.Response, error) {
 		//parse url of upstreamServerURL
@@ -226,10 +227,11 @@ func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) HTTPRoundTri
 	//为了防止udp被限速,需要定时更换端口
 	h3rt := &http3.RoundTripper{}
 	var oldH3rt *http3.RoundTripper
-
+	x := time.Tick(time.Minute)
 	// 每分钟更换一个新的 http3.RoundTripper 并关闭旧的
 	go func() {
-		for range time.Tick(time.Minute) {
+
+		for range x {
 			oldH3rt = h3rt
 			h3rt = &http3.RoundTripper{}
 

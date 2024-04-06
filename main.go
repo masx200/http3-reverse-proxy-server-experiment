@@ -292,9 +292,9 @@ func main() {
 func CreateHTTP12RoundTripperOfUpStreamServer(upstreamServer string, alpns []string) http.RoundTripper {
 	if len(alpns) > 0 {
 		return &http.Transport{TLSClientConfig: &tls.Config{
-			NextProtos: alpns}}
+			NextProtos: alpns}, ForceAttemptHTTP2: true}
 	}
-	return &http.Transport{}
+	return &http.Transport{ForceAttemptHTTP2: true}
 }
 
 func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTPRoundTripperAndCloserInterface {

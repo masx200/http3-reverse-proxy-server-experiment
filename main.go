@@ -216,7 +216,7 @@ func main() {
 	certFile := *tlscertArg //"cert.crt"
 	keyFile := *tlskeyArg   // "key.pem"
 	go func() {
-		if *Arglistenhttp3 {
+		if *Arglistenhttp3 && *tlsboolArg {
 			var handlerFunc = func(w http.ResponseWriter, req *http.Request) {
 				engine.Handler().ServeHTTP(w, req)
 			}

@@ -187,24 +187,28 @@ func main() {
 	var hostname = *Arglistenhostname //"0.0.0.0"
 
 	go func() {
-		listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(httpPort))
-		if err != nil {
-			log.Fatal("ListenAndServe: ", err)
-		}
-		log.Printf("http reverse proxy server started on port %s", listener.Addr())
 
-		// 设置自定义处理器
-		var handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			engine.Handler().ServeHTTP(w, req)
-		})
-		h2s := &http2.Server{
-			// ...
+		if *Arglistenhttp {
+			listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(httpPort))
+			if err != nil {
+				log.Fatal("ListenAndServe: ", err)
+			}
+			log.Printf("http reverse proxy server started on port %s", listener.Addr())
+
+			// 设置自定义处理器
+			var handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				engine.Handler().ServeHTTP(w, req)
+			})
+			h2s := &http2.Server{
+				// ...
+			}
+			// 开始服务
+			err = http.Serve(listener, h2c.NewHandler(handler, h2s))
+			if err != nil {
+				log.Fatal("Serve: ", err)
+			}
 		}
-		// 开始服务
-		err = http.Serve(listener, h2c.NewHandler(handler, h2s))
-		if err != nil {
-			log.Fatal("Serve: ", err)
-		}
+
 	}()
 	certFile := *tlscertArg //"cert.crt"
 	keyFile := *tlskeyArg   // "key.pem"

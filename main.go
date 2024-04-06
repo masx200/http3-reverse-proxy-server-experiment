@@ -243,21 +243,24 @@ func main() {
 		}
 
 	}()
-	log.Printf("Starting https reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
-	server := &http.Server{
-		Addr: hostname + ":" + strconv.Itoa(httpsPort),
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	if *tlsboolArg {
+		log.Printf("Starting https reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
+		server := &http.Server{
+			Addr: hostname + ":" + strconv.Itoa(httpsPort),
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
-			engine.Handler().ServeHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
+				engine.Handler().ServeHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
 
-		}), /*  &LoadBalanceHandler{
-			engine: engine,
-		}, */
+			}), /*  &LoadBalanceHandler{
+				engine: engine,
+			}, */
+		}
+		errx := server.ListenAndServeTLS(certFile, keyFile)
+		if errx != nil {
+			log.Fatal(errx)
+		}
 	}
-	errx := server.ListenAndServeTLS(certFile, keyFile)
-	if errx != nil {
-		log.Fatal(errx)
-	}
+
 }
 
 func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTPRoundTripperAndCloserInterface {

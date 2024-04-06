@@ -81,8 +81,8 @@ func main() {
 	// 定义上游服务器地址
 	/* 测试防环功能 */
 	// var upstreamServers = []string{ /* "https://production.hello-word-worker-cloudflare.masx200.workers.dev/", "https://fastly-compute-hello-world-javascript.edgecompute.app/" */ }
-	var httpsPort = int2ArghttpsPort
-	var httpPort = intArghttpPort
+	var httpsPort = *int2ArghttpsPort
+	var httpPort = *intArghttpPort
 	// var upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string] = map[string]generic.PairInterface[string, string]{}
 	engine := gin.Default()
 	engine.Use(Forwarded(), LoopDetect())

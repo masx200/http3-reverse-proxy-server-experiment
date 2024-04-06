@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/tls"
 	"flag"
 	"time"
 
@@ -80,8 +81,12 @@ func main() {
 	fmt.Printf("upstream-protocol argument: %v\n", *StringArgprotocol)
 	fmt.Printf("listen-tls argument: %v\n", *tlsboolArg)
 	var upstreamServer = *strArgupstreamServer
-	upstreamServerDefaultTransport := CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
 
+	var upstreamServerDefaultTransport http.RoundTripper
+	upstreamServerDefaultTransport = CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
+	if !strings.Contains(*StringArgprotocol, "h3") {
+		upstreamServerDefaultTransport = CreateHTTP12RoundTripperOfUpStreamServer(upstreamServer, strings.Split(*StringArgprotocol, ","))
+	}
 	//健康检查过期时间毫秒
 	// var maxAge = int64(5 * 1000)
 	// 定义上游服务器地址
@@ -282,6 +287,14 @@ func main() {
 		}
 	}
 
+}
+
+func CreateHTTP12RoundTripperOfUpStreamServer(upstreamServer string, alpns []string) http.RoundTripper {
+	if len(alpns) > 0 {
+		return &http.Transport{TLSClientConfig: &tls.Config{
+			NextProtos: alpns}}
+	}
+	return &http.Transport{}
 }
 
 func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTPRoundTripperAndCloserInterface {

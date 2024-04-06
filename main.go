@@ -89,18 +89,23 @@ func main() {
 	engine := gin.Default()
 	engine.Use(Forwarded(), LoopDetect())
 	engine.Use(func(c *gin.Context) {
+		if *tlsboolArg {
+			c.Writer.Header().Add("Alt-Svc",
+				"h3=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-29=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-27=\":"+fmt.Sprint(httpsPort)+"\";ma=86400",
+			)
+		}
+		if *Arglistenhttp {
+			c.Writer.Header().Add("Alt-Svc",
+				"h2c=\":"+fmt.Sprint(httpPort)+"\";ma=86400",
+			)
+		}
 
-		c.Writer.Header().Add("Alt-Svc",
-			"h3=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-29=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-27=\":"+fmt.Sprint(httpsPort)+"\";ma=86400",
-		)
-		c.Writer.Header().Add("Alt-Svc",
-			"h2c=\":"+fmt.Sprint(httpPort)+"\";ma=86400",
-		)
 		c.Next()
 	},
 		func(ctx *gin.Context) {
-
-			ctx.Writer.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+			if *tlsboolArg {
+				ctx.Writer.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+			}
 			ctx.Next()
 		})
 	// // 定义上游服务器地址

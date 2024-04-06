@@ -63,13 +63,15 @@ func main() {
 	Arglistenhostname := flag.String("listen-hostname", "0.0.0.0", "listen-hostname")
 	tlsboolArg := flag.Bool("listen-tls", true, "listen-tls")
 	Arglistenhttp := flag.Bool("listen-http", true, "listen-http")
+	Arglistenhttp3 := flag.Bool("listen-http3", true, "listen-http3")
 
 	// 解析命令行参数
 	flag.Parse()
 
 	// 输出解析后的参数值
-	fmt.Printf("Arglistenhostname argument: %v\n", *Arglistenhostname)
+	fmt.Printf("listen-hostname argument: %v\n", *Arglistenhostname)
 	fmt.Printf("listen-http argument: %v\n", *Arglistenhttp)
+	fmt.Printf("listen-http3 argument: %v\n", *Arglistenhttp3)
 	fmt.Printf("tls-cert argument: %s\n", *tlscertArg)
 	fmt.Printf("tls-key argument: %s\n", *tlskeyArg)
 	fmt.Printf("upstream-server argument: %s\n", *strArgupstreamServer)
@@ -213,30 +215,33 @@ func main() {
 	certFile := *tlscertArg //"cert.crt"
 	keyFile := *tlskeyArg   // "key.pem"
 	go func() {
-		var handlerFunc = func(w http.ResponseWriter, req *http.Request) {
-			engine.Handler().ServeHTTP(w, req)
+		if *Arglistenhttp3 {
+			var handlerFunc = func(w http.ResponseWriter, req *http.Request) {
+				engine.Handler().ServeHTTP(w, req)
+			}
+
+			bCap := hostname + ":" + fmt.Sprint(httpsPort)
+			handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				handlerFunc(w, req)
+			})
+			server := http3.Server{
+				Handler:    handler,
+				Addr:       bCap,
+				QuicConfig: &quic.Config{
+					// Tracer: qlog.DefaultTracer,
+				},
+			}
+			log.Printf("Starting http3 reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
+
+			var err = server.ListenAndServeTLS(certFile, keyFile)
+			// var err = http3.ListenAndServe(bCap, certFile, keyFile, &
+			// 	serveHTTP: handlerFunc,
+			// })
+			if err != nil {
+				log.Fatal("Serve: ", err)
+			}
 		}
 
-		bCap := hostname + ":" + fmt.Sprint(httpsPort)
-		handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			handlerFunc(w, req)
-		})
-		server := http3.Server{
-			Handler:    handler,
-			Addr:       bCap,
-			QuicConfig: &quic.Config{
-				// Tracer: qlog.DefaultTracer,
-			},
-		}
-		log.Printf("Starting http3 reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
-
-		var err = server.ListenAndServeTLS(certFile, keyFile)
-		// var err = http3.ListenAndServe(bCap, certFile, keyFile, &
-		// 	serveHTTP: handlerFunc,
-		// })
-		if err != nil {
-			log.Fatal("Serve: ", err)
-		}
 	}()
 	log.Printf("Starting https reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
 	server := &http.Server{

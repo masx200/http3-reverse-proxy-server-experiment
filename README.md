@@ -32,12 +32,32 @@ http3反向代理服务器实验golang
 
 #### 安装教程
 
-1. xxxx
-2. xxxx
-3. xxxx
+```
+go build main.go
+```
 
 #### 使用说明
 
-1. xxxx
-2. xxxx
-3. xxxx
+```
+Usage of main.exe:
+  -http-port int
+        http-port (default 18080)
+  -https-port int
+        https-port (default 18443)
+  -listen-hostname string
+        listen-hostname (default "0.0.0.0")
+  -listen-http
+        listen-http (default true)
+  -listen-http3
+        listen-http3 (default true)
+  -listen-tls
+        listen-tls (default true)
+  -tls-cert string
+        tls-cert (default "cert.crt")
+  -tls-key string
+        tls-key (default "key.pem")
+  -upstream-protocol string
+        upstream-protocol (default "h3")
+  -upstream-server string
+        upstream-server (default "https://workers.cloudflare.com/")
+```

@@ -214,8 +214,8 @@ func main() {
 			log.Fatal("Serve: ", err)
 		}
 	}()
-	certFile := "cert.crt"
-	keyFile := "key.pem"
+	certFile := *tlscertArg //"cert.crt"
+	keyFile := *tlskeyArg   // "key.pem"
 	go func() {
 		var handlerFunc = func(w http.ResponseWriter, req *http.Request) {
 			engine.Handler().ServeHTTP(w, req)

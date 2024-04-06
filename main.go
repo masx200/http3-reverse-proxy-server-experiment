@@ -51,7 +51,7 @@ func CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServerURL strin
 
 // 主程序入口
 func main() {
-	var upstreamServer = ""
+	var upstreamServer = "https://workers.cloudflare.com/"
 	upstreamServerDefaultTransport := CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
 
 	//健康检查过期时间毫秒

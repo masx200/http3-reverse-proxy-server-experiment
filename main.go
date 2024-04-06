@@ -51,7 +51,7 @@ func CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServerURL strin
 
 // 主程序入口
 func main() {
-	var upstreamServer = "https://workers.cloudflare.com/"
+	var upstreamServer =  "https://workers.cloudflare.com/"
 	upstreamServerDefaultTransport := CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
 
 	//健康检查过期时间毫秒
@@ -137,6 +137,7 @@ func main() {
 
 		if err != nil {
 			log.Println("ERROR:", err) // 打印错误信息
+			c.String(502, "ERROR: "+err.Error())
 			c.AbortWithStatus(http.StatusBadGateway)
 			return
 		} else {

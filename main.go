@@ -60,12 +60,14 @@ func main() {
 	StringArgprotocol := flag.String("upstream-protocol", "h3", "upstream-protocol")
 	tlscertArg := flag.String("tls-cert", "cert.crt", "tls-cert")
 	tlskeyArg := flag.String("tls-key", "key.pem", "tls-key")
-	tlsboolArg := flag.Bool("listen-tls", false, "listen-tls")
+	tlsboolArg := flag.Bool("listen-tls", true, "listen-tls")
+	Arglistenhttp := flag.Bool("listen-http", true, "listen-http")
 
 	// 解析命令行参数
 	flag.Parse()
 
 	// 输出解析后的参数值
+	fmt.Printf("listen-http argument: %v\n", *Arglistenhttp)
 	fmt.Printf("tls-cert argument: %s\n", *tlscertArg)
 	fmt.Printf("tls-key argument: %s\n", *tlskeyArg)
 	fmt.Printf("upstream-server argument: %s\n", *strArgupstreamServer)

@@ -34,7 +34,7 @@ type HTTPRoundTripper func(req *http.Request) (*http.Response, error)
 func (m HTTPRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	return m(req)
 }
-func CreateHTTPRoundTripperMiddleWare(upstreamServerURL string) HTTPRoundTripperMiddleWare {
+func CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServerURL string) HTTPRoundTripperMiddleWare {
 	return func(req *http.Request, next func(req *http.Request) (*http.Response, error)) (*http.Response, error) {
 		//parse url of upstreamServerURL
 		upstreamServerURL, err := url.Parse(upstreamServerURL)
@@ -52,13 +52,8 @@ func CreateHTTPRoundTripperMiddleWare(upstreamServerURL string) HTTPRoundTripper
 // 主程序入口
 func main() {
 	var upstreamServer = ""
-	h3rt := &http3.RoundTripper{}
-	upstreamServerDefaultTransport := HTTPRoundTripper(func(req *http.Request) (*http.Response, error) {
-		return CreateHTTPRoundTripperMiddleWare(upstreamServer)(req, func(req *http.Request) (*http.Response, error) {
-			return h3rt.RoundTrip(req)
-		})
+	upstreamServerDefaultTransport := CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
 
-	})
 	//健康检查过期时间毫秒
 	// var maxAge = int64(5 * 1000)
 	// 定义上游服务器地址
@@ -223,6 +218,17 @@ func main() {
 	if errx != nil {
 		log.Fatal(errx)
 	}
+}
+
+func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) HTTPRoundTripper {
+	h3rt := &http3.RoundTripper{}
+	upstreamServerDefaultTransport := HTTPRoundTripper(func(req *http.Request) (*http.Response, error) {
+		return CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServer)(req, func(req *http.Request) (*http.Response, error) {
+			return h3rt.RoundTrip(req)
+		})
+
+	})
+	return upstreamServerDefaultTransport
 }
 
 // checkUpstreamHealth 检查上游服务的健康状态

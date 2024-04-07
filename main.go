@@ -67,10 +67,10 @@ func CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServerURLstring
 
 // 主程序入口
 func main() {
-	strArgupstreamServer := flag.String("upstream-server", "https://workers.cloudflare.com/", "upstream-server")
+	strArgupstreamServer := flag.String("upstream-server", "", "upstream-server,example \"https://workers.cloudflare.com/\"")
 	intArghttpPort := flag.Int("http-port", 18080, "http-port")
 	int2ArghttpsPort := flag.Int("https-port", 18443, "https-port")
-	StringArgprotocol := flag.String("upstream-protocol", "h3", "upstream-protocol")
+	StringArgprotocol := flag.String("upstream-protocol", "h3", "upstream-protocol,supports (h3,h2,h2c,http/1.1)")
 	tlscertArg := flag.String("tls-cert", "cert.crt", "tls-cert")
 	tlskeyArg := flag.String("tls-key", "key.pem", "tls-key")
 	Arglistenhostname := flag.String("listen-hostname", "0.0.0.0", "listen-hostname")
@@ -95,7 +95,9 @@ func main() {
 	fmt.Printf("upstream-protocol argument: %v\n", *StringArgprotocol)
 	fmt.Printf("listen-tls argument: %v\n", *tlsboolArg)
 	var upstreamServer = *strArgupstreamServer
-
+	if len(upstreamServer) == 0 {
+		log.Fatal("error :upstream-server is empty")
+	}
 	var upstreamServerDefaultTransport http.RoundTripper
 	upstreamServerDefaultTransport = CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
 	if strings.Contains(*StringArgprotocol, "h2c") {

@@ -59,7 +59,7 @@ Usage of main.exe:
   -tls-key string
         tls-key (default "key.pem")
   -upstream-protocol string
-        upstream-protocol (default "h3")
+        upstream-protocol,supports (h3,h2,h2c,http/1.1) (default "h3")
   -upstream-server string
-        upstream-server (default "https://workers.cloudflare.com/")
+        upstream-server,example "https://workers.cloudflare.com/"
 ```

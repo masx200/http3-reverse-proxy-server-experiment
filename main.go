@@ -281,7 +281,7 @@ func main() {
 	group.Add(1)
 	go func() {
 		defer group.Done()
-		if *Arglistenhttp {
+		if *Arglistenhttp || *Arglistenh2c {
 
 			listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(httpPort))
 			if err != nil {

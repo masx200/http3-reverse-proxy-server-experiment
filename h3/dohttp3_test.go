@@ -9,7 +9,7 @@ import (
 )
 
 func TestDOHTTP3(t *testing.T) {
-	dohServer := []string{"https://nextjs-doh-reverse-proxy.onrender.com/dns-query", "https://doh-cache-worker-cf.masx200.workers.dev/dns-query"}
+	dohServer := []string{"https://nextjs-doh-reverse-proxy.onrender.com/dns-query", "https://unfiltered.adguard-dns.com/dns-query"}
 	// dohServer := []string{"9.9.9.9:853", "1.1.1.1:853", "8.8.4.4:853", "dot.sb:853"}
 	domain := "production.hello-word-worker-cloudflare.masx200.workers.dev"
 

@@ -64,6 +64,7 @@ func main() {
 	Arglistenhostname := flag.String("listen-hostname", "0.0.0.0", "listen-hostname")
 	tlsboolArg := flag.Bool("listen-tls", true, "listen-tls")
 	Arglistenhttp := flag.Bool("listen-http", true, "listen-http")
+	Arglistenh2c := flag.Bool("listen-http", true, "listen-h2c")
 	Arglistenhttp3 := flag.Bool("listen-http3", true, "listen-http3")
 
 	// 解析命令行参数
@@ -72,6 +73,7 @@ func main() {
 	// 输出解析后的参数值
 	fmt.Printf("listen-hostname argument: %v\n", *Arglistenhostname)
 	fmt.Printf("listen-http argument: %v\n", *Arglistenhttp)
+	fmt.Printf("listen-h2c argument: %v\n", *Arglistenh2c)
 	fmt.Printf("listen-http3 argument: %v\n", *Arglistenhttp3)
 	fmt.Printf("tls-cert argument: %s\n", *tlscertArg)
 	fmt.Printf("tls-key argument: %s\n", *tlskeyArg)
@@ -98,12 +100,12 @@ func main() {
 	engine := gin.Default()
 	engine.Use(Forwarded(), LoopDetect())
 	engine.Use(func(c *gin.Context) {
-		if *tlsboolArg {
+		if *Arglistenhttp3 {
 			c.Writer.Header().Add("Alt-Svc",
 				"h3=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-29=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-27=\":"+fmt.Sprint(httpsPort)+"\";ma=86400",
 			)
 		}
-		if *Arglistenhttp {
+		if *Arglistenh2c {
 			c.Writer.Header().Add("Alt-Svc",
 				"h2c=\":"+fmt.Sprint(httpPort)+"\";ma=86400",
 			)

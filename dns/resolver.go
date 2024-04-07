@@ -30,10 +30,11 @@ func Sha512(input []byte) string {
 func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterface[string, func(m *dns.Msg) (r *dns.Msg, err error)], optionsCallBacks ...func(*DnsResolverOptions)) ([]string, error) {
 	// c := cache.NewMemCache()
 	var options = &DnsResolverOptions{
-		HttpsPort:     443,
 		QueryCallback: queryCallbacks,
 		Domain:        domain,
 		DnsCache:      generic.NewMapImplement[string, cache.ICache](),
+		HttpsPort:     443,
+		QueryHTTPS:    true,
 	}
 	for _, optionsCallBack := range optionsCallBacks {
 		optionsCallBack(options)
@@ -123,6 +124,7 @@ type DnsResolverOptions struct {
 	Domain        string                                                                 // Domain 是需要进行DNS解析的域名。
 	DnsCache      generic.MapInterface[string, cache.ICache]
 	HttpsPort     int // HttpsPort 是HTTPS服务监听的端口号。
+	QueryHTTPS    bool
 }
 
 // DnsResolver 是一个用于解析特定域名下多种类型记录的函数，例如A记录、AAAA记录和HTTPS记录。

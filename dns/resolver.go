@@ -133,7 +133,7 @@ type DnsResolverOptions struct {
 // optionsCallBacks 是一个可选参数列表，用于修改查询选项。
 // 返回解析到的地址列表和可能发生的错误。
 func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain string, HttpsPort int) ([]string, error) {
-
+	var errs []error
 	var resultsMutex sync.Mutex
 	var results []string
 	var wg sync.WaitGroup
@@ -142,33 +142,39 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 			defer wg.Done()
 
 			res, err := resolve(dns.TypeA, queryCallback, domain, HttpsPort)
-			if err != nil {
-				fmt.Printf("Error querying A record for %s: %v\n", domain, err)
-				return
-			}
 			resultsMutex.Lock()
 			defer resultsMutex.Unlock()
+			if err != nil {
+				fmt.Printf("Error querying A record for %s: %v\n", domain, err)
+				errs = append(errs, err)
+				return
+			}
+
 			results = append(results, res...)
 
 		}, func() {
 			defer wg.Done()
 			res, err := resolve(dns.TypeAAAA, queryCallback, domain, HttpsPort)
+			resultsMutex.Lock()
+			defer resultsMutex.Unlock()
 			if err != nil {
+				errs = append(errs, err)
 				fmt.Printf("Error querying AAAA record for %s: %v\n", domain, err)
 				return
 			}
-			resultsMutex.Lock()
-			defer resultsMutex.Unlock()
+
 			results = append(results, res...)
 		}, func() {
 			defer wg.Done()
 			res, err := resolve(dns.TypeHTTPS, queryCallback, domain, HttpsPort)
+			resultsMutex.Lock()
+			defer resultsMutex.Unlock()
 			if err != nil {
+				errs = append(errs, err)
 				fmt.Printf("Error querying HTTPS record for %s: %v\n", domain, err)
 				return
 			}
-			resultsMutex.Lock()
-			defer resultsMutex.Unlock()
+
 			results = append(results, res...)
 		},
 	}
@@ -179,7 +185,7 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 
 	wg.Wait()
 	if len(results) == 0 {
-		return nil, fmt.Errorf("no results found for %s", domain)
+		return nil, fmt.Errorf("no results found for %s"+"\n", domain)
 	}
 	return removeDuplicates(results), nil
 

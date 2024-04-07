@@ -229,7 +229,7 @@ func main() {
 	go func() {
 
 		defer group.Done()
-		if *Arglistenhttp3 && *tlsboolArg {
+		if *Arglistenhttp3 {
 			var handlerFunc = func(w http.ResponseWriter, req *http.Request) {
 				engine.Handler().ServeHTTP(w, req)
 			}

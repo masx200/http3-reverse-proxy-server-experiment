@@ -40,6 +40,7 @@ func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterfa
 	}
 	var wg sync.WaitGroup
 	var resultsMutex sync.Mutex
+	var cacheMutex sync.Mutex
 	var results []string
 	if (queryCallbacks).Size() == 0 {
 		return nil, fmt.Errorf("no query callbacks provided")
@@ -49,12 +50,7 @@ func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterfa
 		go func(queryCallback func(m *dns.Msg) (r *dns.Msg, err error)) {
 			defer wg.Done()
 			res, err := DnsResolver(func(m *dns.Msg) (*dns.Msg, error) {
-				var a, b = options.DnsCache.Get(s)
-				if !(a != nil && b) {
-					a = cache.NewMemCache()
-					options.DnsCache.Set(s, a)
-				}
-
+				a := GetOrCreateDNSCacheForString(&cacheMutex, options.DnsCache, s)
 				var copy = m.Copy()
 				/* 为了缓存,需要设置id为0,计算的hash会相同 */
 				copy.Id = 0
@@ -96,6 +92,29 @@ func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterfa
 		return nil, fmt.Errorf("no results found for %s", domain)
 	}
 	return removeDuplicates(results), nil
+}
+
+// GetOrCreateDNSCacheForString 创建或获取一个与给定字符串关联的缓存对象。
+//
+// 参数:
+// cacheMutex *sync.Mutex: 用于保护并发访问缓存的互斥锁。
+// options *DnsResolverOptions: DNS解析器选项，包含缓存配置等。
+// s string: 关联缓存对象的字符串键。
+//
+// 返回值:
+// cache.ICache: 返回一个实现了ICache接口的缓存对象。
+func GetOrCreateDNSCacheForString(cacheMutex *sync.Mutex, DnsCache generic.MapInterface[string, cache.ICache], s string) cache.ICache {
+	cacheMutex.Lock()
+	/*
+		fatal error: concurrent map read and map write			   go并发访问map的坑
+	*/
+	var a, b = DnsCache.Get(s)
+	if !(a != nil && b) {
+		a = cache.NewMemCache()
+		DnsCache.Set(s, a)
+	}
+	defer cacheMutex.Unlock()
+	return a
 }
 
 // DnsResolverOptions 是DNS解析器的配置选项。

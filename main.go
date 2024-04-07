@@ -293,12 +293,14 @@ func main() {
 			var handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				engine.Handler().ServeHTTP(w, req)
 			})
-			h2s := &http2.Server{
+			http2Server := &http2.Server{
 				// ...
 			}
 
 			if *Arglistenh2c {
-				err = http.Serve(listener, h2c.NewHandler(handler, h2s))
+				if *Arglistenhttp {
+					err = http.Serve(listener, h2c.NewHandler(handler, http2Server))
+				}
 			} else {
 				err = http.Serve(listener, (handler))
 			}

@@ -132,7 +132,7 @@ type DnsResolverOptions struct {
 // domain 是需要查询的域名。
 // optionsCallBacks 是一个可选参数列表，用于修改查询选项。
 // 返回解析到的地址列表和可能发生的错误。
-func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain string, HttpsPort int) ([]string, error) {
+func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain string, HttpsPort int, options *DnsResolverOptions) ([]string, error) {
 	var errs []error
 	var resultsMutex sync.Mutex
 	var results []string
@@ -166,6 +166,9 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 			results = append(results, res...)
 		}, func() {
 			defer wg.Done()
+			if !options.QueryHTTPS {
+				return
+			}
 			res, err := resolve(dns.TypeHTTPS, queryCallback, domain, HttpsPort)
 			resultsMutex.Lock()
 			defer resultsMutex.Unlock()

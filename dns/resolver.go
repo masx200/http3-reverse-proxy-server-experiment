@@ -76,7 +76,7 @@ func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterfa
 				a.Set(hash, result)
 				log.Println(s, "cache miss", hash)
 				return result, nil
-			}, domain, options.HttpsPort)
+			}, domain, options.HttpsPort, options)
 			if err != nil {
 				fmt.Printf("Error resolving domain %s: %v\n", domain, err)
 				return
@@ -141,7 +141,7 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 		func() {
 			defer wg.Done()
 
-			res, err := resolve(dns.TypeA, queryCallback, domain, HttpsPort)
+			res, err := resolve(dns.TypeA, queryCallback, domain, HttpsPort, options)
 			resultsMutex.Lock()
 			defer resultsMutex.Unlock()
 			if err != nil {
@@ -154,7 +154,7 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 
 		}, func() {
 			defer wg.Done()
-			res, err := resolve(dns.TypeAAAA, queryCallback, domain, HttpsPort)
+			res, err := resolve(dns.TypeAAAA, queryCallback, domain, HttpsPort, options)
 			resultsMutex.Lock()
 			defer resultsMutex.Unlock()
 			if err != nil {
@@ -169,7 +169,7 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 			if !options.QueryHTTPS {
 				return
 			}
-			res, err := resolve(dns.TypeHTTPS, queryCallback, domain, HttpsPort)
+			res, err := resolve(dns.TypeHTTPS, queryCallback, domain, HttpsPort, options)
 			resultsMutex.Lock()
 			defer resultsMutex.Unlock()
 			if err != nil {
@@ -199,7 +199,7 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 // options: 指定DNS解析器的选项，包含域名、端口和其他配置。
 // recordType: 指定需要查询的记录类型（如A记录、AAAA记录等）。
 // 返回值为解析到的记录值字符串数组和可能发生的错误。
-func resolve(recordType uint16, QueryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain string, HttpsPort int) ([]string, error) {
+func resolve(recordType uint16, QueryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain string, HttpsPort int, options *DnsResolverOptions) ([]string, error) {
 	m := &dns.Msg{}
 	if recordType == dns.TypeHTTPS && HttpsPort != 443 {
 
@@ -248,7 +248,7 @@ func resolve(recordType uint16, QueryCallback func(m *dns.Msg) (r *dns.Msg, err 
 			}
 		case *dns.CNAME:
 			// results = append(results, fmt.Sprintf("CNAME: %s", record.Target))
-			res, err := DnsResolver(QueryCallback, record.Target, HttpsPort)
+			res, err := DnsResolver(QueryCallback, record.Target, HttpsPort, options)
 			if err != nil {
 				return nil, err
 			}

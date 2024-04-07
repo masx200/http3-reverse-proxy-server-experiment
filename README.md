@@ -44,6 +44,8 @@ Usage of main.exe:
         http-port (default 18080)
   -https-port int
         https-port (default 18443)
+  -listen-h2c
+        listen-h2c (default true)
   -listen-hostname string
         listen-hostname (default "0.0.0.0")
   -listen-http

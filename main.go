@@ -64,7 +64,7 @@ func main() {
 	Arglistenhostname := flag.String("listen-hostname", "0.0.0.0", "listen-hostname")
 	tlsboolArg := flag.Bool("listen-tls", true, "listen-tls")
 	Arglistenhttp := flag.Bool("listen-http", true, "listen-http")
-	Arglistenh2c := flag.Bool("listen-http", true, "listen-h2c")
+	Arglistenh2c := flag.Bool("listen-h2c", true, "listen-h2c")
 	Arglistenhttp3 := flag.Bool("listen-http3", true, "listen-http3")
 
 	// 解析命令行参数

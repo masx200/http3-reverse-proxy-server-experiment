@@ -32,7 +32,7 @@ func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterfa
 	var options = &DnsResolverOptions{
 		QueryCallback: queryCallbacks,
 		Domain:        domain,
-		DnsCache:      generic.NewMapImplement[string, cache.ICache](),
+		DnsCache:      NewMapImplementSynchronous[string, cache.ICache](),
 		HttpsPort:     443,
 		QueryHTTPS:    true,
 	}
@@ -289,70 +289,4 @@ func ArrayMap[T any, U any](arr []T, fn func(T) U) []U {
 	}
 
 	return result
-}
-
-type MapImplementSynchronous[T comparable, Y any] struct {
-	data       generic.MapInterface[T, Y]
-	cacheMutex sync.Mutex
-}
-
-// Clear implements generic.MapInterface.
-func (m *MapImplementSynchronous[T, Y]) Clear() {
-	panic("unimplemented")
-}
-
-// Delete implements generic.MapInterface.
-func (m *MapImplementSynchronous[T, Y]) Delete(T) {
-	panic("unimplemented")
-}
-
-// Entries implements generic.MapInterface.
-func (m *MapImplementSynchronous[T, Y]) Entries() []generic.PairInterface[T, Y] {
-	panic("unimplemented")
-}
-
-// ForEach implements generic.MapInterface.
-func (m *MapImplementSynchronous[T, Y]) ForEach(func(Y, T, generic.MapInterface[T, Y])) {
-	panic("unimplemented")
-}
-
-// Get implements generic.MapInterface.
-func (m *MapImplementSynchronous[T, Y]) Get(T) (Y, bool) {
-	panic("unimplemented")
-}
-
-// Has implements generic.MapInterface.
-func (m *MapImplementSynchronous[T, Y]) Has(T) bool {
-	panic("unimplemented")
-}
-
-// Iterator implements generic.MapInterface.
-func (m *MapImplementSynchronous[T, Y]) Iterator() generic.Iterator[generic.PairInterface[T, Y]] {
-	panic("unimplemented")
-}
-
-// Keys implements generic.MapInterface.
-func (m *MapImplementSynchronous[T, Y]) Keys() []T {
-	panic("unimplemented")
-}
-
-// Set implements generic.MapInterface.
-func (m *MapImplementSynchronous[T, Y]) Set(T, Y) {
-	panic("unimplemented")
-}
-
-// Size implements generic.MapInterface.
-func (m *MapImplementSynchronous[T, Y]) Size() int64 {
-	panic("unimplemented")
-}
-
-// Values implements generic.MapInterface.
-func (m *MapImplementSynchronous[T, Y]) Values() []Y {
-	panic("unimplemented")
-}
-
-func NewMapImplementSynchronous[T comparable, Y any](entries ...generic.PairInterface[T, Y]) generic.MapInterface[T, Y] {
-	return &MapImplementSynchronous[T, Y]{
-		data: generic.NewMapImplement[T, Y](entries...),
-	}
 }

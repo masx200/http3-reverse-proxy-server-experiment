@@ -11,7 +11,7 @@ import (
 	"github.com/miekg/dns"
 )
 
-var DnsCache generic.MapInterface[string, cache.ICache] = generic.NewMapImplement[string, cache.ICache]()
+var DnsCache generic.MapInterface[string, cache.ICache] = dns_experiment.NewMapImplementSynchronous[string, cache.ICache]()
 
 func DoHTTP3Client(m *dns.Msg, s string) (r *dns.Msg, err error) {
 	return h3_experiment.DoHTTP3Client(m, s)

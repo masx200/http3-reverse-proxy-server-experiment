@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"flag"
+	"sync"
 	"time"
 
 	// "crypto/tls"
@@ -195,34 +196,39 @@ func main() {
 	})
 	var hostname = *Arglistenhostname //"0.0.0.0"
 
-	go func() {
+	// go func() {
 
-		if *tlsboolArg && *Arglistenhttp {
+	// 	if *tlsboolArg && *Arglistenhttp {
 
-			listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(httpPort))
-			if err != nil {
-				log.Fatal("ListenAndServe: ", err)
-			}
-			log.Printf("http reverse proxy server started on port %s", listener.Addr())
+	// 		listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(httpPort))
+	// 		if err != nil {
+	// 			log.Fatal("ListenAndServe: ", err)
+	// 		}
+	// 		log.Printf("http reverse proxy server started on port %s", listener.Addr())
 
-			// 设置自定义处理器
-			var handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				engine.Handler().ServeHTTP(w, req)
-			})
-			h2s := &http2.Server{
-				// ...
-			}
-			// 开始服务
-			err = http.Serve(listener, h2c.NewHandler(handler, h2s))
-			if err != nil {
-				log.Fatal("Serve: ", err)
-			}
-		}
+	// 		// 设置自定义处理器
+	// 		var handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	// 			engine.Handler().ServeHTTP(w, req)
+	// 		})
+	// 		h2s := &http2.Server{
+	// 			// ...
+	// 		}
+	// 		// 开始服务
+	// 		err = http.Serve(listener, h2c.NewHandler(handler, h2s))
+	// 		if err != nil {
+	// 			log.Fatal("Serve: ", err)
+	// 		}
+	// 	}
 
-	}()
+	// }()
+
+	var group sync.WaitGroup
 	certFile := *tlscertArg //"cert.crt"
 	keyFile := *tlskeyArg   // "key.pem"
+	group.Add(1)
 	go func() {
+
+		defer group.Done()
 		if *Arglistenhttp3 && *tlsboolArg {
 			var handlerFunc = func(w http.ResponseWriter, req *http.Request) {
 				engine.Handler().ServeHTTP(w, req)
@@ -251,50 +257,59 @@ func main() {
 		}
 
 	}()
-	if *tlsboolArg {
-		log.Printf("Starting https reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
-		server := &http.Server{
-			Addr: hostname + ":" + strconv.Itoa(httpsPort),
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	group.Add(1)
+	go func() {
+		defer group.Done()
+		if *tlsboolArg {
+			log.Printf("Starting https reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
+			server := &http.Server{
+				Addr: hostname + ":" + strconv.Itoa(httpsPort),
+				Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
-				engine.Handler().ServeHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
+					engine.Handler().ServeHTTP(w, req) // 调用Gin引擎的Handler方法处理HTTP请求。
 
-			}), /*  &LoadBalanceHandler{
-				engine: engine,
-			}, */
+				}), /*  &LoadBalanceHandler{
+					engine: engine,
+				}, */
+			}
+			errx := server.ListenAndServeTLS(certFile, keyFile)
+			if errx != nil {
+				log.Fatal(errx)
+			}
 		}
-		errx := server.ListenAndServeTLS(certFile, keyFile)
-		if errx != nil {
-			log.Fatal(errx)
-		}
-	} else if !*tlsboolArg && *Arglistenhttp {
+	}()
+	group.Add(1)
+	go func() {
+		defer group.Done()
+		if *Arglistenhttp {
 
-		listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(httpPort))
-		if err != nil {
-			log.Fatal("ListenAndServe: ", err)
-		}
-		log.Printf("http reverse proxy server started on port %s", listener.Addr())
+			listener, err := net.Listen("tcp", hostname+":"+fmt.Sprint(httpPort))
+			if err != nil {
+				log.Fatal("ListenAndServe: ", err)
+			}
+			log.Printf("http reverse proxy server started on port %s", listener.Addr())
 
-		// 设置自定义处理器
-		var handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			engine.Handler().ServeHTTP(w, req)
-		})
-		h2s := &http2.Server{
-			// ...
-		}
+			// 设置自定义处理器
+			var handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				engine.Handler().ServeHTTP(w, req)
+			})
+			h2s := &http2.Server{
+				// ...
+			}
 
-		if *Arglistenh2c {
-			err = http.Serve(listener, h2c.NewHandler(handler, h2s))
-		} else {
-			err = http.Serve(listener, (handler))
-		}
-		// 开始服务
+			if *Arglistenh2c {
+				err = http.Serve(listener, h2c.NewHandler(handler, h2s))
+			} else {
+				err = http.Serve(listener, (handler))
+			}
+			// 开始服务
 
-		if err != nil {
-			log.Fatal("Serve: ", err)
+			if err != nil {
+				log.Fatal("Serve: ", err)
+			}
 		}
-	}
-
+	}()
+	group.Wait()
 }
 
 func CreateHTTP12RoundTripperOfUpStreamServer(upstreamServer string, alpns []string) http.RoundTripper {

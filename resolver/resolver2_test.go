@@ -62,10 +62,10 @@ func GetQueryCallbacks14() generic.MapInterface[string, func(m *dns.Msg) (r *dns
 		return DohClient(m, "https://cloudflare-dns.com/dns-query")
 	}, "https://dns.alidns.com/dns-query": func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DohClient(m, "https://dns.alidns.com/dns-query")
-	}, "http3://doh-cache-worker-cf.masx200.workers.dev/dns-query": func(m *dns.Msg) (r *dns.Msg, err error) {
+	}, "https://unfiltered.adguard-dns.com/dns-query": func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DoHTTP3Client(m, "https://unfiltered.adguard-dns.com/dns-query")
-	}, "http3://dns.alidns.com/dns-query": func(m *dns.Msg) (r *dns.Msg, err error) {
-		return DoHTTP3Client(m, "https://dns.alidns.com/dns-query")
+	}, "https://security.cloudflare-dns.com/dns-query": func(m *dns.Msg) (r *dns.Msg, err error) {
+		return DoHTTP3Client(m, "https://security.cloudflare-dns.com/dns-query")
 	}, "quic://dns.alidns.com": func(m *dns.Msg) (r *dns.Msg, err error) {
 		return DoQClient(m, "quic://dns.alidns.com")
 	}, "quic://family.adguard-dns.com": func(m *dns.Msg) (r *dns.Msg, err error) {

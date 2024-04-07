@@ -38,6 +38,16 @@ import (
 	// "time"
 )
 
+func CreateHTTP2CRoundTripperOfUpStreamServer() http.RoundTripper {
+
+	return &http2.Transport{
+		AllowHTTP: true,
+		DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
+			return net.Dial(network, addr)
+		},
+	}
+}
+
 type HTTPRoundTripperMiddleWare = func(req *http.Request, next func(req *http.Request) (*http.Response, error)) (*http.Response, error)
 
 func CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServerURLstring string) HTTPRoundTripperMiddleWare {
@@ -88,8 +98,10 @@ func main() {
 
 	var upstreamServerDefaultTransport http.RoundTripper
 	upstreamServerDefaultTransport = CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
-	if !strings.Contains(*StringArgprotocol, "h3") {
-		upstreamServerDefaultTransport = CreateHTTP12RoundTripperOfUpStreamServer(upstreamServer, strings.Split(*StringArgprotocol, ","))
+	if strings.Contains(*StringArgprotocol, "h2c") {
+		upstreamServerDefaultTransport = CreateHTTP2CRoundTripperOfUpStreamServer()
+	} else if !strings.Contains(*StringArgprotocol, "h3") {
+		upstreamServerDefaultTransport = CreateHTTP12RoundTripperOfUpStreamServer(strings.Split(*StringArgprotocol, ","))
 	}
 	//健康检查过期时间毫秒
 	// var maxAge = int64(5 * 1000)
@@ -317,9 +329,10 @@ func main() {
 	group.Wait()
 }
 
-func CreateHTTP12RoundTripperOfUpStreamServer(upstreamServer string, alpns []string) http.RoundTripper {
+func CreateHTTP12RoundTripperOfUpStreamServer(alpns []string) http.RoundTripper {
 	if len(alpns) > 0 {
 		return &http.Transport{TLSClientConfig: &tls.Config{
+			// ServerName: ,
 			NextProtos: alpns}, ForceAttemptHTTP2: true}
 	}
 	return &http.Transport{ForceAttemptHTTP2: true}

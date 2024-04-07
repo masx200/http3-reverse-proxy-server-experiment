@@ -18,6 +18,7 @@ import (
 	// "github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	"github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
 	h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
+	"github.com/masx200/http3-reverse-proxy-server-experiment/http2_only"
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -300,6 +301,8 @@ func main() {
 			if *Arglistenh2c {
 				if *Arglistenhttp {
 					err = http.Serve(listener, h2c.NewHandler(handler, http2Server))
+				} else {
+					err = http.Serve(listener, http2_only.NewHandler(handler, http2Server))
 				}
 			} else {
 				err = http.Serve(listener, (handler))

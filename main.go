@@ -282,8 +282,14 @@ func main() {
 		h2s := &http2.Server{
 			// ...
 		}
+
+		if *Arglistenh2c {
+			err = http.Serve(listener, h2c.NewHandler(handler, h2s))
+		} else {
+			err = http.Serve(listener, (handler))
+		}
 		// 开始服务
-		err = http.Serve(listener, h2c.NewHandler(handler, h2s))
+
 		if err != nil {
 			log.Fatal("Serve: ", err)
 		}

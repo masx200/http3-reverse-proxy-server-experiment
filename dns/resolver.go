@@ -185,7 +185,10 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 
 	wg.Wait()
 	if len(results) == 0 {
-		return nil, fmt.Errorf("no results found for %s"+"\n", domain)
+		return nil, fmt.Errorf("no results found for %s"+"\n"+strings.Join(ArrayMap(errs, func(err error) string {
+
+			return err.Error()
+		}), "\n"), domain)
 	}
 	return removeDuplicates(results), nil
 
@@ -265,6 +268,21 @@ func removeDuplicates[T comparable](arr []T) []T {
 			seen[value] = true
 			result = append(result, value)
 		}
+	}
+
+	return result
+}
+
+// ArrayMap 函数接收一个数组和一个函数作为参数，将数组中的每个元素通过函数进行转换，并返回转换后的新数组。
+// [T any] 和 [U any] 表示函数可以接受任何类型的数组和转换函数。
+// arr 参数是待处理的数组。
+// fn 参数是一个函数，用于对数组中的每个元素进行处理并返回一个新的值。
+// 返回值是转换后的新数组。
+func ArrayMap[T any, U any](arr []T, fn func(T) U) []U {
+	result := make([]U, len(arr))
+
+	for i, v := range arr {
+		result[i] = fn(v)
 	}
 
 	return result

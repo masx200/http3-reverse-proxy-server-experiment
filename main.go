@@ -50,6 +50,15 @@ func CreateHTTP2CRoundTripperOfUpStreamServer() http.RoundTripper {
 
 type HTTPRoundTripperMiddleWare = func(req *http.Request, next func(req *http.Request) (*http.Response, error)) (*http.Response, error)
 
+// CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL 创建一个用于修改HTTP请求的中间件，使其指向指定的上游服务器URL。
+//
+// 参数:
+//
+//	upstreamServerURLstring string - 上游服务器的URL字符串。
+//
+// 返回值:
+//
+//	HTTPRoundTripperMiddleWare - 一个函数，接受一个http.Request和一个next函数作为参数，返回一个(*http.Response, error)。
 func CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServerURLstring string) HTTPRoundTripperMiddleWare {
 	return func(req *http.Request, next func(req *http.Request) (*http.Response, error)) (*http.Response, error) {
 		//parse url of upstreamServerURL
@@ -101,9 +110,15 @@ func main() {
 	var upstreamServerDefaultTransport http.RoundTripper
 	upstreamServerDefaultTransport = CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
 	if strings.Contains(*StringArgprotocol, "h2c") {
-		upstreamServerDefaultTransport = CreateHTTP2CRoundTripperOfUpStreamServer()
+		var rt = CreateHTTP2CRoundTripperOfUpStreamServer()
+		upstreamServerDefaultTransport = adapter.RoundTripTransport(func(r *http.Request) (*http.Response, error) {
+			return CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServer)(r, rt.RoundTrip)
+		})
 	} else if !strings.Contains(*StringArgprotocol, "h3") {
-		upstreamServerDefaultTransport = CreateHTTP12RoundTripperOfUpStreamServer(strings.Split(*StringArgprotocol, ","))
+		var rt = CreateHTTP12RoundTripperOfUpStreamServer(strings.Split(*StringArgprotocol, ","))
+		upstreamServerDefaultTransport = adapter.RoundTripTransport(func(r *http.Request) (*http.Response, error) {
+			return CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServer)(r, rt.RoundTrip)
+		})
 	}
 	//健康检查过期时间毫秒
 	// var maxAge = int64(5 * 1000)

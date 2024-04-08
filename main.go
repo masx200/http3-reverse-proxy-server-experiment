@@ -108,8 +108,10 @@ func main() {
 		log.Fatal("error :upstream-server is empty")
 	}
 	var upstreamServerDefaultTransport http.RoundTripper
-	upstreamServerDefaultTransport = CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
-	if strings.Contains(*StringArgprotocol, "h2c") {
+
+	if strings.Contains(*StringArgprotocol, "h3") {
+		upstreamServerDefaultTransport = CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer)
+	} else if strings.Contains(*StringArgprotocol, "h2c") {
 		var rt = CreateHTTP2CRoundTripperOfUpStreamServer()
 		upstreamServerDefaultTransport = adapter.RoundTripTransport(func(r *http.Request) (*http.Response, error) {
 			return CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServer)(r, rt.RoundTrip)

@@ -147,7 +147,9 @@ func CreateHTTP3TransportWithIPGetter(getter func() (string, error)) adapter.HTT
 		// 使用定制的HTTP/3传输器进行HTTP请求的传输。
 		return roundTripper.RoundTrip(r)
 	}), Closer: func() error {
-		transportquic.Close()
+		if transportquic != nil {
+			transportquic.Close()
+		}
 		return roundTripper.Close()
 	}}
 

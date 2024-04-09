@@ -39,7 +39,7 @@ go build main.go
 #### 使用说明
 
 ```
-Usage of main.exe:
+Usage of reverse-proxy-server.exe:
   -http-port int
         http-port (default 18080)
   -https-port int
@@ -62,4 +62,12 @@ Usage of main.exe:
         upstream-protocol,supports (h3,h2,h2c,http/1.1) (default "h3")
   -upstream-server string
         upstream-server,example "https://workers.cloudflare.com/"
+```
+
+```
+go run doh_debugger\doh_debugger.go www.example.com,h5.sinaimg.cn  A,AAAA https://doh.360.cn/dns-query
+```
+
+```
+go run doh3_debugger\doh3_debugger.go www.example.com,h5.sinaimg.cn  A,AAAA https://dns.alidns.com/dns-query
 ```

@@ -26,7 +26,17 @@ jobs:
 
           GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/linux-amd64/reverse-proxy-server ./main.go
           cd ./dist/linux-amd64/
-          tar  zcvf ../../dist/reverse-proxy-server-linux-amd64.tgz ./*
+          tar  zcvf ../../dist/reverse-proxy-server-linux-amd64.tgz ./reverse-proxy-server
+          cd ../../
+
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/linux-amd64/doh3_debugger ./doh3_debugger\doh3_debugger.go
+          cd ./dist/linux-amd64/
+          tar  zcvf ../../dist/doh3_debugger-linux-amd64.tgz ./doh3_debugger
+          cd ../../
+
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/linux-amd64/doh_debugger ./doh_debugger\doh_debugger.go
+          cd ./dist/linux-amd64/
+          tar  zcvf ../../dist/doh_debugger-linux-amd64.tgz ./doh_debugger
           cd ../../
       - name: Release
         uses: softprops/action-gh-release@v2

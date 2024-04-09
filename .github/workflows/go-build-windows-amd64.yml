@@ -28,6 +28,15 @@ jobs:
           cd ./dist/windows-amd64/
           tar  zcvf ../../dist/reverse-proxy-server-windows-amd64.tgz ./*
           cd ../../
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/windows-amd64/doh3_debugger.exe ./doh3_debugger/doh3_debugger.go
+          cd ./dist/windows-amd64/
+          tar  zcvf ../../dist/doh3_debugger-windows-amd64.tgz ./doh3_debugger.exe
+          cd ../../
+
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/windows-amd64/doh_debugger.exe ./doh_debugger/doh_debugger.go
+          cd ./dist/windows-amd64/
+          tar  zcvf ../../dist/doh_debugger-windows-amd64.tgz ./doh_debugger.exe
+          cd ../../
       - name: Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/master')

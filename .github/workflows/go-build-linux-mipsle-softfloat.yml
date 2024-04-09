@@ -28,6 +28,15 @@ jobs:
           cd ./dist/linux-mipsle-softfloat/
           tar  zcvf ../../dist/reverse-proxy-server-linux-mipsle-softfloat.tgz ./*
           cd ../../
+          CGO_ENABLED=0 GOMIPS=softfloat CC=mips-linux-gcc GOOS=linux GOARCH=mipsle CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/linux-mipsle/doh3_debugger ./doh3_debugger/doh3_debugger.go
+          cd ./dist/linux-mipsle/
+          tar  zcvf ../../dist/doh3_debugger-linux-mipsle-softfloat.tgz ./doh3_debugger
+          cd ../../
+
+          CGO_ENABLED=0 GOMIPS=softfloat CC=mips-linux-gcc GOOS=linux GOARCH=mipsle CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/linux-mipsle/doh_debugger ./doh_debugger/doh_debugger.go
+          cd ./dist/linux-mipsle/
+          tar  zcvf ../../dist/doh_debugger-linux-mipsle-softfloat.tgz ./doh_debugger
+          cd ../../
       - name: Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/master')

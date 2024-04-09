@@ -28,6 +28,15 @@ jobs:
           cd ./dist/linux-arm64/
           tar  zcvf ../../dist/reverse-proxy-server-linux-arm64.tgz ./*
           cd ../../
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/linux-arm64/doh3_debugger ./doh3_debugger/doh3_debugger.go
+          cd ./dist/linux-arm64/
+          tar  zcvf ../../dist/doh3_debugger-linux-arm64.tgz ./doh3_debugger
+          cd ../../
+
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0  go build -v -ldflags="-w -s" -o ./dist/linux-arm64/doh_debugger ./doh_debugger/doh_debugger.go
+          cd ./dist/linux-arm64/
+          tar  zcvf ../../dist/doh_debugger-linux-arm64.tgz ./doh_debugger
+          cd ../../
       - name: Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/master')

@@ -121,8 +121,8 @@ func DohClient(msg *dns.Msg, dohServerURL string) (r *dns.Msg, err error) {
 	}
 	//res.status check
 	if res.StatusCode != 200 {
-		log.Println(dohServerURL, "http status code is not 200 "+fmt.Sprintf("status code is %d", res.StatusCode))
-		return nil, fmt.Errorf("http status code is not 200" + fmt.Sprintf("status code is %d", res.StatusCode))
+		log.Println(dohServerURL, "http status code is not 200  "+fmt.Sprintf("status code is %d", res.StatusCode))
+		return nil, fmt.Errorf("http status code is not 200 " + fmt.Sprintf("status code is %d", res.StatusCode))
 	}
 
 	//check content-type

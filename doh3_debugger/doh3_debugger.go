@@ -22,6 +22,8 @@ func main() {
 
 	for _, d := range strings.Split(domain, ",") {
 		for _, t := range strings.Split(dnstype, ",") {
+			fmt.Println("domain:", d, "dnstype:", t, "dohurl:", dohurl)
+
 			var msg = &dns.Msg{}
 			msg.SetQuestion(d+".", dns.StringToType[t])
 			fmt.Println(msg.String())

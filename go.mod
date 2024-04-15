@@ -4,7 +4,7 @@ go 1.21.6
 
 require (
 	github.com/quic-go/quic-go v0.42.0
-	github.com/tantalor93/doq-go v0.9.0
+	github.com/tantalor93/doq-go v0.10.0
 )
 
 require (

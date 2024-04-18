@@ -128,10 +128,10 @@ func CreateHTTP3TransportWithIPGetter(getter func() (string, error)) adapter.HTT
 			// 使用替换后的地址尝试建立QUIC连接。
 			conn, err := transportquic.DialEarly(ctx, a, tlsConf, quicConf)
 			if err != nil {
-				fmt.Println("http3连接失败", ServerName, host, port /*  conn.LocalAddr(), conn.RemoteAddr() */)
+				log.Println("http3连接失败", ServerName, host, port /*  conn.LocalAddr(), conn.RemoteAddr() */)
 				return nil, err
 			}
-			fmt.Println("http3连接成功", ServerName, host, port, conn.LocalAddr(), conn.RemoteAddr())
+			log.Println("http3连接成功", ServerName, host, port, conn.LocalAddr(), conn.RemoteAddr())
 			// mapconnection[ServerName] = conn
 			return conn, err
 			// },

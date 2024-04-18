@@ -135,12 +135,12 @@ func main() {
 	engine.Use(func(c *gin.Context) {
 		if *Arglistenhttp3 {
 			c.Writer.Header().Add("Alt-Svc",
-				"h3=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-29=\":"+fmt.Sprint(httpsPort)+"\";ma=86400,h3-27=\":"+fmt.Sprint(httpsPort)+"\";ma=86400",
+				"h3=\":"+fmt.Sprint(httpsPort)+"\";ma=886400,h3-29=\":"+fmt.Sprint(httpsPort)+"\";ma=886400,h3-27=\":"+fmt.Sprint(httpsPort)+"\";ma=886400",
 			)
 		}
 		if *Arglistenh2c {
 			c.Writer.Header().Add("Alt-Svc",
-				"h2c=\":"+fmt.Sprint(httpPort)+"\";ma=86400",
+				"h2c=\":"+fmt.Sprint(httpPort)+"\";ma=886400",
 			)
 		}
 
@@ -357,8 +357,17 @@ func CreateHTTP12RoundTripperOfUpStreamServer(alpns []string) http.RoundTripper 
 	return &http.Transport{ForceAttemptHTTP2: true}
 }
 
+// CreateHTTP3RoundTripperOfUpStreamServer 创建一个指向上游服务器的HTTP/3轮询器。
+// 参数:
+//
+//	upstreamServer string - 上游服务器的URL。
+//
+// 返回值:
+//
+//	adapter.HTTPRoundTripperAndCloserInterface - 支持HTTP/3协议的轮询器接口，可用于发起HTTP请求。
 func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTPRoundTripperAndCloserInterface {
-	//为了防止udp被限速,需要定时更换端口
+	var mutex sync.Mutex
+	var started = false
 	var h3rt = h3_experiment.CreateHTTP3TransportWithIPGetter(func() (string, error) {
 		upstreamServerURL, err := url.Parse(upstreamServer)
 		if err != nil {
@@ -366,12 +375,23 @@ func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTP
 		}
 		return upstreamServerURL.Hostname(), nil
 	})
+	log.Println(
+		"INFO: Creating new HTTP/3 round tripper for upstream server",
+	)
 	var oldH3rt optional.Option[adapter.HTTPRoundTripperAndCloserInterface] = nil
-	ticker := time.NewTicker(time.Minute)
-	// 每分钟更换一个新的 http3.RoundTripper 并关闭旧的
-	go func() {
 
+	ticker := time.NewTicker(time.Minute)
+	var intervaltask = func() {
+		mutex.Lock()
+		defer mutex.Unlock()
+		if started {
+			return
+		}
+		started = true
 		for range ticker.C {
+			log.Println(
+				"INFO: Creating new HTTP/3 round tripper for upstream server",
+			)
 			oldH3rt = optional.Some(h3rt)
 			h3rt = h3_experiment.CreateHTTP3TransportWithIPGetter(func() (string, error) {
 				upstreamServerURL, err := url.Parse(upstreamServer)
@@ -383,11 +403,19 @@ func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTP
 
 			if oldH3rt != nil && oldH3rt.IsSome() {
 				oldH3rt.Unwrap().Close()
+				log.Println(
+					"INFO: Closed old HTTP/3 round tripper for upstream server",
+				)
 			}
 		}
-	}()
+	}
+	//为了防止udp被限速,需要定时更换端口
+
+	// 每分钟更换一个新的 http3.RoundTripper 并关闭旧的
+
 	upstreamServerDefaultTransport := &adapter.HTTPRoundTripperAndCloserImplement{RoundTripper: (func(req *http.Request) (*http.Response, error) {
 		return CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServer)(req, func(req *http.Request) (*http.Response, error) {
+			go intervaltask()
 			return h3rt.RoundTrip(req)
 		})
 

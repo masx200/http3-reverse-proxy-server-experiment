@@ -179,7 +179,7 @@ func main() {
 			pprofhttp.Handler("block").ServeHTTP(ctx.Writer, ctx.Request)
 			ctx.Abort()
 		})
-		engine.GET("/debug/pprof/goroutine", func(ctx *gin.Context) {
+		engine.Any("/debug/pprof/goroutine", func(ctx *gin.Context) {
 			var f = ctx.Writer
 			//defer f.Close() // error handling omitted for example
 			runtime.GC()
@@ -208,7 +208,7 @@ func main() {
 			pprofhttp.Trace(ctx.Writer, ctx.Request)
 			ctx.Abort()
 		})
-		engine.GET("/debug/pprof/heap", func(ctx *gin.Context) {
+		engine.Any("/debug/pprof/heap", func(ctx *gin.Context) {
 			var f = ctx.Writer
 			//defer f.Close() // error handling omitted for example
 			runtime.GC()
@@ -426,26 +426,29 @@ func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTP
 			return
 		}
 		started = true
-		for range ticker.C {
-			log.Println(
-				"INFO: Creating new HTTP/3 round tripper for upstream server",
-			)
-			oldH3rt = optional.Some(h3rt)
-			h3rt = h3_experiment.CreateHTTP3TransportWithIPGetter(func() (string, error) {
-				upstreamServerURL, err := url.Parse(upstreamServer)
-				if err != nil {
-					return "", err
-				}
-				return upstreamServerURL.Hostname(), nil
-			})
-
-			if oldH3rt != nil && oldH3rt.IsSome() {
-				oldH3rt.Unwrap().Close()
+		go func() {
+			for range ticker.C {
 				log.Println(
-					"INFO: Closed old HTTP/3 round tripper for upstream server",
+					"INFO: Creating new HTTP/3 round tripper for upstream server",
 				)
+				oldH3rt = optional.Some(h3rt)
+				h3rt = h3_experiment.CreateHTTP3TransportWithIPGetter(func() (string, error) {
+					upstreamServerURL, err := url.Parse(upstreamServer)
+					if err != nil {
+						return "", err
+					}
+					return upstreamServerURL.Hostname(), nil
+				})
+
+				if oldH3rt != nil && oldH3rt.IsSome() {
+					oldH3rt.Unwrap().Close()
+					log.Println(
+						"INFO: Closed old HTTP/3 round tripper for upstream server",
+					)
+				}
 			}
-		}
+		}()
+
 	}
 	//为了防止udp被限速,需要定时更换端口
 

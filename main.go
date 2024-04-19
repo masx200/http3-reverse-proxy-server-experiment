@@ -157,76 +157,18 @@ func main() {
 			}
 			ctx.Next()
 		})
-
+	var debug_pprof_app = optional.None[*gin.Engine]()
 	if *Arg_debug_pprof {
-		engine.Any("/debug/pprof/allocs", func(ctx *gin.Context) {
-			pprofhttp.Handler("allocs").ServeHTTP(ctx.Writer, ctx.Request)
-			ctx.Abort()
-		})
-		engine.Any("/debug/pprof/mutex", func(ctx *gin.Context) {
-			pprofhttp.Handler("mutex").ServeHTTP(ctx.Writer, ctx.Request)
-			ctx.Abort()
-		})
-		engine.Any("/debug/pprof/threadcreate", func(ctx *gin.Context) {
-			pprofhttp.Handler("threadcreate").ServeHTTP(ctx.Writer, ctx.Request)
-			ctx.Abort()
-		})
-		engine.Any("/debug/pprof/", func(ctx *gin.Context) {
-			pprofhttp.Index(ctx.Writer, ctx.Request)
-			ctx.Abort()
-		})
-		engine.Any("/debug/pprof/block", func(ctx *gin.Context) {
-			pprofhttp.Handler("block").ServeHTTP(ctx.Writer, ctx.Request)
-			ctx.Abort()
-		})
-		engine.Any("/debug/pprof/goroutine", func(ctx *gin.Context) {
-			var f = ctx.Writer
-			//defer f.Close() // error handling omitted for example
-			runtime.GC()
-			if err := pprof.Lookup("goroutine").WriteTo(f, 1); err != nil {
-				fmt.Println("could not start goroutine profile: ", err)
-				f.Write([]byte("could not start goroutine profile: " + err.Error()))
-				ctx.AbortWithError(http.StatusInternalServerError, err)
-				return
-			}
-			// defer pprof.StopCPUProfile()
-			ctx.Abort()
-		})
-		engine.Any("/debug/pprof/cmdline", func(ctx *gin.Context) {
-			pprofhttp.Cmdline(ctx.Writer, ctx.Request)
-			ctx.Abort()
-		})
-		engine.Any("/debug/pprof/profile", func(ctx *gin.Context) {
-			pprofhttp.Profile(ctx.Writer, ctx.Request)
-			ctx.Abort()
-		})
-		engine.Any("/debug/pprof/symbol", func(ctx *gin.Context) {
-			pprofhttp.Symbol(ctx.Writer, ctx.Request)
-			ctx.Abort()
-		})
-		engine.Any("/debug/pprof/trace", func(ctx *gin.Context) {
-			pprofhttp.Trace(ctx.Writer, ctx.Request)
-			ctx.Abort()
-		})
-		engine.Any("/debug/pprof/heap", func(ctx *gin.Context) {
-			var f = ctx.Writer
-			//defer f.Close() // error handling omitted for example
-			runtime.GC()
-			if err := pprof.WriteHeapProfile(f); err != nil {
-				fmt.Println("could not start heap profile: ", err)
-				f.Write([]byte("could not start heap profile: " + err.Error()))
-				ctx.AbortWithError(http.StatusInternalServerError, err)
-				return
-			}
-			// defer pprof.StopCPUProfile()
-			ctx.Abort()
-		})
+
+		debug_pprof_app = CreateDebugPprofApplication()
+
 	}
 
 	engine.Use(func(ctx *gin.Context) {
 		if *Arg_debug_pprof {
-			if strings.HasPrefix(ctx.Request.URL.Path, "/debug/pprof/") {
-				ctx.Next()
+			if strings.HasPrefix(ctx.Request.URL.Path, "/debug/pprof/") && debug_pprof_app.IsSome() {
+				debug_pprof_app.Unwrap().ServeHTTP(ctx.Writer, ctx.Request)
+				ctx.Abort()
 				return
 
 			}
@@ -384,6 +326,76 @@ func main() {
 		}
 	}()
 	group.Wait()
+}
+
+// CreateDebugPprofApplication 创建并配置一个启用PPROF的Gin路由器实例。
+// 该函数不接受参数，返回一个包含gin.Engine指针的optional.Option类型。
+// 这允许调用者选择是否使用PPROF调试功能。
+func CreateDebugPprofApplication() optional.Option[*gin.Engine] {
+	var debug_pprof_app = (gin.Default())
+	debug_pprof_app.Any("/debug/pprof/allocs", func(ctx *gin.Context) {
+		pprofhttp.Handler("allocs").ServeHTTP(ctx.Writer, ctx.Request)
+		ctx.Abort()
+	})
+	debug_pprof_app.Any("/debug/pprof/mutex", func(ctx *gin.Context) {
+		pprofhttp.Handler("mutex").ServeHTTP(ctx.Writer, ctx.Request)
+		ctx.Abort()
+	})
+	debug_pprof_app.Any("/debug/pprof/threadcreate", func(ctx *gin.Context) {
+		pprofhttp.Handler("threadcreate").ServeHTTP(ctx.Writer, ctx.Request)
+		ctx.Abort()
+	})
+	debug_pprof_app.Any("/debug/pprof/", func(ctx *gin.Context) {
+		pprofhttp.Index(ctx.Writer, ctx.Request)
+		ctx.Abort()
+	})
+	debug_pprof_app.Any("/debug/pprof/block", func(ctx *gin.Context) {
+		pprofhttp.Handler("block").ServeHTTP(ctx.Writer, ctx.Request)
+		ctx.Abort()
+	})
+	debug_pprof_app.Any("/debug/pprof/goroutine", func(ctx *gin.Context) {
+		var f = ctx.Writer
+
+		runtime.GC()
+		if err := pprof.Lookup("goroutine").WriteTo(f, 1); err != nil {
+			fmt.Println("could not start goroutine profile: ", err)
+			f.Write([]byte("could not start goroutine profile: " + err.Error()))
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		ctx.Abort()
+	})
+	debug_pprof_app.Any("/debug/pprof/cmdline", func(ctx *gin.Context) {
+		pprofhttp.Cmdline(ctx.Writer, ctx.Request)
+		ctx.Abort()
+	})
+	debug_pprof_app.Any("/debug/pprof/profile", func(ctx *gin.Context) {
+		pprofhttp.Profile(ctx.Writer, ctx.Request)
+		ctx.Abort()
+	})
+	debug_pprof_app.Any("/debug/pprof/symbol", func(ctx *gin.Context) {
+		pprofhttp.Symbol(ctx.Writer, ctx.Request)
+		ctx.Abort()
+	})
+	debug_pprof_app.Any("/debug/pprof/trace", func(ctx *gin.Context) {
+		pprofhttp.Trace(ctx.Writer, ctx.Request)
+		ctx.Abort()
+	})
+	debug_pprof_app.Any("/debug/pprof/heap", func(ctx *gin.Context) {
+		var f = ctx.Writer
+
+		runtime.GC()
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			fmt.Println("could not start heap profile: ", err)
+			f.Write([]byte("could not start heap profile: " + err.Error()))
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		ctx.Abort()
+	})
+	return optional.Some(debug_pprof_app)
 }
 
 func CreateHTTP12RoundTripperOfUpStreamServer(alpns []string) http.RoundTripper {

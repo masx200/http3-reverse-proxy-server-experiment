@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"flag"
+	"runtime"
 	"sync"
 	"time"
 
@@ -34,8 +35,11 @@ import (
 	// "net/url"
 	"strconv"
 	"strings"
+
 	// "sync"
 	// "time"
+	pprofhttp "net/http/pprof"
+	"runtime/pprof"
 )
 
 func CreateHTTP2CRoundTripperOfUpStreamServer() http.RoundTripper {
@@ -87,11 +91,12 @@ func main() {
 	Arglistenhttp := flag.Bool("listen-http", true, "listen-http")
 	Arglistenh2c := flag.Bool("listen-h2c", true, "listen-h2c")
 	Arglistenhttp3 := flag.Bool("listen-http3", true, "listen-http3")
-
+	Arg_debug_pprof := flag.Bool("debug-pprof", false, "debug-pprof")
 	// 解析命令行参数
 	flag.Parse()
 
 	// 输出解析后的参数值
+	fmt.Printf("debug-pprof argument: %v\n", *Arg_debug_pprof)
 	fmt.Printf("listen-hostname argument: %v\n", *Arglistenhostname)
 	fmt.Printf("listen-http argument: %v\n", *Arglistenhttp)
 	fmt.Printf("listen-h2c argument: %v\n", *Arglistenh2c)
@@ -152,49 +157,81 @@ func main() {
 			}
 			ctx.Next()
 		})
-	// // 定义上游服务器地址
-	// var upstreamServers = []string{"https://quic.nginx.org/", , "https://production.hello-word-worker.masx200.workers.dev/"}
-	//打印上游
-	// fmt.Println("Upstream servers:")
-	// for _, server := range upstreamServers {
-	// 	fmt.Println(server)
-	// }
 
-	// var expires = int64(0)
-	// var upstreamServerOfName = map[string]string{}
-	// var proxyServers map[string]func(*http.Request) (*http.Response, error) = map[string]func(*http.Request) (*http.Response, error){}
+	if *Arg_debug_pprof {
+		engine.Any("/debug/pprof/allocs", func(ctx *gin.Context) {
+			pprofhttp.Handler("allocs").ServeHTTP(ctx.Writer, ctx.Request)
+			ctx.Abort()
+		})
+		engine.Any("/debug/pprof/mutex", func(ctx *gin.Context) {
+			pprofhttp.Handler("mutex").ServeHTTP(ctx.Writer, ctx.Request)
+			ctx.Abort()
+		})
+		engine.Any("/debug/pprof/threadcreate", func(ctx *gin.Context) {
+			pprofhttp.Handler("threadcreate").ServeHTTP(ctx.Writer, ctx.Request)
+			ctx.Abort()
+		})
+		engine.Any("/debug/pprof/", func(ctx *gin.Context) {
+			pprofhttp.Index(ctx.Writer, ctx.Request)
+			ctx.Abort()
+		})
+		engine.Any("/debug/pprof/block", func(ctx *gin.Context) {
+			pprofhttp.Handler("block").ServeHTTP(ctx.Writer, ctx.Request)
+			ctx.Abort()
+		})
+		engine.GET("/debug/pprof/goroutine", func(ctx *gin.Context) {
+			var f = ctx.Writer
+			//defer f.Close() // error handling omitted for example
+			runtime.GC()
+			if err := pprof.Lookup("goroutine").WriteTo(f, 1); err != nil {
+				fmt.Println("could not start goroutine profile: ", err)
+				f.Write([]byte("could not start goroutine profile: " + err.Error()))
+				ctx.AbortWithError(http.StatusInternalServerError, err)
+				return
+			}
+			// defer pprof.StopCPUProfile()
+			ctx.Abort()
+		})
+		engine.Any("/debug/pprof/cmdline", func(ctx *gin.Context) {
+			pprofhttp.Cmdline(ctx.Writer, ctx.Request)
+			ctx.Abort()
+		})
+		engine.Any("/debug/pprof/profile", func(ctx *gin.Context) {
+			pprofhttp.Profile(ctx.Writer, ctx.Request)
+			ctx.Abort()
+		})
+		engine.Any("/debug/pprof/symbol", func(ctx *gin.Context) {
+			pprofhttp.Symbol(ctx.Writer, ctx.Request)
+			ctx.Abort()
+		})
+		engine.Any("/debug/pprof/trace", func(ctx *gin.Context) {
+			pprofhttp.Trace(ctx.Writer, ctx.Request)
+			ctx.Abort()
+		})
+		engine.GET("/debug/pprof/heap", func(ctx *gin.Context) {
+			var f = ctx.Writer
+			//defer f.Close() // error handling omitted for example
+			runtime.GC()
+			if err := pprof.WriteHeapProfile(f); err != nil {
+				fmt.Println("could not start heap profile: ", err)
+				f.Write([]byte("could not start heap profile: " + err.Error()))
+				ctx.AbortWithError(http.StatusInternalServerError, err)
+				return
+			}
+			// defer pprof.StopCPUProfile()
+			ctx.Abort()
+		})
+	}
 
-	// for _, urlString := range upstreamServers {
-	// 	upstreamURL, err := url.Parse(urlString)
-	// 	if err != nil {
-	// 		log.Fatalf("Failed to parse upstream server URL: %v", err)
-	// 	}
-	// 	if upstreamURL.Path != "/" && upstreamURL.Path != "" {
-	// 		log.Fatalf("upstreamServer Path must be / or empty")
-	// 	}
-	// 	proxy, err := createReverseProxy(urlString, int64(maxAge))
+	engine.Use(func(ctx *gin.Context) {
+		if *Arg_debug_pprof {
+			if strings.HasPrefix(ctx.Request.URL.Path, "/debug/pprof/") {
+				ctx.Next()
+				return
 
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	proxyServers[urlString] = func(req *http.Request) (*http.Response, error) {
-	// 		return proxy.Transport.RoundTrip(req)
-	// 	}
-	// 	upstreamServerOfName[urlString] = urlString
-	// 	upStreamServerSchemeAndHostOfName[urlString] = generic.NewPairImplement[string, string](upstreamURL.Scheme, upstreamURL.Host)
-	// }
-	// 启动反向代理服务器
-	// var healthyUpstream = proxyServers
-	// var transportsUpstream = proxyServers
-	// var mutex2 sync.Mutex
-	// var getHealthyProxyServers = func() map[string]func(*http.Request) (*http.Response, error) {
-	// 	return refreshHealthyUpStreams(func() int64 { return expires }, func() map[string]func(*http.Request) (*http.Response, error) { return healthyUpstream }, transportsUpstream, upstreamServerOfName, maxAge, func(i int64) { expires = i }, func(transportsUpstream map[string]func(*http.Request) (*http.Response, error)) {
-	// 		healthyUpstream = transportsUpstream
-	// 	}, &mutex2)
-
-	// }
-	engine.Any("/*path", func(c *gin.Context) {
-		req := c.Request
+			}
+		}
+		req := ctx.Request
 		if req.TLS != nil {
 			req.URL.Scheme = "https"
 		} else {
@@ -210,20 +247,21 @@ func main() {
 
 		if err != nil {
 			log.Println("ERROR:", err) // 打印错误信息
-			c.String(502, "ERROR: "+err.Error())
-			c.AbortWithStatus(http.StatusBadGateway)
+			ctx.String(502, "ERROR: "+err.Error())
+			ctx.AbortWithStatus(http.StatusBadGateway)
 			return
 		} else {
 			PrintResponse(resp) // 打印响应信息
 		}
 		for k, vv := range resp.Header {
 			for _, v := range vv {
-				c.Writer.Header().Add(k, v)
+				ctx.Writer.Header().Add(k, v)
 			}
 		}
-		c.Status(resp.StatusCode)
+		ctx.Status(resp.StatusCode)
 		defer resp.Body.Close()
-		bufio.NewReader(resp.Body).WriteTo(c.Writer)
+		bufio.NewReader(resp.Body).WriteTo(ctx.Writer)
+		ctx.Abort()
 
 	})
 	var hostname = *Arglistenhostname //"0.0.0.0"
@@ -381,7 +419,7 @@ func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTP
 	var oldH3rt optional.Option[adapter.HTTPRoundTripperAndCloserInterface] = nil
 
 	ticker := time.NewTicker(time.Minute)
-	var intervaltask = func() {
+	var intervalTaskStart = func() {
 		mutex.Lock()
 		defer mutex.Unlock()
 		if started {
@@ -415,7 +453,10 @@ func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTP
 
 	upstreamServerDefaultTransport := &adapter.HTTPRoundTripperAndCloserImplement{RoundTripper: (func(req *http.Request) (*http.Response, error) {
 		return CreateHTTPRoundTripperMiddleWareOfUpStreamServerURL(upstreamServer)(req, func(req *http.Request) (*http.Response, error) {
-			go intervaltask()
+			if !started {
+				go intervalTaskStart()
+			}
+
 			return h3rt.RoundTrip(req)
 		})
 

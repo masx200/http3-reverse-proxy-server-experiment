@@ -272,7 +272,11 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) OnUpstreamFailure(loadBalanc
 // 参数request为待发送的HTTP请求。
 // 返回值为执行请求后的HTTP响应及可能发生的错误。
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Request) (*http.Response, error) {
-	go l.LoadBalanceService.HealthyCheckStart()
+
+	if !l.LoadBalanceService.healthCheckRunning {
+		go l.LoadBalanceService.HealthyCheckStart()
+	}
+
 	upstreams := l.UpStreams
 	for _, value := range generic.RandomShuffle((upstreams.Entries())) {
 

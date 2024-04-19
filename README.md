@@ -40,6 +40,8 @@ go build main.go
 
 ```
 Usage of reverse-proxy-server.exe:
+  -debug-pprof
+        debug-pprof
   -http-port int
         http-port (default 18080)
   -https-port int

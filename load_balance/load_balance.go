@@ -10,6 +10,7 @@ import (
 // LoadBalance 是一个负载均衡接口，它定义了如何对HTTP请求进行负载均衡转发。
 // 其中包含了一个Map，用于映射域名到对应的UpStream。
 type LoadBalanceAndUpStream interface {
+	Close()
 	// RoundTrip 是一个代理方法，用于发送HTTP请求，并返回响应或错误。
 	// 参数：
 	//   *http.Request: 待发送的HTTP请求
@@ -32,6 +33,11 @@ type LoadBalanceAndUpStream interface {
 
 // ServerConfigCommon 定义了服务配置的公共接口
 type ServerConfigCommon interface {
+	GetActiveHealthyCheckEnabled() bool
+	SetActiveHealthyCheckEnabled(bool)
+	GetPassiveHealthyCheckEnabled() bool
+	SetPassiveHealthyCheckEnabled(bool)
+
 	GetPassiveUnHealthyCheckStatusCodeRange() generic.PairInterface[int, int]
 	// GetActiveHealthyCheckURL 返回主动健康检查的URL
 	GetActiveHealthyCheckURL() string
@@ -102,15 +108,27 @@ type ServerConfigCommon interface {
 	GetUnHealthyFailMaxCount() int64
 
 	OnUpstreamFailure()
+	OnUpstreamHealthy()
 }
 type LoadBalanceService interface {
 	GetUpStreams() generic.MapInterface[string, LoadBalanceAndUpStream]
 
 	//选择一个可用的上游服务器
 	// 参数：
-	SelectAvailableServer() (LoadBalanceAndUpStream, error)
+	SelectAvailableServers() ([]LoadBalanceAndUpStream, error)
+
+	LoadBalancePolicySelector() ([]LoadBalanceAndUpStream, error)
+
+	GetActiveHealthyCheckEnabled() bool
+	SetActiveHealthyCheckEnabled(bool)
+	GetPassiveHealthyCheckEnabled() bool
+	SetPassiveHealthyCheckEnabled(bool)
 	HealthyCheckStart()
 	HealthyCheckRunning() bool
 	HealthyCheckStop()
+	Close()
 	GetIdentifier() string
+	RoundTrip(*http.Request) (*http.Response, error)
+
+	FailoverAttemptStrategy(*http.Request) bool
 }

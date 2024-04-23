@@ -65,7 +65,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 		return m.GetServerAddress(), nil
 	})
 	m.RoundTripper = h3rtcl
-	m.Closer = func() { h3rtcl.Close() }
+	m.Closer = func() error { return h3rtcl.Close() }
 	for _, option := range options {
 		option(m)
 	}
@@ -74,7 +74,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP3ClientOfAddress struct {
-	Closer                  func()
+	Closer                  func() error
 	RoundTripper            http.RoundTripper
 	ServerConfigCommon      ServerConfigCommon
 	UnHealthyFailMaxCount   int64
@@ -91,8 +91,8 @@ type SingleHostHTTP3ClientOfAddress struct {
 }
 
 // Close implements LoadBalanceAndUpStream.
-func (l *SingleHostHTTP3ClientOfAddress) Close() {
-	l.Closer()
+func (l *SingleHostHTTP3ClientOfAddress) Close() error {
+	return l.Closer()
 }
 
 // GetServerConfigCommon implements LoadBalanceAndUpStream.

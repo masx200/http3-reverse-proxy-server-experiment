@@ -361,8 +361,9 @@ type HTTP3HTTP2LoadBalancer struct {
 }
 
 // Close implements LoadBalanceService.
-func (h *HTTP3HTTP2LoadBalancer) Close() {
+func (h *HTTP3HTTP2LoadBalancer) Close() error {
 	h.HealthyCheckStop()
+	return nil
 }
 
 // FailoverAttemptStrategy implements LoadBalanceService.

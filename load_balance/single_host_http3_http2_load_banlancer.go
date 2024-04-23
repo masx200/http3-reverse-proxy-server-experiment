@@ -374,13 +374,13 @@ func (h *HTTP3HTTP2LoadBalancer) FailoverAttemptStrategy(r *http.Request) bool {
 }
 
 // GetActiveHealthyCheckEnabled implements LoadBalanceService.
-func (h *HTTP3HTTP2LoadBalancer) GetActiveHealthyCheckEnabled() bool {
-	panic("unimplemented")
+func (s *HTTP3HTTP2LoadBalancer) GetActiveHealthyCheckEnabled() bool {
+	return s.ActiveHealthyCheckEnabled
 }
 
 // GetPassiveHealthyCheckEnabled implements LoadBalanceService.
-func (h *HTTP3HTTP2LoadBalancer) GetPassiveHealthyCheckEnabled() bool {
-	panic("unimplemented")
+func (s *HTTP3HTTP2LoadBalancer) GetPassiveHealthyCheckEnabled() bool {
+	return s.PassiveHealthyCheckEnabled
 }
 
 // LoadBalancePolicySelector implements LoadBalanceService.
@@ -432,13 +432,13 @@ func ArrayFilter[T any](arr []T, callback func(T) bool) []T {
 }
 
 // SetActiveHealthyCheckEnabled implements LoadBalanceService.
-func (h *HTTP3HTTP2LoadBalancer) SetActiveHealthyCheckEnabled(bool) {
-	panic("unimplemented")
+func (h *HTTP3HTTP2LoadBalancer) SetActiveHealthyCheckEnabled(e bool) {
+	h.ActiveHealthyCheckEnabled = e
 }
 
 // SetPassiveHealthyCheckEnabled implements LoadBalanceService.
-func (h *HTTP3HTTP2LoadBalancer) SetPassiveHealthyCheckEnabled(bool) {
-	panic("unimplemented")
+func (h *HTTP3HTTP2LoadBalancer) SetPassiveHealthyCheckEnabled(e bool) {
+	h.PassiveHealthyCheckEnabled = e
 }
 
 // GetIdentifier implements LoadBalanceService.

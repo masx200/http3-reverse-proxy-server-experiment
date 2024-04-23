@@ -174,9 +174,12 @@ func (s *ServerConfigImplement) GetUpStreamServerURL() string {
 }
 
 func (l *ServerConfigImplement) ActiveHealthyCheck() (bool, error) {
-	// 这里应实现主动健康检查的逻辑
-	// 示例仅返回健康状态和空错误
-	return l.ActiveHealthyChecker(l.RoundTripper, l.GetActiveHealthyCheckURL(), l.GetActiveHealthyCheckMethod(), l.GetActiveHealthyCheckStatusCodeRange().GetFirst(), l.GetActiveHealthyCheckStatusCodeRange().GetSecond())
+
+	x, x1 := l.ActiveHealthyChecker(l.RoundTripper, l.GetActiveHealthyCheckURL(), l.GetActiveHealthyCheckMethod(), l.GetActiveHealthyCheckStatusCodeRange().GetFirst(), l.GetActiveHealthyCheckStatusCodeRange().GetSecond())
+	if x {
+		l.OnUpstreamHealthy()
+	}
+	return x, x1
 }
 
 func (s *ServerConfigImplement) GetIdentifier() string {

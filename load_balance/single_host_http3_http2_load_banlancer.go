@@ -464,7 +464,10 @@ func (h *HTTP3HTTP2LoadBalancer) SelectAvailableServer() (LoadBalanceAndUpStream
 }
 
 func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
+	if !h.ActiveHealthyCheckEnabled {
+		return
 
+	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	go func() {

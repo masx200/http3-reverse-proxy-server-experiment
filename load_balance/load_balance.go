@@ -10,7 +10,7 @@ import (
 // LoadBalance 是一个负载均衡接口，它定义了如何对HTTP请求进行负载均衡转发。
 // 其中包含了一个Map，用于映射域名到对应的UpStream。
 type LoadBalanceAndUpStream interface {
-	Close()
+	Close() error
 	// RoundTrip 是一个代理方法，用于发送HTTP请求，并返回响应或错误。
 	// 参数：
 	//   *http.Request: 待发送的HTTP请求
@@ -49,7 +49,7 @@ type LoadBalanceService interface {
 	HealthyCheckStart()
 	HealthyCheckRunning() bool
 	HealthyCheckStop()
-	Close()
+	Close() error
 	GetIdentifier() string
 	RoundTrip(*http.Request) (*http.Response, error)
 

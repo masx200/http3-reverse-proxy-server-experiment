@@ -162,6 +162,15 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	ServerConfigCommon ServerConfigCommon
 }
 
+// Close implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) Close() error {
+	var err error = nil
+	l.GetLoadBalanceService().IfSome(func(v LoadBalanceService) {
+		err = v.Close()
+	})
+	return err
+}
+
 // GetServerConfigCommon implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetServerConfigCommon() ServerConfigCommon {
 	return l.ServerConfigCommon
@@ -349,6 +358,51 @@ type HTTP3HTTP2LoadBalancer struct {
 	healthCheckRunning          bool
 	mu                          sync.Mutex // 添加互斥锁，确保并发安全
 	Identifier                  string
+}
+
+// Close implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) Close() {
+	h.HealthyCheckStop()
+}
+
+// FailoverAttemptStrategy implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) FailoverAttemptStrategy(*http.Request) bool {
+	panic("unimplemented")
+}
+
+// GetActiveHealthyCheckEnabled implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) GetActiveHealthyCheckEnabled() bool {
+	panic("unimplemented")
+}
+
+// GetPassiveHealthyCheckEnabled implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) GetPassiveHealthyCheckEnabled() bool {
+	panic("unimplemented")
+}
+
+// LoadBalancePolicySelector implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) LoadBalancePolicySelector() ([]LoadBalanceAndUpStream, error) {
+	panic("unimplemented")
+}
+
+// RoundTrip implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) RoundTrip(*http.Request) (*http.Response, error) {
+	panic("unimplemented")
+}
+
+// SelectAvailableServers implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) SelectAvailableServers() ([]LoadBalanceAndUpStream, error) {
+	panic("unimplemented")
+}
+
+// SetActiveHealthyCheckEnabled implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) SetActiveHealthyCheckEnabled(bool) {
+	panic("unimplemented")
+}
+
+// SetPassiveHealthyCheckEnabled implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) SetPassiveHealthyCheckEnabled(bool) {
+	panic("unimplemented")
 }
 
 // GetIdentifier implements LoadBalanceService.

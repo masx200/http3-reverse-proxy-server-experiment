@@ -33,6 +33,31 @@ type ServerConfigImplement struct {
 	PassiveUnHealthyCheckStatusCodeRange generic.PairInterface[int, int]
 }
 
+// GetActiveHealthyCheckEnabled implements ServerConfigCommon.
+func (s *ServerConfigImplement) GetActiveHealthyCheckEnabled() bool {
+	panic("unimplemented")
+}
+
+// GetPassiveHealthyCheckEnabled implements ServerConfigCommon.
+func (s *ServerConfigImplement) GetPassiveHealthyCheckEnabled() bool {
+	panic("unimplemented")
+}
+
+// OnUpstreamHealthy implements ServerConfigCommon.
+func (s *ServerConfigImplement) OnUpstreamHealthy() {
+	panic("unimplemented")
+}
+
+// SetActiveHealthyCheckEnabled implements ServerConfigCommon.
+func (s *ServerConfigImplement) SetActiveHealthyCheckEnabled(bool) {
+	panic("unimplemented")
+}
+
+// SetPassiveHealthyCheckEnabled implements ServerConfigCommon.
+func (s *ServerConfigImplement) SetPassiveHealthyCheckEnabled(bool) {
+	panic("unimplemented")
+}
+
 // GetPassiveUnHealthyCheckStatusCodeRange implements ServerConfigCommon.
 func (s *ServerConfigImplement) GetPassiveUnHealthyCheckStatusCodeRange() generic.PairInterface[int, int] {
 	return s.PassiveUnHealthyCheckStatusCodeRange

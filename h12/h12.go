@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
 	"golang.org/x/net/http2"
 	// "golang.org/x/net/http2"
 )
@@ -77,7 +78,7 @@ func CreateHTTP12TransportWithIP(ip string) http.RoundTripper {
 // CreateHTTP12TransportWithIPGetter 创建一个自定义的http.Transport实例，该实例允许通过getter函数动态获取IP地址来进行连接，适用于需要手动指定连接IP的场景。
 // getter: 一个函数，用于获取要使用的IP地址。该函数会在每次建立连接时被调用。
 // 返回值: 配置好的http.RoundTripper接口，即http.Transport实例，可直接用于http.Client中。
-func CreateHTTP12TransportWithIPGetter(getter func() string) http.RoundTripper {
+func CreateHTTP12TransportWithIPGetter(getter func() string) adapter.HTTPRoundTripperAndCloserInterface {
 	/* 需要把connection保存起来,防止一个请求一个连接的情况速度会很慢 */
 	dialer := &net.Dialer{
 		Timeout:   30 * time.Second, // 设置拨号超时时间为30秒
@@ -85,7 +86,7 @@ func CreateHTTP12TransportWithIPGetter(getter func() string) http.RoundTripper {
 	}
 
 	// 返回配置好的http.Transport实例
-	return &http.Transport{
+	var roundTripper = &http.Transport{
 		ForceAttemptHTTP2: true,
 		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 
@@ -126,7 +127,21 @@ func CreateHTTP12TransportWithIPGetter(getter func() string) http.RoundTripper {
 			return conn, err
 		},
 	}
+	return &adapter.HTTPRoundTripperAndCloserImplement{RoundTripper: (func(r *http.Request) (*http.Response, error) {
 
+		// 创建UDP连接，作为QUIC协议的基础。
+
+		// 创建HTTP/3传输器，定制了Dial函数以使用指定的IP地址。
+
+		// 使用定制的HTTP/3传输器进行HTTP请求的传输。
+		return roundTripper.RoundTrip(r)
+	}), Closer: func() error {
+		// if transportquic != nil {
+		// 	transportquic.Close()
+		// }
+		roundTripper.CloseIdleConnections()
+		return nil
+	}}
 }
 
 // CreateHTTP12TransportWithIPGetter 创建一个自定义的http.Transport实例，该实例允许通过getter函数动态获取IP地址来进行连接，适用于需要手动指定连接IP的场景。

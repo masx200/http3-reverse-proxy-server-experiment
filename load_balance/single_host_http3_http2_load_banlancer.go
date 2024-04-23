@@ -131,7 +131,11 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 
 			return m.ActiveHealthyCheck()
 		},
-	}
+		RoundTripper: func(r *http.Request) (*http.Response, error) {
+
+			return m.RoundTrip(r)
+		}}
+
 	m.LoadBalanceService = LoadBalanceServiceInstance
 	m.ServerConfigCommon = ServerConfigImplementConstructor(m.Identifier, m.UpStreamServerURL, m)
 	for _, option := range options {
@@ -348,6 +352,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUpStreams() generic.MapIn
 }
 
 type HTTP3HTTP2LoadBalancer struct {
+	RoundTripper               func(r *http.Request) (*http.Response, error)
 	PassiveHealthyCheckEnabled bool
 	ActiveHealthyCheckEnabled  bool
 	UpStreamsGetter            func() generic.MapInterface[string, LoadBalanceAndUpStream]
@@ -395,8 +400,8 @@ func (h *HTTP3HTTP2LoadBalancer) LoadBalancePolicySelector() ([]LoadBalanceAndUp
 }
 
 // RoundTrip implements LoadBalanceService.
-func (h *HTTP3HTTP2LoadBalancer) RoundTrip(*http.Request) (*http.Response, error) {
-	panic("unimplemented")
+func (h *HTTP3HTTP2LoadBalancer) RoundTrip(r *http.Request) (*http.Response, error) {
+	return h.RoundTripper(r)
 }
 
 // SelectAvailableServers implements LoadBalanceService.

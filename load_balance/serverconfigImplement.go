@@ -13,6 +13,8 @@ const PassiveUnHealthyCheckStatusCodeRangeDefaultStart = 500
 const PassiveUnHealthyCheckStatusCodeRangeDefaultEnd = 600
 
 type ServerConfigImplement struct {
+	PassiveHealthyCheckEnabled        bool
+	ActiveHealthyCheckEnabled         bool
 	ActiveHealthyCheckStatusCodeRange generic.PairInterface[int, int]
 	ActiveHealthyCheckMethod          string
 	Identifier                        string
@@ -35,12 +37,12 @@ type ServerConfigImplement struct {
 
 // GetActiveHealthyCheckEnabled implements ServerConfigCommon.
 func (s *ServerConfigImplement) GetActiveHealthyCheckEnabled() bool {
-	panic("unimplemented")
+	return s.ActiveHealthyCheckEnabled
 }
 
 // GetPassiveHealthyCheckEnabled implements ServerConfigCommon.
 func (s *ServerConfigImplement) GetPassiveHealthyCheckEnabled() bool {
-	panic("unimplemented")
+	return s.PassiveHealthyCheckEnabled
 }
 
 // OnUpstreamHealthy implements ServerConfigCommon.
@@ -49,13 +51,14 @@ func (s *ServerConfigImplement) OnUpstreamHealthy() {
 }
 
 // SetActiveHealthyCheckEnabled implements ServerConfigCommon.
-func (s *ServerConfigImplement) SetActiveHealthyCheckEnabled(bool) {
-	panic("unimplemented")
+func (s *ServerConfigImplement) SetActiveHealthyCheckEnabled(e bool) {
+
+	s.ActiveHealthyCheckEnabled = e
 }
 
 // SetPassiveHealthyCheckEnabled implements ServerConfigCommon.
-func (s *ServerConfigImplement) SetPassiveHealthyCheckEnabled(bool) {
-	panic("unimplemented")
+func (s *ServerConfigImplement) SetPassiveHealthyCheckEnabled(e bool) {
+	s.PassiveHealthyCheckEnabled = e
 }
 
 // GetPassiveUnHealthyCheckStatusCodeRange implements ServerConfigCommon.

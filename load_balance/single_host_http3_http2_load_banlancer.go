@@ -348,8 +348,10 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUpStreams() generic.MapIn
 }
 
 type HTTP3HTTP2LoadBalancer struct {
-	UpStreamsGetter         func() generic.MapInterface[string, LoadBalanceAndUpStream]
-	SelectorAvailableServer func() (LoadBalanceAndUpStream, error)
+	PassiveHealthyCheckEnabled bool
+	ActiveHealthyCheckEnabled  bool
+	UpStreamsGetter            func() generic.MapInterface[string, LoadBalanceAndUpStream]
+	SelectorAvailableServer    func() (LoadBalanceAndUpStream, error)
 	//毫秒
 	GetHealthyCheckInterval     func() int64
 	SetHealthy                  func(healthy bool)

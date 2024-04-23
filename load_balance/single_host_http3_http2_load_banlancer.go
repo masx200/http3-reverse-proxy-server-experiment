@@ -367,8 +367,8 @@ func (h *HTTP3HTTP2LoadBalancer) Close() error {
 }
 
 // FailoverAttemptStrategy implements LoadBalanceService.
-func (h *HTTP3HTTP2LoadBalancer) FailoverAttemptStrategy(*http.Request) bool {
-	panic("unimplemented")
+func (h *HTTP3HTTP2LoadBalancer) FailoverAttemptStrategy(r *http.Request) bool {
+	return IsIdempotentMethodFailoverAttemptStrategy(r)
 }
 
 // GetActiveHealthyCheckEnabled implements LoadBalanceService.

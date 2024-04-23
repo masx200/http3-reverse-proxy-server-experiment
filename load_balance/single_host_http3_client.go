@@ -90,6 +90,26 @@ type SingleHostHTTP3ClientOfAddress struct {
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 }
 
+// GetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GetActiveHealthyCheckEnabled() bool {
+	return l.ServerConfigCommon.GetActiveHealthyCheckEnabled()
+}
+
+// GetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GetPassiveHealthyCheckEnabled() bool {
+	return l.ServerConfigCommon.GetPassiveHealthyCheckEnabled()
+}
+
+// SetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) SetActiveHealthyCheckEnabled(e bool) {
+	l.GetServerConfigCommon().SetActiveHealthyCheckEnabled(e)
+}
+
+// SetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) SetPassiveHealthyCheckEnabled(e bool) {
+	l.GetServerConfigCommon().SetPassiveHealthyCheckEnabled(e)
+}
+
 // Close implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3ClientOfAddress) Close() error {
 	return l.Closer()

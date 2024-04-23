@@ -96,7 +96,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 		}
 
 	})
-	var http3upstream, err2 = NewSingleHostHTTP3ClientOfAddress(http3identifier, UpStreamServerURL, func(shhcoa *SingleHostHTTP3ClientOfAddress) {
+	var http3upstream, err2 = NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(http3identifier, UpStreamServerURL, func(shhcoa *SingleHostHTTP3HTTP2LoadBalancerOfAddress) {
 		shhcoa.GetServerAddress = func() string {
 			return m.GetServerAddress()
 		}
@@ -165,6 +165,32 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	LoadBalanceService *HTTP3HTTP2LoadBalancer
 
 	ServerConfigCommon ServerConfigCommon
+}
+
+// GetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetActiveHealthyCheckEnabled() bool {
+	return l.ServerConfigCommon.GetActiveHealthyCheckEnabled()
+}
+
+// GetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetPassiveHealthyCheckEnabled() bool {
+	return l.ServerConfigCommon.GetPassiveHealthyCheckEnabled()
+}
+
+// SetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetActiveHealthyCheckEnabled(e bool) {
+	l.GetServerConfigCommon().SetActiveHealthyCheckEnabled(e)
+	l.GetLoadBalanceService().IfSome(func(v LoadBalanceService) {
+		v.SetActiveHealthyCheckEnabled(e)
+	})
+}
+
+// SetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetPassiveHealthyCheckEnabled(e bool) {
+	l.GetServerConfigCommon().SetPassiveHealthyCheckEnabled(e)
+	l.GetLoadBalanceService().IfSome(func(v LoadBalanceService) {
+		v.SetPassiveHealthyCheckEnabled(e)
+	})
 }
 
 // Close implements LoadBalanceAndUpStream.

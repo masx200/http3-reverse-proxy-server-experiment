@@ -3,13 +3,16 @@ package load_balance
 import (
 	"net/http"
 
-	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	"github.com/moznion/go-optional"
 )
 
 // LoadBalance 是一个负载均衡接口，它定义了如何对HTTP请求进行负载均衡转发。
 // 其中包含了一个Map，用于映射域名到对应的UpStream。
 type LoadBalanceAndUpStream interface {
+	GetActiveHealthyCheckEnabled() bool
+	SetActiveHealthyCheckEnabled(bool)
+	GetPassiveHealthyCheckEnabled() bool
+	SetPassiveHealthyCheckEnabled(bool)
 	Close() error
 	// RoundTrip 是一个代理方法，用于发送HTTP请求，并返回响应或错误。
 	// 参数：
@@ -32,26 +35,3 @@ type LoadBalanceAndUpStream interface {
 }
 
 // ServerConfigCommon 定义了服务配置的公共接口
-
-type LoadBalanceService interface {
-	GetUpStreams() generic.MapInterface[string, LoadBalanceAndUpStream]
-
-	//选择一个可用的上游服务器
-	// 参数：
-	SelectAvailableServers() ([]LoadBalanceAndUpStream, error)
-
-	LoadBalancePolicySelector() ([]LoadBalanceAndUpStream, error)
-
-	GetActiveHealthyCheckEnabled() bool
-	SetActiveHealthyCheckEnabled(bool)
-	GetPassiveHealthyCheckEnabled() bool
-	SetPassiveHealthyCheckEnabled(bool)
-	HealthyCheckStart()
-	HealthyCheckRunning() bool
-	HealthyCheckStop()
-	Close() error
-	GetIdentifier() string
-	RoundTrip(*http.Request) (*http.Response, error)
-
-	FailoverAttemptStrategy(*http.Request) bool
-}

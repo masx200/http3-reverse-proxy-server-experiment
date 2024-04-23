@@ -41,9 +41,12 @@ func TestMain(t *testing.T) {
 	var upstreamServer = "https://quic.nginx.org/" //"https://assets.fastly.com/" //
 
 	var LoadBalanceAndUpStream, err = load_balance.NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(upstreamServer, upstreamServer)
+
 	if err != nil {
 		log.Fatal(err)
 	}
+	LoadBalanceAndUpStream.SetActiveHealthyCheckEnabled(true)
+	LoadBalanceAndUpStream.SetPassiveHealthyCheckEnabled(true)
 	var httpsPort = 18443
 	// var httpPort = 18080
 	// var upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string] = map[string]generic.PairInterface[string, string]{}

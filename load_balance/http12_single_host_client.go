@@ -145,6 +145,26 @@ type SingleHostHTTP12ClientOfAddress struct {
 	Closer                  func() error
 }
 
+// GetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) GetActiveHealthyCheckEnabled() bool {
+	return l.ServerConfigCommon.GetActiveHealthyCheckEnabled()
+}
+
+// GetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) GetPassiveHealthyCheckEnabled() bool {
+	return l.ServerConfigCommon.GetPassiveHealthyCheckEnabled()
+}
+
+// SetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) SetActiveHealthyCheckEnabled(e bool) {
+	l.GetServerConfigCommon().SetActiveHealthyCheckEnabled(e)
+}
+
+// SetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) SetPassiveHealthyCheckEnabled(e bool) {
+	l.GetServerConfigCommon().SetPassiveHealthyCheckEnabled(e)
+}
+
 // Close implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP12ClientOfAddress) Close() error {
 	return l.Closer()

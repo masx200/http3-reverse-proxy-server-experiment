@@ -393,7 +393,29 @@ func (h *HTTP3HTTP2LoadBalancer) RoundTrip(*http.Request) (*http.Response, error
 
 // SelectAvailableServers implements LoadBalanceService.
 func (h *HTTP3HTTP2LoadBalancer) SelectAvailableServers() ([]LoadBalanceAndUpStream, error) {
-	panic("unimplemented")
+	return ArrayFilter(h.GetUpStreams().Values(), func(value LoadBalanceAndUpStream) bool {
+		return value.GetServerConfigCommon().GetHealthy()
+	}), nil
+}
+
+// ArrayFilter 是一个根据回调函数过滤数组元素的通用函数。
+// 它接受一个类型参数 T 的数组 arr 和一个回调函数 callback，该回调函数对每个数组元素进行测试。
+// 如果回调函数对某个元素返回 true，则该元素被加入到结果数组中。
+//
+// 参数：
+// arr []T - 需要进行过滤的数组。
+// callback func(T) bool - 用于测试每个元素的回调函数，如果该函数返回 true，则元素被包含在结果数组中。
+//
+// 返回值：
+// []T - 过滤后由满足条件的元素组成的新数组。
+func ArrayFilter[T any](arr []T, callback func(T) bool) []T {
+	var result []T
+	for _, v := range arr {
+		if callback(v) {
+			result = append(result, v)
+		}
+	}
+	return result
 }
 
 // SetActiveHealthyCheckEnabled implements LoadBalanceService.

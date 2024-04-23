@@ -96,7 +96,7 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 		}
 
 	})
-	var http3upstream, err2 = NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(http3identifier, UpStreamServerURL, func(shhcoa *SingleHostHTTP3HTTP2LoadBalancerOfAddress) {
+	var http3upstream, err2 = NewSingleHostHTTP3ClientOfAddress(http3identifier, UpStreamServerURL, func(shhcoa *SingleHostHTTP3ClientOfAddress) {
 		shhcoa.GetServerAddress = func() string {
 			return m.GetServerAddress()
 		}

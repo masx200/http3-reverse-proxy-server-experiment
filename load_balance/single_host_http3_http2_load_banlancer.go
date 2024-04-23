@@ -289,21 +289,41 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 	if !l.LoadBalanceService.healthCheckRunning {
 		go l.LoadBalanceService.HealthyCheckStart()
 	}
+	x2 := l.GetLoadBalanceService()
+	if x2.IsNone() {
+		return nil, errors.New("no LoadBalanceService")
+	}
 
-	upstreams := l.UpStreams
-	for _, value := range generic.RandomShuffle((upstreams.Entries())) {
+	// upstreams := l.UpStreams
+	x3 := l.GetLoadBalanceService().Unwrap()
+	x, x1 := x3.LoadBalancePolicySelector()
+	if x1 != nil {
+		return nil, x1
+	}
 
-		if value.GetSecond().GetServerConfigCommon().GetHealthy() {
-			response, err := value.GetSecond().RoundTrip(request)
+	for _, value := range x {
+
+		if value.GetServerConfigCommon().GetHealthy() {
+			response, err := value.RoundTrip(request)
 			if err != nil {
 				log.Println("OnUpstreamFailure", err)
-				l.OnUpstreamFailure(value.GetSecond())
-				continue
+				l.OnUpstreamFailure(value)
+
+				if x3.FailoverAttemptStrategy(request) {
+					continue
+				} else {
+					return nil, err
+				}
+
 			}
 			if ok, err := l.PassiveUnHealthyCheck(response); err != nil || !ok {
 				log.Println("OnUpstreamFailure", err)
-				l.OnUpstreamFailure(value.GetSecond())
-				continue
+				l.OnUpstreamFailure(value)
+				if x3.FailoverAttemptStrategy(request) {
+					continue
+				} else {
+					return nil, err
+				}
 			}
 			return response, nil
 		}

@@ -45,7 +45,7 @@ func (s *ServerConfigImplement) GetPassiveHealthyCheckEnabled() bool {
 
 // OnUpstreamHealthy implements ServerConfigCommon.
 func (s *ServerConfigImplement) OnUpstreamHealthy() {
-	panic("unimplemented")
+	fmt.Println("OnUpstreamHealthy", s.GetIdentifier())
 }
 
 // SetActiveHealthyCheckEnabled implements ServerConfigCommon.

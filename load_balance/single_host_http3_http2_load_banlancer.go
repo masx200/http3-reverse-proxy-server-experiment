@@ -404,7 +404,7 @@ func (h *HTTP3HTTP2LoadBalancer) SelectAvailableServers() ([]LoadBalanceAndUpStr
 	})
 	if len(upstreams) == 0 {
 
-		return nil, errors.New("no healthy upstreams")
+		return nil, errors.New("no Available healthy upstreams")
 	}
 	return upstreams, nil
 }

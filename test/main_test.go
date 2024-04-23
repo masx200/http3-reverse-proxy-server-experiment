@@ -114,7 +114,7 @@ func TestMain(t *testing.T) {
 		PrintRequest(req) // 打印请求信息
 
 		// 使用随机负载均衡策略选择一个健康状态的传输函数，并执行请求
-		var resp, err = LoadBalanceAndUpStream.RoundTrip(req) //panic(req) // RandomLoadBalancer(getHealthyProxyServers(), req, upStreamServerSchemeAndHostOfName)
+		var resp, err = LoadBalanceAndUpStream.RoundTrip(req)
 
 		if err != nil {
 			log.Println("ERROR:", err) // 打印错误信息

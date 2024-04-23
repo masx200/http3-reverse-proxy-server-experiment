@@ -85,6 +85,11 @@ func (s *ServerConfigImplement) GetActiveHealthyCheckURL() string {
 func (s *ServerConfigImplement) OnUpstreamFailure() {
 
 	fmt.Println("OnUpstreamFailure", s.GetIdentifier())
+
+	if !s.PassiveHealthyCheckEnabled {
+		return
+
+	}
 	s.FailureMutex.Lock()
 	defer s.FailureMutex.Unlock()
 	s.IncrementUnHealthyFailCount()

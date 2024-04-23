@@ -4,6 +4,7 @@ import (
 	// "fmt"
 	// "bytes"
 	"errors"
+	"strings"
 	// "io"
 
 	// "io/ioutil"
@@ -13,9 +14,9 @@ import (
 	"sync"
 
 	// "sync/atomic"
-	"time"
-
+	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
 	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
+	"time"
 
 	// "net/url"
 	// h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
@@ -291,7 +292,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 	}
 	x2 := l.GetLoadBalanceService()
 	if x2.IsNone() {
-		return nil, errors.New("no LoadBalanceService")
+		return nil, errors.New("no LoadBalanceService error")
 	}
 
 	// upstreams := l.UpStreams
@@ -300,12 +301,13 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 	if x1 != nil {
 		return nil, x1
 	}
-
+	var erros = []error{}
 	for _, value := range x {
 
 		if value.GetServerConfigCommon().GetHealthy() {
 			response, err := value.RoundTrip(request)
 			if err != nil {
+				erros = append(erros, err)
 				log.Println("OnUpstreamFailure", err)
 				l.OnUpstreamFailure(value)
 
@@ -321,6 +323,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 				return response, nil
 			}
 			if ok, err := l.PassiveUnHealthyCheck(response); err != nil || !ok {
+				erros = append(erros, err)
 				log.Println("OnUpstreamFailure", err)
 				l.OnUpstreamFailure(value)
 				if x3.FailoverAttemptStrategy(request) {
@@ -334,7 +337,7 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 
 	}
 
-	return nil, errors.New("bad Gateway: no healthy upstreams or PassiveUnHealthyCheck error")
+	return nil, errors.New("bad Gateway: no healthy upstreams or PassiveUnHealthyCheck error" + "\n" + strings.Join(dns_experiment.ArrayMap(erros, func(err error) string { return err.Error() }), "\n"))
 
 }
 

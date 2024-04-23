@@ -383,7 +383,13 @@ func (h *HTTP3HTTP2LoadBalancer) GetPassiveHealthyCheckEnabled() bool {
 
 // LoadBalancePolicySelector implements LoadBalanceService.
 func (h *HTTP3HTTP2LoadBalancer) LoadBalancePolicySelector() ([]LoadBalanceAndUpStream, error) {
-	panic("unimplemented")
+	upstreams, err := h.SelectAvailableServers()
+	if err != nil {
+		return nil, err
+	}
+
+	return generic.RandomShuffle(upstreams), nil
+
 }
 
 // RoundTrip implements LoadBalanceService.
@@ -393,9 +399,14 @@ func (h *HTTP3HTTP2LoadBalancer) RoundTrip(*http.Request) (*http.Response, error
 
 // SelectAvailableServers implements LoadBalanceService.
 func (h *HTTP3HTTP2LoadBalancer) SelectAvailableServers() ([]LoadBalanceAndUpStream, error) {
-	return ArrayFilter(h.GetUpStreams().Values(), func(value LoadBalanceAndUpStream) bool {
+	upstreams := ArrayFilter(h.GetUpStreams().Values(), func(value LoadBalanceAndUpStream) bool {
 		return value.GetServerConfigCommon().GetHealthy()
-	}), nil
+	})
+	if len(upstreams) == 0 {
+
+		return nil, errors.New("no healthy upstreams")
+	}
+	return upstreams, nil
 }
 
 // ArrayFilter 是一个根据回调函数过滤数组元素的通用函数。

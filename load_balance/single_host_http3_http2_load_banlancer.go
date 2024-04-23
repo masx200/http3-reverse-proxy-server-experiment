@@ -77,18 +77,18 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 		UnHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
 	}
 	// m.IsHealthy.Store(true)
-	parsedURL2, err := url.Parse(UpStreamServerURL)
-	if err != nil {
-		return nil, err
-	}
-	parsedURL2.Scheme = "http2"
-	parsedURL3, err := url.Parse(UpStreamServerURL)
-	if err != nil {
-		return nil, err
-	}
-	parsedURL3.Scheme = "http3"
-	var http2identifier = parsedURL2.String()
-	var http3identifier = parsedURL3.String()
+	// parsedURL2, err := url.Parse(UpStreamServerURL)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// parsedURL2.Scheme = "http2"
+	// parsedURL3, err := url.Parse(UpStreamServerURL)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// parsedURL3.Scheme = "http3"
+	var http2identifier = "http2-" + UpStreamServerURL
+	var http3identifier = "http3-" + UpStreamServerURL
 	var http2upstream, err1 = NewSingleHostHTTP12ClientOfAddress(http2identifier, UpStreamServerURL, func(shhcoa *SingleHostHTTP12ClientOfAddress) {
 		shhcoa.GetServerAddress = func() string {
 			return m.GetServerAddress()

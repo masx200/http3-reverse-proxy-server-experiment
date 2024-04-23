@@ -61,9 +61,11 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 	}
 	m.ServerConfigCommon = ServerConfigImplementConstructor(m.Identifier, m.UpStreamServerURL, m)
 	/* 需要把transport保存起来,防止一个请求一个连接的情况速度会很慢 */
-	m.RoundTripper = h3_experiment.CreateHTTP3TransportWithIPGetter(func() (string, error) {
+	h3rtcl := h3_experiment.CreateHTTP3TransportWithIPGetter(func() (string, error) {
 		return m.GetServerAddress(), nil
 	})
+	m.RoundTripper = h3rtcl
+	m.Closer = func() error { return h3rtcl.Close() }
 	for _, option := range options {
 		option(m)
 	}
@@ -72,6 +74,7 @@ func NewSingleHostHTTP3ClientOfAddress(Identifier string, UpStreamServerURL stri
 
 // SingleHostHTTPClientOfAddress 是一个针对单个主机的HTTP客户端结构体，用于管理与特定地址的HTTP通信。
 type SingleHostHTTP3ClientOfAddress struct {
+	Closer                  func() error
 	RoundTripper            http.RoundTripper
 	ServerConfigCommon      ServerConfigCommon
 	UnHealthyFailMaxCount   int64
@@ -85,6 +88,31 @@ type SingleHostHTTP3ClientOfAddress struct {
 	PassiveUnHealthyChecker func(response *http.Response, UnHealthyStatusMin int, UnHealthyStatusMax int) (bool, error)                         // 健康响应检查函数，用于基于HTTP响应检查客户端的健康状态。
 	// RoundTripper           http.RoundTripper                                              // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL string // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
+}
+
+// GetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GetActiveHealthyCheckEnabled() bool {
+	return l.ServerConfigCommon.GetActiveHealthyCheckEnabled()
+}
+
+// GetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) GetPassiveHealthyCheckEnabled() bool {
+	return l.ServerConfigCommon.GetPassiveHealthyCheckEnabled()
+}
+
+// SetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) SetActiveHealthyCheckEnabled(e bool) {
+	l.GetServerConfigCommon().SetActiveHealthyCheckEnabled(e)
+}
+
+// SetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) SetPassiveHealthyCheckEnabled(e bool) {
+	l.GetServerConfigCommon().SetPassiveHealthyCheckEnabled(e)
+}
+
+// Close implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3ClientOfAddress) Close() error {
+	return l.Closer()
 }
 
 // GetServerConfigCommon implements LoadBalanceAndUpStream.

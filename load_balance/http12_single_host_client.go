@@ -107,9 +107,13 @@ func NewSingleHostHTTP12ClientOfAddress(Identifier string, UpStreamServerURL str
 
 	// if strings.HasPrefix(m.UpStreamServerURL, "https") {
 	/* 按照加密和不加密进行选择http2还是http1 */
-	m.RoundTripper = h12_experiment.CreateHTTP12TransportWithIPGetter(func() string {
+	var h2rtcl = h12_experiment.CreateHTTP12TransportWithIPGetter(func() string {
 		return m.GetServerAddress()
 	})
+	m.RoundTripper = h2rtcl
+	m.Closer = func() error {
+		return h2rtcl.Close()
+	}
 	// } else {
 	// 	m.RoundTripper = h12_experiment.CreateHTTP1TransportWithIPGetter(func() string {
 	// 		return m.GetServerAddress()
@@ -138,6 +142,32 @@ type SingleHostHTTP12ClientOfAddress struct {
 	RoundTripper            http.RoundTripper                                                                           // HTTP传输，用于执行HTTP请求的实际传输。
 	UpStreamServerURL       string                                                                                      // 上游服务器URL，指定客户端将请求转发到的上游服务器的地址。
 	UnHealthyFailMaxCount   int64
+	Closer                  func() error
+}
+
+// GetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) GetActiveHealthyCheckEnabled() bool {
+	return l.ServerConfigCommon.GetActiveHealthyCheckEnabled()
+}
+
+// GetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) GetPassiveHealthyCheckEnabled() bool {
+	return l.ServerConfigCommon.GetPassiveHealthyCheckEnabled()
+}
+
+// SetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) SetActiveHealthyCheckEnabled(e bool) {
+	l.GetServerConfigCommon().SetActiveHealthyCheckEnabled(e)
+}
+
+// SetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) SetPassiveHealthyCheckEnabled(e bool) {
+	l.GetServerConfigCommon().SetPassiveHealthyCheckEnabled(e)
+}
+
+// Close implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP12ClientOfAddress) Close() error {
+	return l.Closer()
 }
 
 // GetServerConfigCommon implements LoadBalanceAndUpStream.

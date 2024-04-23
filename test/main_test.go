@@ -41,9 +41,12 @@ func TestMain(t *testing.T) {
 	var upstreamServer = "https://quic.nginx.org/" //"https://assets.fastly.com/" //
 
 	var LoadBalanceAndUpStream, err = load_balance.NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(upstreamServer, upstreamServer)
+
 	if err != nil {
 		log.Fatal(err)
 	}
+	LoadBalanceAndUpStream.SetActiveHealthyCheckEnabled(true)
+	LoadBalanceAndUpStream.SetPassiveHealthyCheckEnabled(true)
 	var httpsPort = 18443
 	// var httpPort = 18080
 	// var upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string] = map[string]generic.PairInterface[string, string]{}
@@ -114,7 +117,7 @@ func TestMain(t *testing.T) {
 		PrintRequest(req) // 打印请求信息
 
 		// 使用随机负载均衡策略选择一个健康状态的传输函数，并执行请求
-		var resp, err = LoadBalanceAndUpStream.RoundTrip(req) //panic(req) // RandomLoadBalancer(getHealthyProxyServers(), req, upStreamServerSchemeAndHostOfName)
+		var resp, err = LoadBalanceAndUpStream.RoundTrip(req)
 
 		if err != nil {
 			log.Println("ERROR:", err) // 打印错误信息

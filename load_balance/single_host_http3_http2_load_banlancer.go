@@ -4,6 +4,7 @@ import (
 	// "fmt"
 	// "bytes"
 	"errors"
+	"strings"
 	// "io"
 
 	// "io/ioutil"
@@ -13,9 +14,9 @@ import (
 	"sync"
 
 	// "sync/atomic"
-	"time"
-
+	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
 	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
+	"time"
 
 	// "net/url"
 	// h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
@@ -77,18 +78,18 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 		UnHealthyFailMaxCount:   UnHealthyFailMaxCountDefault,
 	}
 	// m.IsHealthy.Store(true)
-	parsedURL2, err := url.Parse(UpStreamServerURL)
-	if err != nil {
-		return nil, err
-	}
-	parsedURL2.Scheme = "http2"
-	parsedURL3, err := url.Parse(UpStreamServerURL)
-	if err != nil {
-		return nil, err
-	}
-	parsedURL3.Scheme = "http3"
-	var http2identifier = parsedURL2.String()
-	var http3identifier = parsedURL3.String()
+	// parsedURL2, err := url.Parse(UpStreamServerURL)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// parsedURL2.Scheme = "http2"
+	// parsedURL3, err := url.Parse(UpStreamServerURL)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// parsedURL3.Scheme = "http3"
+	var http2identifier = "http2-" + UpStreamServerURL
+	var http3identifier = "http3-" + UpStreamServerURL
 	var http2upstream, err1 = NewSingleHostHTTP12ClientOfAddress(http2identifier, UpStreamServerURL, func(shhcoa *SingleHostHTTP12ClientOfAddress) {
 		shhcoa.GetServerAddress = func() string {
 			return m.GetServerAddress()
@@ -131,7 +132,11 @@ func NewSingleHostHTTP3HTTP2LoadBalancerOfAddress(Identifier string, UpStreamSer
 
 			return m.ActiveHealthyCheck()
 		},
-	}
+		RoundTripper: func(r *http.Request) (*http.Response, error) {
+
+			return m.RoundTrip(r)
+		}}
+
 	m.LoadBalanceService = LoadBalanceServiceInstance
 	m.ServerConfigCommon = ServerConfigImplementConstructor(m.Identifier, m.UpStreamServerURL, m)
 	for _, option := range options {
@@ -160,6 +165,47 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 	LoadBalanceService *HTTP3HTTP2LoadBalancer
 
 	ServerConfigCommon ServerConfigCommon
+}
+
+// GetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetActiveHealthyCheckEnabled() bool {
+	if l.GetLoadBalanceService().IsNone() {
+		return false
+	}
+	return l.ServerConfigCommon.GetActiveHealthyCheckEnabled() && l.GetLoadBalanceService().Unwrap().GetActiveHealthyCheckEnabled()
+}
+
+// GetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetPassiveHealthyCheckEnabled() bool {
+	if l.GetLoadBalanceService().IsNone() {
+		return false
+	}
+	return l.ServerConfigCommon.GetPassiveHealthyCheckEnabled() && l.GetLoadBalanceService().Unwrap().GetPassiveHealthyCheckEnabled()
+}
+
+// SetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetActiveHealthyCheckEnabled(e bool) {
+	l.GetServerConfigCommon().SetActiveHealthyCheckEnabled(e)
+	l.GetLoadBalanceService().IfSome(func(v LoadBalanceService) {
+		v.SetActiveHealthyCheckEnabled(e)
+	})
+}
+
+// SetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) SetPassiveHealthyCheckEnabled(e bool) {
+	l.GetServerConfigCommon().SetPassiveHealthyCheckEnabled(e)
+	l.GetLoadBalanceService().IfSome(func(v LoadBalanceService) {
+		v.SetPassiveHealthyCheckEnabled(e)
+	})
+}
+
+// Close implements LoadBalanceAndUpStream.
+func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) Close() error {
+	var err error = nil
+	l.GetLoadBalanceService().IfSome(func(v LoadBalanceService) {
+		err = v.Close()
+	})
+	return err
 }
 
 // GetServerConfigCommon implements LoadBalanceAndUpStream.
@@ -276,28 +322,54 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 	if !l.LoadBalanceService.healthCheckRunning {
 		go l.LoadBalanceService.HealthyCheckStart()
 	}
+	x2 := l.GetLoadBalanceService()
+	if x2.IsNone() {
+		return nil, errors.New("no LoadBalanceService error")
+	}
 
-	upstreams := l.UpStreams
-	for _, value := range generic.RandomShuffle((upstreams.Entries())) {
+	// upstreams := l.UpStreams
+	x3 := l.GetLoadBalanceService().Unwrap()
+	x, x1 := x3.LoadBalancePolicySelector()
+	if x1 != nil {
+		return nil, x1
+	}
+	var erros = []error{}
+	for _, value := range x {
 
-		if value.GetSecond().GetServerConfigCommon().GetHealthy() {
-			response, err := value.GetSecond().RoundTrip(request)
+		if value.GetServerConfigCommon().GetHealthy() {
+			response, err := value.RoundTrip(request)
 			if err != nil {
+				erros = append(erros, err)
 				log.Println("OnUpstreamFailure", err)
-				l.OnUpstreamFailure(value.GetSecond())
-				continue
+				l.OnUpstreamFailure(value)
+
+				if x3.FailoverAttemptStrategy(request) {
+					continue
+				} else {
+					return nil, err
+				}
+
+			}
+
+			if !x3.GetPassiveHealthyCheckEnabled() {
+				return response, nil
 			}
 			if ok, err := l.PassiveUnHealthyCheck(response); err != nil || !ok {
+				erros = append(erros, err)
 				log.Println("OnUpstreamFailure", err)
-				l.OnUpstreamFailure(value.GetSecond())
-				continue
+				l.OnUpstreamFailure(value)
+				if x3.FailoverAttemptStrategy(request) {
+					continue
+				} else {
+					return nil, err
+				}
 			}
 			return response, nil
 		}
 
 	}
 
-	return nil, errors.New("bad Gateway: no healthy upstreams or PassiveUnHealthyCheck error")
+	return nil, errors.New("bad Gateway: no healthy upstreams or PassiveUnHealthyCheck error" + "\n" + strings.Join(dns_experiment.ArrayMap(erros, func(err error) string { return err.Error() }), "\n"))
 
 }
 
@@ -339,8 +411,11 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetUpStreams() generic.MapIn
 }
 
 type HTTP3HTTP2LoadBalancer struct {
-	UpStreamsGetter         func() generic.MapInterface[string, LoadBalanceAndUpStream]
-	SelectorAvailableServer func() (LoadBalanceAndUpStream, error)
+	RoundTripper               func(r *http.Request) (*http.Response, error)
+	PassiveHealthyCheckEnabled bool
+	ActiveHealthyCheckEnabled  bool
+	UpStreamsGetter            func() generic.MapInterface[string, LoadBalanceAndUpStream]
+	SelectorAvailableServer    func() (LoadBalanceAndUpStream, error)
 	//毫秒
 	GetHealthyCheckInterval     func() int64
 	SetHealthy                  func(healthy bool)
@@ -349,6 +424,93 @@ type HTTP3HTTP2LoadBalancer struct {
 	healthCheckRunning          bool
 	mu                          sync.Mutex // 添加互斥锁，确保并发安全
 	Identifier                  string
+}
+
+// Close implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) Close() error {
+	var err2 error = nil
+	h.HealthyCheckStop()
+	h.GetUpStreams().ForEach(func(lbaus LoadBalanceAndUpStream, s string, mi generic.MapInterface[string, LoadBalanceAndUpStream]) {
+
+		if err := lbaus.Close(); err != nil {
+			log.Println("Close", err)
+			err2 = err
+		}
+	})
+	return err2
+}
+
+// FailoverAttemptStrategy implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) FailoverAttemptStrategy(r *http.Request) bool {
+	return IsIdempotentMethodFailoverAttemptStrategy(r)
+}
+
+// GetActiveHealthyCheckEnabled implements LoadBalanceService.
+func (s *HTTP3HTTP2LoadBalancer) GetActiveHealthyCheckEnabled() bool {
+	return s.ActiveHealthyCheckEnabled
+}
+
+// GetPassiveHealthyCheckEnabled implements LoadBalanceService.
+func (s *HTTP3HTTP2LoadBalancer) GetPassiveHealthyCheckEnabled() bool {
+	return s.PassiveHealthyCheckEnabled
+}
+
+// LoadBalancePolicySelector implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) LoadBalancePolicySelector() ([]LoadBalanceAndUpStream, error) {
+	upstreams, err := h.SelectAvailableServers()
+	if err != nil {
+		return nil, err
+	}
+
+	return generic.RandomShuffle(upstreams), nil
+
+}
+
+// RoundTrip implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) RoundTrip(r *http.Request) (*http.Response, error) {
+	return h.RoundTripper(r)
+}
+
+// SelectAvailableServers implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) SelectAvailableServers() ([]LoadBalanceAndUpStream, error) {
+	upstreams := ArrayFilter(h.GetUpStreams().Values(), func(value LoadBalanceAndUpStream) bool {
+		return value.GetServerConfigCommon().GetHealthy()
+	})
+	if len(upstreams) == 0 {
+
+		return nil, errors.New("no Available healthy upstreams")
+	}
+	return upstreams, nil
+}
+
+// ArrayFilter 是一个根据回调函数过滤数组元素的通用函数。
+// 它接受一个类型参数 T 的数组 arr 和一个回调函数 callback，该回调函数对每个数组元素进行测试。
+// 如果回调函数对某个元素返回 true，则该元素被加入到结果数组中。
+//
+// 参数：
+// arr []T - 需要进行过滤的数组。
+// callback func(T) bool - 用于测试每个元素的回调函数，如果该函数返回 true，则元素被包含在结果数组中。
+//
+// 返回值：
+// []T - 过滤后由满足条件的元素组成的新数组。
+func ArrayFilter[T any](arr []T, callback func(T) bool) []T {
+	var result []T
+	for _, v := range arr {
+		if callback(v) {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
+// SetActiveHealthyCheckEnabled implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) SetActiveHealthyCheckEnabled(e bool) {
+	h.ActiveHealthyCheckEnabled = e
+}
+
+// SetPassiveHealthyCheckEnabled implements LoadBalanceService.
+func (h *HTTP3HTTP2LoadBalancer) SetPassiveHealthyCheckEnabled(e bool) {
+	h.PassiveHealthyCheckEnabled = e
 }
 
 // GetIdentifier implements LoadBalanceService.
@@ -369,7 +531,10 @@ func (h *HTTP3HTTP2LoadBalancer) SelectAvailableServer() (LoadBalanceAndUpStream
 }
 
 func (h *HTTP3HTTP2LoadBalancer) HealthyCheckStart() {
+	if !h.ActiveHealthyCheckEnabled {
+		return
 
+	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	go func() {

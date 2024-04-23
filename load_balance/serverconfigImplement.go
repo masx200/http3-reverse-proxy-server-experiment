@@ -13,6 +13,8 @@ const PassiveUnHealthyCheckStatusCodeRangeDefaultStart = 500
 const PassiveUnHealthyCheckStatusCodeRangeDefaultEnd = 600
 
 type ServerConfigImplement struct {
+	PassiveHealthyCheckEnabled        bool
+	ActiveHealthyCheckEnabled         bool
 	ActiveHealthyCheckStatusCodeRange generic.PairInterface[int, int]
 	ActiveHealthyCheckMethod          string
 	Identifier                        string
@@ -31,6 +33,32 @@ type ServerConfigImplement struct {
 	ActiveHealthyCheckURL             string
 
 	PassiveUnHealthyCheckStatusCodeRange generic.PairInterface[int, int]
+}
+
+// GetActiveHealthyCheckEnabled implements ServerConfigCommon.
+func (s *ServerConfigImplement) GetActiveHealthyCheckEnabled() bool {
+	return s.ActiveHealthyCheckEnabled
+}
+
+// GetPassiveHealthyCheckEnabled implements ServerConfigCommon.
+func (s *ServerConfigImplement) GetPassiveHealthyCheckEnabled() bool {
+	return s.PassiveHealthyCheckEnabled
+}
+
+// OnUpstreamHealthy implements ServerConfigCommon.
+func (s *ServerConfigImplement) OnUpstreamHealthy() {
+	fmt.Println("OnUpstreamHealthy", s.GetIdentifier())
+}
+
+// SetActiveHealthyCheckEnabled implements ServerConfigCommon.
+func (s *ServerConfigImplement) SetActiveHealthyCheckEnabled(e bool) {
+
+	s.ActiveHealthyCheckEnabled = e
+}
+
+// SetPassiveHealthyCheckEnabled implements ServerConfigCommon.
+func (s *ServerConfigImplement) SetPassiveHealthyCheckEnabled(e bool) {
+	s.PassiveHealthyCheckEnabled = e
 }
 
 // GetPassiveUnHealthyCheckStatusCodeRange implements ServerConfigCommon.
@@ -57,6 +85,11 @@ func (s *ServerConfigImplement) GetActiveHealthyCheckURL() string {
 func (s *ServerConfigImplement) OnUpstreamFailure() {
 
 	fmt.Println("OnUpstreamFailure", s.GetIdentifier())
+
+	if !s.PassiveHealthyCheckEnabled {
+		return
+
+	}
 	s.FailureMutex.Lock()
 	defer s.FailureMutex.Unlock()
 	s.IncrementUnHealthyFailCount()
@@ -141,9 +174,12 @@ func (s *ServerConfigImplement) GetUpStreamServerURL() string {
 }
 
 func (l *ServerConfigImplement) ActiveHealthyCheck() (bool, error) {
-	// 这里应实现主动健康检查的逻辑
-	// 示例仅返回健康状态和空错误
-	return l.ActiveHealthyChecker(l.RoundTripper, l.GetActiveHealthyCheckURL(), l.GetActiveHealthyCheckMethod(), l.GetActiveHealthyCheckStatusCodeRange().GetFirst(), l.GetActiveHealthyCheckStatusCodeRange().GetSecond())
+
+	x, x1 := l.ActiveHealthyChecker(l.RoundTripper, l.GetActiveHealthyCheckURL(), l.GetActiveHealthyCheckMethod(), l.GetActiveHealthyCheckStatusCodeRange().GetFirst(), l.GetActiveHealthyCheckStatusCodeRange().GetSecond())
+	if x {
+		l.OnUpstreamHealthy()
+	}
+	return x, x1
 }
 
 func (s *ServerConfigImplement) GetIdentifier() string {

@@ -428,8 +428,16 @@ type HTTP3HTTP2LoadBalancer struct {
 
 // Close implements LoadBalanceService.
 func (h *HTTP3HTTP2LoadBalancer) Close() error {
+	var err2 error = nil
 	h.HealthyCheckStop()
-	return nil
+	h.GetUpStreams().ForEach(func(lbaus LoadBalanceAndUpStream, s string, mi generic.MapInterface[string, LoadBalanceAndUpStream]) {
+
+		if err := lbaus.Close(); err != nil {
+			log.Println("Close", err)
+			err2 = err
+		}
+	})
+	return err2
 }
 
 // FailoverAttemptStrategy implements LoadBalanceService.

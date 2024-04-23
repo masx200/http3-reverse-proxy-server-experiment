@@ -316,6 +316,10 @@ func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) RoundTrip(request *http.Requ
 				}
 
 			}
+
+			if !x3.GetPassiveHealthyCheckEnabled() {
+				return response, nil
+			}
 			if ok, err := l.PassiveUnHealthyCheck(response); err != nil || !ok {
 				log.Println("OnUpstreamFailure", err)
 				l.OnUpstreamFailure(value)

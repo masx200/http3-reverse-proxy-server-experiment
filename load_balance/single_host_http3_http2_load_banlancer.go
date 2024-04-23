@@ -169,12 +169,18 @@ type SingleHostHTTP3HTTP2LoadBalancerOfAddress struct {
 
 // GetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetActiveHealthyCheckEnabled() bool {
-	return l.ServerConfigCommon.GetActiveHealthyCheckEnabled()
+	if l.GetLoadBalanceService().IsNone() {
+		return false
+	}
+	return l.ServerConfigCommon.GetActiveHealthyCheckEnabled() && l.GetLoadBalanceService().Unwrap().GetActiveHealthyCheckEnabled()
 }
 
 // GetPassiveHealthyCheckEnabled implements LoadBalanceAndUpStream.
 func (l *SingleHostHTTP3HTTP2LoadBalancerOfAddress) GetPassiveHealthyCheckEnabled() bool {
-	return l.ServerConfigCommon.GetPassiveHealthyCheckEnabled()
+	if l.GetLoadBalanceService().IsNone() {
+		return false
+	}
+	return l.ServerConfigCommon.GetPassiveHealthyCheckEnabled() && l.GetLoadBalanceService().Unwrap().GetPassiveHealthyCheckEnabled()
 }
 
 // SetActiveHealthyCheckEnabled implements LoadBalanceAndUpStream.

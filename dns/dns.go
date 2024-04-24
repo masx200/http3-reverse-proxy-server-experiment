@@ -5,6 +5,7 @@ import (
 	// "time"
 	"context"
 	"errors"
+	"time"
 
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	doq "github.com/tantalor93/doq-go/doq"
@@ -106,6 +107,8 @@ func setPortIfMissing(rawURL string) (string, error) {
 // r: 代表DNS应答消息的dns.Msg对象。
 // err: 如果过程中发生错误，则返回错误信息。
 func DohClient(msg *dns.Msg, dohServerURL string) (r *dns.Msg, err error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	/* 为了doh的缓存,需要设置id为0 ,可以缓存*/
 	msg.Id = 0
 	body, err := msg.Pack()
@@ -113,8 +116,10 @@ func DohClient(msg *dns.Msg, dohServerURL string) (r *dns.Msg, err error) {
 		log.Println(dohServerURL, err)
 		return nil, err
 	}
+	req, err := http.NewRequestWithContext(ctx, "POST", dohServerURL, strings.NewReader(string(body)))
+	req.Header.Set("Content-Type", "application/dns-message")
 	//http request doh
-	res, err := http.Post(dohServerURL, "application/dns-message", strings.NewReader(string(body)))
+	res, err := http.DefaultClient.Do(req) //Post(dohServerURL, "application/dns-message", strings.NewReader(string(body)))
 	if err != nil {
 		log.Println(dohServerURL, err)
 		return nil, err

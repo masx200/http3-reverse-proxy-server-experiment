@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
 	"github.com/miekg/dns"
@@ -165,6 +166,8 @@ func CreateHTTP3TransportWithIPGetter(getter func() (string, error)) adapter.HTT
 // r: 代表DNS应答消息的dns.Msg对象。
 // err: 如果过程中发生错误，则返回错误信息。
 func DoHTTP3Client(msg *dns.Msg, dohttp3ServerURL string) (r *dns.Msg, err error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	/* 为了doh的缓存,需要设置id为0 ,可以缓存*/
 	msg.Id = 0
 	client := &http.Client{
@@ -175,8 +178,10 @@ func DoHTTP3Client(msg *dns.Msg, dohttp3ServerURL string) (r *dns.Msg, err error
 		log.Println(dohttp3ServerURL, err)
 		return nil, err
 	}
+	req, err := http.NewRequestWithContext(ctx, "POST", dohttp3ServerURL, strings.NewReader(string(body)))
+	req.Header.Set("Content-Type", "application/dns-message")
 	//http request doh
-	res, err := client.Post(dohttp3ServerURL, "application/dns-message", strings.NewReader(string(body)))
+	res, err := client.Do(req) //Post(dohttp3ServerURL, "application/dns-message", strings.NewReader(string(body)))
 	if err != nil {
 		log.Println(dohttp3ServerURL, err)
 		return nil, err

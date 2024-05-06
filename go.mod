@@ -3,7 +3,7 @@ module github.com/masx200/http3-reverse-proxy-server-experiment
 go 1.21.6
 
 require (
-	github.com/quic-go/quic-go v0.42.0
+	github.com/quic-go/quic-go v0.43.1
 	github.com/tantalor93/doq-go v0.10.0
 )
 

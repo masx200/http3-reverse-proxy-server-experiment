@@ -3,9 +3,11 @@ module github.com/masx200/http3-reverse-proxy-server-experiment
 go 1.21.6
 
 require (
-	github.com/quic-go/quic-go v0.42.0
-	github.com/tantalor93/doq-go v0.10.0
+	github.com/quic-go/quic-go v0.44.0
+	github.com/tantalor93/doq-go v0.11.0
 )
+
+require golang.org/x/sync v0.7.0 // indirect
 
 require (
 	github.com/kr/text v0.2.0 // indirect
@@ -46,11 +48,11 @@ require (
 	github.com/onsi/ginkgo/v2 v2.9.5 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
-	golang.org/x/crypto v0.22.0 // indirect
-	golang.org/x/exp v0.0.0-20221205204356-47842c84f3db // indirect
-	golang.org/x/mod v0.16.0 // indirect
-	golang.org/x/net v0.24.0
-	golang.org/x/sys v0.19.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/tools v0.19.0 // indirect
+	golang.org/x/crypto v0.23.0 // indirect
+	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
+	golang.org/x/mod v0.17.0 // indirect
+	golang.org/x/net v0.25.0
+	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
+	golang.org/x/tools v0.21.0 // indirect
 )

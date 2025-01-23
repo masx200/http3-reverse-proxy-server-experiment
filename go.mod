@@ -16,7 +16,7 @@ require (
 
 require (
 	github.com/kr/text v0.2.0 // indirect
-	github.com/moznion/go-optional v0.11.0
+	github.com/moznion/go-optional v0.12.0
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 )
 

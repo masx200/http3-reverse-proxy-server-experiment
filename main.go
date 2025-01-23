@@ -511,7 +511,7 @@ func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTP
 // 		log.Println("ERROR:"+"Status code is 500 or greater.", statusCode)
 
 // 	}
-// 	return false, fmt.Errorf("ERROR:Status code is 500 or greater" + fmt.Sprint(statusCode))
+// 	return false,  errors.New("ERROR:Status code is 500 or greater" + fmt.Sprint(statusCode))
 // }
 
 // sendHeadRequestAndCheckStatus 发送一个HEAD请求并检查状态码。
@@ -679,7 +679,7 @@ func LoopDetect() gin.HandlerFunc {
 // 	// Parse the original URL
 // 	originalURL, err := url.Parse(originalURLStr)
 // 	if err != nil {
-// 		return "", fmt.Errorf("failed to parse the original URL: %v", err)
+// 		return "",  errors.New("failed to parse the original URL: %v", err)
 // 	}
 
 // 	// Modify the scheme
@@ -722,19 +722,19 @@ func LoopDetect() gin.HandlerFunc {
 // 	}
 // 	// http3url, err := ChangeURLScheme(upstreamServer, "http3")
 // 	// if err != nil {
-// 	// 	return nil, fmt.Errorf("failed to parse upstream server URL: %v", err)
+// 	// 	return nil,  errors.New("failed to parse upstream server URL: %v", err)
 // 	// }
 // 	// var http12url string
 // 	// if upstreamURL.Scheme == "http" {
 // 	// 	http12urlll, err := ChangeURLScheme(upstreamServer, "http1")
 // 	// 	if err != nil {
-// 	// 		return nil, fmt.Errorf("failed to parse upstream server URL: %v", err)
+// 	// 		return nil,  errors.New("failed to parse upstream server URL: %v", err)
 // 	// 	}
 // 	// 	http12url = http12urlll
 // 	// } else {
 // 	// 	http12urlll, err := ChangeURLScheme(upstreamServer, "http2")
 // 	// 	if err != nil {
-// 	// 		return nil, fmt.Errorf("failed to parse upstream server URL: %v", err)
+// 	// 		return nil,  errors.New("failed to parse upstream server URL: %v", err)
 // 	// 	}
 // 	// 	http12url = http12urlll
 // 	// }
@@ -948,7 +948,7 @@ func LoopDetect() gin.HandlerFunc {
 // 			// 如果请求发送成功，打印响应信息，并返回响应和错误
 // 			log.Println("ERROR:", "Status code is 500 or greater.", rs.StatusCode)
 // 			PrintResponse(rs)
-// 			rer = fmt.Errorf("ERROR:Status code is 500 or greater" + fmt.Sprint(rs.StatusCode))
+// 			rer =  errors.New("ERROR:Status code is 500 or greater" + fmt.Sprint(rs.StatusCode))
 // 		} else {
 // 			// 如果请求发送成功，打印响应信息，并返回响应和错误
 // 			PrintResponse(rs)

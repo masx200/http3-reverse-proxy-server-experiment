@@ -3,6 +3,7 @@ package h3
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -165,7 +166,7 @@ func CreateHTTP3TransportWithIPGetter(getter func() (string, error)) adapter.HTT
 // 返回值:
 // r: 代表DNS应答消息的dns.Msg对象。
 // err: 如果过程中发生错误，则返回错误信息。
-func DoHTTP3Client(msg *dns.Msg, dohttp3ServerURL string) (r *dns.Msg, err error) {
+func DoHTTP3Client(msg *dns.Msg, dohttp3ServerURL string, dohip ...string) (r *dns.Msg, err error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	/* 为了doh的缓存,需要设置id为0 ,可以缓存*/
@@ -189,13 +190,13 @@ func DoHTTP3Client(msg *dns.Msg, dohttp3ServerURL string) (r *dns.Msg, err error
 	//res.status check
 	if res.StatusCode != 200 {
 		log.Println(dohttp3ServerURL, "http status code is not 200  "+fmt.Sprintf("status code is %d", res.StatusCode))
-		return nil, fmt.Errorf("http status code is not 200 " + fmt.Sprintf("status code is %d", res.StatusCode))
+		return nil, errors.New("http status code is not 200 " + fmt.Sprintf("status code is %d", res.StatusCode))
 	}
 
 	//check content-type
 	if res.Header.Get("Content-Type") != "application/dns-message" {
 		log.Println(dohttp3ServerURL, "content-type is not application/dns-message "+res.Header.Get("Content-Type"))
-		return nil, fmt.Errorf("content-type is not application/dns-message " + res.Header.Get("Content-Type"))
+		return nil, errors.New("content-type is not application/dns-message " + res.Header.Get("Content-Type"))
 	}
 	//利用ioutil包读取百度服务器返回的数据
 	data, err := io.ReadAll(res.Body)

@@ -2,6 +2,7 @@ package dns
 
 import (
 	// "context"
+	"errors"
 	"fmt"
 	"log"
 	"testing"
@@ -34,11 +35,11 @@ func TestDOQ(t *testing.T) {
 		if respA.Rcode != dns.RcodeSuccess {
 			log.Println(dns.RcodeToString[respA.Rcode])
 
-			t.Fatal(fmt.Errorf("dns server %s response error not success", doqServer))
+			t.Fatal(errors.New("dns server " + doqServer + " response error not success"))
 		}
 		if len(respA.Answer) == 0 {
 			log.Println(doqServer + "-No A records found")
-			t.Fatal(fmt.Errorf(
+			t.Fatal(errors.New(
 				"dns server  response error No A records found",
 			))
 		}
@@ -57,11 +58,11 @@ func TestDOQ(t *testing.T) {
 			if respAAAA.Rcode != dns.RcodeSuccess {
 				log.Println(dns.RcodeToString[qAAAA.Rcode])
 
-				t.Fatal(fmt.Errorf("dns server %s response error not success", doqServer))
+				t.Fatal(errors.New("dns server " + doqServer + " response error not success"))
 			}
 			if len(respAAAA.Answer) == 0 {
 				log.Println(doqServer + "-No AAAA records found")
-				t.Fatal(fmt.Errorf(
+				t.Fatal(errors.New(
 					"dns server  response error No AAAA records found",
 				))
 			}
@@ -81,11 +82,11 @@ func TestDOQ(t *testing.T) {
 			if respHTTPS.Rcode != dns.RcodeSuccess {
 				log.Println(dns.RcodeToString[respHTTPS.Rcode])
 
-				t.Fatal(fmt.Errorf("dns server %s response error not success", doqServer))
+				t.Fatal(errors.New("dns server " + doqServer + " response error not success"))
 			}
 			if len(respHTTPS.Answer) == 0 {
 				log.Println(doqServer + "-No HTTPS records found")
-				t.Fatal(fmt.Errorf(
+				t.Fatal(errors.New(
 					"dns server  response error No HTTPS records found",
 				))
 			}
@@ -122,11 +123,11 @@ func TestDOQ2(t *testing.T) {
 		if respA.Rcode != dns.RcodeSuccess {
 			log.Println(dns.RcodeToString[respA.Rcode])
 
-			t.Fatal(fmt.Errorf("dns server %s response error not success", doqServer))
+			t.Fatal(errors.New("dns server " + doqServer + " response error not success"))
 		}
 		if len(respA.Answer) == 0 {
 			log.Println(doqServer + "-No A records found")
-			t.Fatal(fmt.Errorf(
+			t.Fatal(errors.New(
 				"dns server  response error No A records found",
 			))
 		}
@@ -145,11 +146,11 @@ func TestDOQ2(t *testing.T) {
 			if respAAAA.Rcode != dns.RcodeSuccess {
 				log.Println(dns.RcodeToString[qAAAA.Rcode])
 
-				t.Fatal(fmt.Errorf("dns server %s response error not success", doqServer))
+				t.Fatal(errors.New("dns server " + doqServer + " response error not success"))
 			}
 			if len(respAAAA.Answer) == 0 {
 				log.Println(doqServer + "-No AAAA records found")
-				t.Fatal(fmt.Errorf(
+				t.Fatal(errors.New(
 					"dns server  response error No AAAA records found",
 				))
 			}
@@ -169,11 +170,11 @@ func TestDOQ2(t *testing.T) {
 			if respHTTPS.Rcode != dns.RcodeSuccess {
 				log.Println(dns.RcodeToString[respHTTPS.Rcode])
 
-				t.Fatal(fmt.Errorf("dns server %s response error not success", doqServer))
+				t.Fatal(errors.New("dns server " + doqServer + " response error not success"))
 			}
 			if len(respHTTPS.Answer) == 0 {
 				log.Println(doqServer + "-No HTTPS records found")
-				t.Fatal(fmt.Errorf(
+				t.Fatal(errors.New(
 					"dns server  response error No HTTPS records found",
 				))
 			}

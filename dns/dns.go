@@ -4,12 +4,10 @@ import (
 	// "context"
 	// "time"
 	"context"
+	"crypto/tls"
 	"errors"
+	"net"
 	"time"
-
-	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
-	doq "github.com/tantalor93/doq-go/doq"
-
 	// "crypto/tls"
 	// "fmt"
 	// "io"
@@ -17,16 +15,16 @@ import (
 	// "net/http"
 	// "crypto/tls"
 	//	"fmt"
+	"fmt"
 	"io"
-
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 
-	"fmt"
-	"net/url"
-
+	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	"github.com/miekg/dns"
+	doq "github.com/tantalor93/doq-go/doq"
 )
 
 // DNSQueryHTTPS 执行DNS查询以获取HTTPS服务记录。
@@ -54,12 +52,12 @@ func DNSQueryHTTPS(domain string, port string, DOHServer string) ([]dns.SVCB, er
 	}
 	if resp.Rcode != dns.RcodeSuccess {
 		log.Printf("DNS query failed: %s ", dns.RcodeToString[resp.Rcode]+" "+DOHServer+"\n")
-		return nil, fmt.Errorf(
-			"DNS query failed: %s ", dns.RcodeToString[resp.Rcode]+" "+DOHServer)
+		return nil, errors.New(
+			"DNS query failed:  " + dns.RcodeToString[resp.Rcode] + " " + DOHServer)
 	}
 	if len(resp.Answer) == 0 {
 		log.Println(DOHServer + "-No HTTPS records found")
-		return nil, fmt.Errorf(
+		return nil, errors.New(
 			"No HTTPS records found" + " " + DOHServer)
 	}
 	log.Println(DOHServer + "-" + resp.String())
@@ -74,7 +72,7 @@ func DNSQueryHTTPS(domain string, port string, DOHServer string) ([]dns.SVCB, er
 	}
 	if len(result) == 0 {
 		log.Println(DOHServer + "-No HTTPS records found")
-		return nil, fmt.Errorf(
+		return nil, errors.New(
 			"No HTTPS records found" + " " + DOHServer)
 	}
 	return result, nil
@@ -106,7 +104,7 @@ func setPortIfMissing(rawURL string) (string, error) {
 // 返回值:
 // r: 代表DNS应答消息的dns.Msg对象。
 // err: 如果过程中发生错误，则返回错误信息。
-func DohClient(msg *dns.Msg, dohServerURL string) (r *dns.Msg, err error) {
+func DohClient(msg *dns.Msg, dohServerURL string, dohip ...string) (r *dns.Msg, err error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	/* 为了doh的缓存,需要设置id为0 ,可以缓存*/
@@ -119,7 +117,64 @@ func DohClient(msg *dns.Msg, dohServerURL string) (r *dns.Msg, err error) {
 	req, err := http.NewRequestWithContext(ctx, "POST", dohServerURL, strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/dns-message")
 	//http request doh
-	res, err := http.DefaultClient.Do(req) //Post(dohServerURL, "application/dns-message", strings.NewReader(string(body)))
+
+	// 创建自定义的 http.Client
+	var client *http.Client
+	if len(dohip) > 0 {
+		serverIP := dohip[0]
+		transport := &http.Transport{
+			// 自定义 DialContext 函数
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				// 解析出原地址中的端口
+				_, port, err := net.SplitHostPort(addr)
+				if err != nil {
+					return nil, err
+				}
+				// 用指定的 IP 地址和原端口创建新地址
+				newAddr := net.JoinHostPort(serverIP, port)
+				// 创建 net.Dialer 实例
+				dialer := &net.Dialer{}
+				// 发起连接
+				return dialer.DialContext(ctx, network, newAddr)
+			},
+			DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+
+				// 解析出原地址中的端口
+				address, port, err := net.SplitHostPort(addr)
+				if err != nil {
+					return nil, err
+				}
+				// 用指定的 IP 地址和原端口创建新地址
+				newAddr := net.JoinHostPort(serverIP, port)
+				// 创建 net.Dialer 实例
+				dialer := &net.Dialer{}
+				// 发起连接
+				conn, err := dialer.DialContext(ctx, network, newAddr)
+				if err != nil {
+					return nil, err
+				}
+				tlsConfig := &tls.Config{
+					ServerName: address,
+				}
+				// 创建 TLS 连接
+				tlsConn := tls.Client(conn, tlsConfig)
+				// 进行 TLS 握手
+				err = tlsConn.HandshakeContext(ctx)
+				if err != nil {
+					conn.Close()
+					return nil, err
+				}
+				return tlsConn, nil
+			},
+		}
+		client = &http.Client{
+			Transport: transport,
+		}
+	} else {
+		client = http.DefaultClient
+	}
+
+	res, err := client.Do(req) //Post(dohServerURL, "application/dns-message", strings.NewReader(string(body)))
 	if err != nil {
 		log.Println(dohServerURL, err)
 		return nil, err
@@ -127,13 +182,13 @@ func DohClient(msg *dns.Msg, dohServerURL string) (r *dns.Msg, err error) {
 	//res.status check
 	if res.StatusCode != 200 {
 		log.Println(dohServerURL, "http status code is not 200  "+fmt.Sprintf("status code is %d", res.StatusCode))
-		return nil, fmt.Errorf("http status code is not 200 " + fmt.Sprintf("status code is %d", res.StatusCode))
+		return nil, errors.New("http status code is not 200 " + fmt.Sprintf("status code is %d", res.StatusCode))
 	}
 
 	//check content-type
 	if res.Header.Get("Content-Type") != "application/dns-message" {
 		log.Println(dohServerURL, "content-type is not application/dns-message "+res.Header.Get("Content-Type"))
-		return nil, fmt.Errorf(dohServerURL, "content-type is not application/dns-message "+res.Header.Get("Content-Type"))
+		return nil, errors.New(dohServerURL + "content-type is not application/dns-message " + res.Header.Get("Content-Type"))
 	}
 	//利用ioutil包读取百度服务器返回的数据
 	data, err := io.ReadAll(res.Body)
@@ -200,13 +255,13 @@ func DoQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
 func ExtractDOQServerDetails(doqServer string) (string, string, error) {
 	parts := strings.Split(doqServer, "://")
 	if len(parts) != 2 {
-		return "", "", fmt.Errorf("invalid DOQ server format")
+		return "", "", errors.New("invalid DOQ server format")
 	}
 
 	serverWithPort := parts[1]
 	serverParts := strings.Split(serverWithPort, ":")
 	if len(serverParts) != 2 {
-		return "", "", fmt.Errorf("invalid server details, missing port")
+		return "", "", errors.New("invalid server details, missing port")
 	}
 
 	serverName := serverParts[0]

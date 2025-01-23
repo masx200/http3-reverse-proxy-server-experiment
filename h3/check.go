@@ -3,6 +3,7 @@ package h3
 import (
 	// "context"
 	// "crypto/tls"
+	"errors"
 	"fmt"
 	"log"
 
@@ -10,11 +11,11 @@ import (
 	"net/http"
 	"strings"
 
+	// "testing"
+
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	// "github.com/quic-go/quic-go"
 	// "github.com/quic-go/quic-go/http3"
-
-	// "testing"
 	altsvc "github.com/ebi-yade/altsvc-go"
 	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
 	"github.com/miekg/dns"
@@ -35,7 +36,7 @@ import (
 func getAltSvc(url string) (string, error) {
 	resp, err := http.Head(url)
 	if err != nil {
-		return "", fmt.Errorf("failed to send HEAD request: %v", err)
+		return "", errors.New("failed to send HEAD request: " + err.Error())
 	}
 
 	PrintResponse(resp)
@@ -43,13 +44,13 @@ func getAltSvc(url string) (string, error) {
 
 	// 检查状态码是否成功（200 等）
 	if resp.StatusCode >= 500 {
-		return "", fmt.Errorf("received non-success status code: %d", resp.StatusCode)
+		return "", errors.New("received non-success status code: " + fmt.Sprint(resp.StatusCode))
 	}
 
 	// 获取 Alt-Svc 响应头
 	altSvc := resp.Header.Get("Alt-Svc")
 	if altSvc == "" {
-		return "Not found", fmt.Errorf("Alt-Svc header not found")
+		return "Not found", errors.New("Alt-Svc header not found")
 	}
 	log.Println("altSvc", altSvc)
 	return altSvc, nil
@@ -83,7 +84,7 @@ func CheckHttp3ViaHttp2(domain string, port string) (bool, error) {
 		}
 
 	}
-	return false, fmt.Errorf("alt-svc Not found h3 and port")
+	return false, errors.New("alt-svc Not found h3 and port")
 }
 
 // CheckH3ViaDNS 通过DNS查询来检查指定域名和端口是否支持H3协议。
@@ -112,7 +113,7 @@ func CheckHttp3ViaDNS(domain string, port string, DOHServer string) (bool, error
 			}
 		}
 	}
-	return false, fmt.Errorf("no H3 alpn records found")
+	return false, errors.New("no H3 alpn records found")
 } // ContainsGeneric 函数用于判断一个切片中是否包含某个元素。
 // 该函数支持泛型，可以适用于任意实现了可比较接口（comparable）的类型。
 // 参数：

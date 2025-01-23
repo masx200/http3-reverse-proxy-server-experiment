@@ -1,13 +1,13 @@
 package dns
 
 import (
+	"crypto/sha512"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 	"sync"
-
-	"crypto/sha512"
-	"encoding/hex"
 
 	"github.com/fanjindong/go-cache"
 	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
@@ -44,7 +44,7 @@ func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterfa
 	var cacheMutex sync.Mutex
 	var results []string
 	if (queryCallbacks).Size() == 0 {
-		return nil, fmt.Errorf("no query callbacks provided")
+		return nil, errors.New("no query callbacks provided")
 	}
 	queryCallbacks.ForEach(func(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), s string, mi generic.MapInterface[string, func(m *dns.Msg) (r *dns.Msg, err error)]) {
 		wg.Add(1)
@@ -90,7 +90,7 @@ func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterfa
 
 	wg.Wait()
 	if len(results) == 0 {
-		return nil, fmt.Errorf("no results found for %s", domain)
+		return nil, errors.New("no results found for " + domain)
 	}
 	return removeDuplicates(results), nil
 }
@@ -188,10 +188,10 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 
 	wg.Wait()
 	if len(results) == 0 {
-		return nil, fmt.Errorf("no results found for %s"+"\n"+strings.Join(ArrayMap(errs, func(err error) string {
+		return nil, errors.New("no results found for " + domain + "\n" + strings.Join(ArrayMap(errs, func(err error) string {
 
 			return err.Error()
-		}), "\n"), domain)
+		}), "\n"))
 	}
 	return removeDuplicates(results), nil
 
@@ -215,11 +215,11 @@ func resolve(recordType uint16, QueryCallback func(m *dns.Msg) (r *dns.Msg, err 
 	}
 	if resp.Rcode != dns.RcodeSuccess {
 		log.Println(dns.RcodeToString[resp.Rcode])
-		return nil, fmt.Errorf("dns server  response error not success:" + m.Question[0].String())
+		return nil, errors.New("dns server  response error not success:" + m.Question[0].String())
 	}
 	if len(resp.Answer) == 0 {
 		log.Println("dns server-No  records found:" + m.Question[0].String())
-		return nil, fmt.Errorf(
+		return nil, errors.New(
 			"dns server  response error No  records found:" + m.Question[0].String(),
 		)
 	}
@@ -256,7 +256,7 @@ func resolve(recordType uint16, QueryCallback func(m *dns.Msg) (r *dns.Msg, err 
 		}
 	}
 	if len(results) == 0 {
-		return nil, fmt.Errorf("no results found for %s", domain)
+		return nil, errors.New("no results found for " + domain)
 	}
 	return removeDuplicates(results), nil
 } // removeDuplicates 函数用于移除一个可比较类型切片中的重复元素。

@@ -1,6 +1,7 @@
 package load_balance
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,11 +9,10 @@ import (
 
 	// "strings"
 	"sync"
-
 	// "net/url"
+
 	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	h12_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h12"
-
 	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
 	optional "github.com/moznion/go-optional"
 )
@@ -61,7 +61,7 @@ func ActiveHealthyCheckDefault(RoundTripper http.RoundTripper, url string, metho
 func HealthyResponseCheckSuccess(response *http.Response, statusCodeMin int, statusCodeMax int) (bool, error) {
 	// 检查响应状态码是否小于500
 	if !(response.StatusCode >= statusCodeMin && response.StatusCode < statusCodeMax) {
-		return false, fmt.Errorf("StatusCode %d   is not success", response.StatusCode)
+		return false, errors.New("StatusCode" + fmt.Sprint(response.StatusCode) + "is not success")
 	}
 	return true, nil
 }
@@ -267,7 +267,7 @@ func HealthyResponseCheckDefault(response *http.Response, UnHealthyStatusMin int
 
 	// 检查响应状态码是否小于500
 	if response.StatusCode >= UnHealthyStatusMin && response.StatusCode < UnHealthyStatusMax {
-		return false, fmt.Errorf("StatusCode %d   is greater than 500", response.StatusCode)
+		return false, errors.New("StatusCode " + fmt.Sprint(response.StatusCode) + "   is greater than 500")
 	}
 	return true, nil
 } // SingleHostHTTPClientOfAddress 是一个针对单个主机地址的HTTP客户端实现，
@@ -298,7 +298,7 @@ func (l *SingleHostHTTP12ClientOfAddress) RoundTrip(request *http.Request) (*htt
 // 用于选择可用的服务实例。
 // 返回值为可用的服务实例（此处始终为自身）及可能发生的错误。
 func (l *SingleHostHTTP12ClientOfAddress) SelectAvailableServer() (LoadBalanceAndUpStream, error) {
-	return nil, fmt.Errorf("no upstream available")
+	return nil, errors.New("no upstream available")
 }
 
 // SetHealthy 实现了LoadBalanceAndUpStream接口的SetHealthy方法，

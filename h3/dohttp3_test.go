@@ -1,6 +1,7 @@
 package h3
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"testing"
@@ -35,11 +36,11 @@ func TestDOHTTP3(t *testing.T) {
 				}
 				if resp.Rcode != dns.RcodeSuccess {
 					log.Println(dns.RcodeToString[resp.Rcode])
-					return fmt.Errorf("dns server %s response error not success", dohServer)
+					return errors.New("dns server " + dohServer + " response error not success")
 				}
 				if len(resp.Answer) == 0 {
 					log.Println(dohServer + "-No AAAA records found")
-					return fmt.Errorf(
+					return errors.New(
 						"dns server  response error No AAAA records found",
 					)
 				}
@@ -62,12 +63,12 @@ func TestDOHTTP3(t *testing.T) {
 				}
 				if resp.Rcode != dns.RcodeSuccess {
 					log.Println(dns.RcodeToString[resp.Rcode])
-					return fmt.Errorf("dns server %s response error not success", dohServer)
+					return errors.New("dns server " + dohServer + " response error not success")
 				}
 
 				if len(resp.Answer) == 0 {
 					log.Println(dohServer + "-No A records found")
-					return fmt.Errorf(
+					return errors.New(
 						"dns server  response error No A records found",
 					)
 				}
@@ -90,11 +91,11 @@ func TestDOHTTP3(t *testing.T) {
 				}
 				if resp.Rcode != dns.RcodeSuccess {
 					log.Println(dns.RcodeToString[resp.Rcode])
-					return fmt.Errorf("dns server %s response error not success", dohServer)
+					return errors.New("dns server " + dohServer + " response error not success")
 				}
 				if len(resp.Answer) == 0 {
 					log.Println(dohServer + "-No HTTPS records found")
-					return fmt.Errorf(
+					return errors.New(
 						"dns server  response HTTPS No AAAA records found",
 					)
 				}

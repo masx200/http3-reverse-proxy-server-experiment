@@ -147,7 +147,7 @@ func initH2CWithPriorKnowledge(w http.ResponseWriter) (net.Conn, error) {
 	buf := make([]byte, len(expectedBody))
 	n, err := io.ReadFull(rw, buf)
 	if err != nil {
-		return nil, fmt.Errorf("h2c: error reading client preface: %s", err)
+		return nil, errors.New("h2c: error reading client preface: " + err.Error())
 	}
 
 	if string(buf[:n]) == expectedBody {
@@ -163,7 +163,7 @@ func getH2Settings(h http.Header) ([]byte, error) {
 		return nil, errors.New("missing HTTP2-Settings header")
 	}
 	if len(vals) != 1 {
-		return nil, fmt.Errorf("expected 1 HTTP2-Settings. Got: %v", vals)
+		return nil, errors.New("expected 1 HTTP2-Settings. Got: " + fmt.Sprint(vals))
 	}
 	settings, err := base64.RawURLEncoding.DecodeString(vals[0])
 	if err != nil {

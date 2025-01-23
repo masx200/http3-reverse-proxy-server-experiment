@@ -1,8 +1,8 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 
@@ -11,14 +11,31 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 4 {
-		fmt.Println("usage:", os.Args[0], "domain dnstype dohurl")
+
+	domain := flag.String("domain", "", "指定要查询的域名")
+	dohurl := flag.String("dohurl", "", "指定DoH(DNS over HTTPS)服务的URL")
+
+	// 定义可选的命令行标志
+	dnstype := flag.String("dnstype", "A,AAAA", "指定DNS查询类型，默认为A和AAAA记录")
+	dohip := flag.String("dohip", "", "指定DoH服务的IP地址（可选）")
+
+	// 解析命令行参数
+	flag.Parse()
+
+	// 必需参数检查
+	if *domain == "" || *dohurl == "" {
+		fmt.Println("错误：必须提供-domain和-dohurl参数")
+		flag.Usage()
 		return
 	}
+	if *dohip != "" {
+		dohnslookup(*domain, *dnstype, *dohurl, *dohip)
+	} else {
+		dohnslookup(*domain, *dnstype, *dohurl)
+	}
+}
 
-	var domain = os.Args[1]
-	var dnstype = os.Args[2]
-	var dohurl = os.Args[3]
+func dohnslookup(domain string, dnstype string, dohurl string, dohip ...string) {
 	fmt.Println("domain:", domain, "dnstype:", dnstype, "dohurl:", dohurl)
 	var wg sync.WaitGroup
 	for _, d := range strings.Split(domain, ",") {
@@ -31,7 +48,7 @@ func main() {
 				msg.SetQuestion(d+".", dns.StringToType[t])
 				fmt.Println(msg.String())
 
-				res, err := dns_experiment.DohClient(msg, dohurl)
+				res, err := dns_experiment.DohClient(msg, dohurl, dohip...)
 				if err != nil {
 					fmt.Println(err)
 					return
@@ -43,5 +60,4 @@ func main() {
 		}
 	}
 	wg.Wait()
-
 }

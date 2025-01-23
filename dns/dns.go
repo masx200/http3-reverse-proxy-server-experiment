@@ -123,6 +123,7 @@ func DohClient(msg *dns.Msg, dohServerURL string, dohip ...string) (r *dns.Msg, 
 	if len(dohip) > 0 {
 		serverIP := dohip[0]
 		transport := &http.Transport{
+			ForceAttemptHTTP2: true,
 			// 自定义 DialContext 函数
 			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 				// 解析出原地址中的端口

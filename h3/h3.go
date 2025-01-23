@@ -171,9 +171,20 @@ func DoHTTP3Client(msg *dns.Msg, dohttp3ServerURL string, dohip ...string) (r *d
 	defer cancel()
 	/* 为了doh的缓存,需要设置id为0 ,可以缓存*/
 	msg.Id = 0
-	client := &http.Client{
-		Transport: &http3.RoundTripper{},
+	var client *http.Client
+	if len(dohip) > 0 {
+		// 如果有指定的 IP 地址，使用该 IP 地址创建 HTTP/3 传输
+		transport := CreateHTTP3TransportWithIP(dohip[0])
+		client = &http.Client{
+			Transport: transport,
+		}
+	} else {
+		// 没有指定 IP 地址，使用默认的 HTTP/3 传输
+		client = &http.Client{
+			Transport: &http3.RoundTripper{},
+		}
 	}
+
 	body, err := msg.Pack()
 	if err != nil {
 		log.Println(dohttp3ServerURL, err)

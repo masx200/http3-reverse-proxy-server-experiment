@@ -12,20 +12,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/gin-gonic/gin"
-	"github.com/moznion/go-optional"
-
-	// "github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
-	// "github.com/masx200/http3-reverse-proxy-server-experiment/generic"
-	"github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
-	h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
-	"github.com/masx200/http3-reverse-proxy-server-experiment/http2_only"
-	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
-	"github.com/quic-go/quic-go"
-	"github.com/quic-go/quic-go/http3"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
-
 	// "math/rand"
 	"net"
 	"net/http"
@@ -40,6 +26,20 @@ import (
 	// "time"
 	pprofhttp "net/http/pprof"
 	"runtime/pprof"
+
+	"github.com/gin-gonic/gin"
+	"github.com/moznion/go-optional"
+
+	// "github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
+	// "github.com/masx200/http3-reverse-proxy-server-experiment/generic"
+	"github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
+	h3_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/h3"
+	"github.com/masx200/http3-reverse-proxy-server-experiment/http2_only"
+	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
+	"github.com/quic-go/quic-go"
+	"github.com/quic-go/quic-go/http3"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 func CreateHTTP2CRoundTripperOfUpStreamServer() http.RoundTripper {
@@ -253,7 +253,7 @@ func main() {
 			server := http3.Server{
 				Handler:    handler,
 				Addr:       bCap,
-				QuicConfig: &quic.Config{
+				QUICConfig: &quic.Config{
 					// Tracer: qlog.DefaultTracer,
 				},
 			}

@@ -242,7 +242,7 @@ func DoQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
 	var addr = fmt.Sprintf("%s:%s", serverName, port) // 格式化服务器地址
 	fmt.Println("addr", addr)
 	// 创建一个DOQ客户端
-	client := doq.NewClient(addr, doq.Options{})
+	client := doq.NewClient(addr, )
 	// 发送DNS查询并获取应答
 	respA, err := client.Send(context.Background(), msg)
 	if err != nil {

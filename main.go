@@ -96,18 +96,18 @@ func main() {
 	flag.Parse()
 
 	// 输出解析后的参数值
-	fmt.Printf("debug-pprof argument: %v\n", *Arg_debug_pprof)
-	fmt.Printf("listen-hostname argument: %v\n", *Arglistenhostname)
-	fmt.Printf("listen-http argument: %v\n", *Arglistenhttp)
-	fmt.Printf("listen-h2c argument: %v\n", *Arglistenh2c)
-	fmt.Printf("listen-http3 argument: %v\n", *Arglistenhttp3)
-	fmt.Printf("tls-cert argument: %s\n", *tlscertArg)
-	fmt.Printf("tls-key argument: %s\n", *tlskeyArg)
-	fmt.Printf("upstream-server argument: %s\n", *strArgupstreamServer)
-	fmt.Printf("http-port argument: %d\n", *intArghttpPort)
-	fmt.Printf("https-port argument: %d\n", *int2ArghttpsPort)
-	fmt.Printf("upstream-protocol argument: %v\n", *StringArgprotocol)
-	fmt.Printf("listen-tls argument: %v\n", *tlsboolArg)
+	log.Printf("debug-pprof argument: %v\n", *Arg_debug_pprof)
+	log.Printf("listen-hostname argument: %v\n", *Arglistenhostname)
+	log.Printf("listen-http argument: %v\n", *Arglistenhttp)
+	log.Printf("listen-h2c argument: %v\n", *Arglistenh2c)
+	log.Printf("listen-http3 argument: %v\n", *Arglistenhttp3)
+	log.Printf("tls-cert argument: %s\n", *tlscertArg)
+	log.Printf("tls-key argument: %s\n", *tlskeyArg)
+	log.Printf("upstream-server argument: %s\n", *strArgupstreamServer)
+	log.Printf("http-port argument: %d\n", *intArghttpPort)
+	log.Printf("https-port argument: %d\n", *int2ArghttpsPort)
+	log.Printf("upstream-protocol argument: %v\n", *StringArgprotocol)
+	log.Printf("listen-tls argument: %v\n", *tlsboolArg)
 	var upstreamServer = *strArgupstreamServer
 	if len(upstreamServer) == 0 {
 		log.Fatal("error :upstream-server is empty")
@@ -358,7 +358,7 @@ func CreateDebugPprofApplication() optional.Option[*gin.Engine] {
 
 		runtime.GC()
 		if err := pprof.Lookup("goroutine").WriteTo(f, 1); err != nil {
-			fmt.Println("could not start goroutine profile: ", err)
+			log.Println("could not start goroutine profile: ", err)
 			f.Write([]byte("could not start goroutine profile: " + err.Error()))
 			ctx.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -387,7 +387,7 @@ func CreateDebugPprofApplication() optional.Option[*gin.Engine] {
 
 		runtime.GC()
 		if err := pprof.WriteHeapProfile(f); err != nil {
-			fmt.Println("could not start heap profile: ", err)
+			log.Println("could not start heap profile: ", err)
 			f.Write([]byte("could not start heap profile: " + err.Error()))
 			ctx.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -501,11 +501,11 @@ func CreateHTTP3RoundTripperOfUpStreamServer(upstreamServer string) adapter.HTTP
 // 	}
 
 // 	// 打印状态码信息
-// 	fmt.Printf("health check Status code: %d\n", statusCode)
+// 	log.Printf("health check Status code: %d\n", statusCode)
 
 // 	// 根据状态码判断上游服务的健康状态
 // 	if statusCode < 500 {
-// 		fmt.Println("Status code is less than 500.")
+// 		log.Println("Status code is less than 500.")
 // 		return true, nil
 // 	} else {
 // 		log.Println("ERROR:"+"Status code is 500 or greater.", statusCode)
@@ -793,8 +793,8 @@ func LoopDetect() gin.HandlerFunc {
 
 // 	// 检查当前上游服务器列表是否已过期。
 // 	if getExpires() > time.Now().UnixMilli() {
-// 		fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
-// 		fmt.Println("健康的上游服务器", getHealthyUpstream())
+// 		log.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
+// 		log.Println("健康的上游服务器", getHealthyUpstream())
 // 		return getHealthyUpstream()
 // 	}
 
@@ -804,12 +804,12 @@ func LoopDetect() gin.HandlerFunc {
 // 		mutex2.Lock()
 // 		defer mutex2.Unlock()
 // 		if getExpires() > time.Now().UnixMilli() {
-// 			fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
-// 			fmt.Println("健康的上游服务器", getHealthyUpstream())
+// 			log.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
+// 			log.Println("健康的上游服务器", getHealthyUpstream())
 // 			return
 // 		}
 // 		var healthy = map[string]func(*http.Request) (*http.Response, error){}
-// 		fmt.Println("需要进行健康检查", "已经过期的时间毫秒", -getExpires()+time.Now().UnixMilli())
+// 		log.Println("需要进行健康检查", "已经过期的时间毫秒", -getExpires()+time.Now().UnixMilli())
 // 		//需要并行检查
 // 		// 遍历所有上游服务器进行健康检查。
 // 		var promises = make(chan struct{}, len(transportsUpstream))
@@ -825,7 +825,7 @@ func LoopDetect() gin.HandlerFunc {
 // 				//loop variable roundTrip captured by func literal loop closure
 // 				if ok, err := checkUpstreamHealth(upstreamServer, roundTripi0); ok {
 // 					healthy[keyi0] = roundTripi0
-// 					fmt.Println("健康检查成功", keyi0, upstreamServer)
+// 					log.Println("健康检查成功", keyi0, upstreamServer)
 // 				} else {
 
 // 					log.Println("健康检查失败", keyi0, upstreamServer, err)
@@ -840,10 +840,10 @@ func LoopDetect() gin.HandlerFunc {
 // 		// 根据健康检查结果更新健康上游服务器列表。
 // 		if len(healthy) == 0 {
 // 			setHealthyUpstream(transportsUpstream)
-// 			fmt.Println("没有健康的上游服务器", getHealthyUpstream())
+// 			log.Println("没有健康的上游服务器", getHealthyUpstream())
 // 		} else {
 // 			setHealthyUpstream(healthy)
-// 			fmt.Println("找到健康的上游服务器", getHealthyUpstream())
+// 			log.Println("找到健康的上游服务器", getHealthyUpstream())
 // 		}
 
 // 		// 设置上游服务器列表的新过期时间。
@@ -922,7 +922,7 @@ func LoopDetect() gin.HandlerFunc {
 // - error：如果在发送请求时遇到错误，则返回错误信息；否则为nil。
 // func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Response, error), req *http.Request, upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string]) (*http.Response, error) {
 // 	// 打印传入的运输函数列表
-// 	fmt.Println("接收到的可用上游服务器:", roundTripper)
+// 	log.Println("接收到的可用上游服务器:", roundTripper)
 
 // 	PrintRequest(req)
 // 	var roundTripperArray = mapToArray(roundTripper)

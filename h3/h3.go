@@ -54,10 +54,10 @@ func CreateHTTP3TransportWithIP(ip string) http.RoundTripper {
 				// 使用替换后的地址尝试建立QUIC连接。
 				conn, err := tr.DialEarly(ctx, a, tlsConf, quicConf)
 				if err != nil {
-					fmt.Println("http3连接失败", host, port /*  conn.LocalAddr(), conn.RemoteAddr() */)
+					log.Println("http3连接失败", host, port /*  conn.LocalAddr(), conn.RemoteAddr() */)
 					return nil, err
 				}
-				fmt.Println("http3连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())
+				log.Println("http3连接成功", host, port, conn.LocalAddr(), conn.RemoteAddr())
 				return conn, err
 			},
 		}
@@ -109,7 +109,7 @@ func CreateHTTP3TransportWithIPGetter(getter func() (string, error)) adapter.HTT
 			// x := mapconnection[ServerName]
 			// if x != nil {
 
-			// 	fmt.Println("使用quic缓存连接", ServerName, addr, x.LocalAddr(), x.RemoteAddr())
+			// 	log.Println("使用quic缓存连接", ServerName, addr, x.LocalAddr(), x.RemoteAddr())
 			// 	return x, nil
 			// }
 			// 分解地址并替换为指定的IP地址。

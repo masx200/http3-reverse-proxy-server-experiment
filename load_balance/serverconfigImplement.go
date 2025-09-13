@@ -1,11 +1,12 @@
 package load_balance
 
 import (
-	"fmt"
-	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
+	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/masx200/http3-reverse-proxy-server-experiment/generic"
 	// "time"
 )
 
@@ -47,7 +48,7 @@ func (s *ServerConfigImplement) GetPassiveHealthyCheckEnabled() bool {
 
 // OnUpstreamHealthy implements ServerConfigCommon.
 func (s *ServerConfigImplement) OnUpstreamHealthy() {
-	fmt.Println("OnUpstreamHealthy", s.GetIdentifier())
+	log.Println("OnUpstreamHealthy", s.GetIdentifier())
 }
 
 // SetActiveHealthyCheckEnabled implements ServerConfigCommon.
@@ -84,7 +85,7 @@ func (s *ServerConfigImplement) GetActiveHealthyCheckURL() string {
 // OnUpstreamFailure implements ServerConfigCommon.
 func (s *ServerConfigImplement) OnUpstreamFailure() {
 
-	fmt.Println("OnUpstreamFailure", s.GetIdentifier())
+	log.Println("OnUpstreamFailure", s.GetIdentifier())
 
 	if !s.PassiveHealthyCheckEnabled {
 		return

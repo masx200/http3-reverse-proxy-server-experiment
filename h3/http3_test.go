@@ -3,8 +3,9 @@ package h3
 import (
 	// "context"
 	// "crypto/tls"
-	"fmt"
+
 	"io"
+	"log"
 
 	// "net"
 	// "net/http"
@@ -37,7 +38,7 @@ func TestHttp3ViaIP(t *testing.T) {
 		// 使用指定的IP地址发起HTTP GET请求
 		resp, err := FetchHttp3WithIP(ip, url)
 		if err != nil {
-			fmt.Println("Error:", err)
+			log.Println("Error:", err)
 			// t.Errorf(err.Error())
 			// eee = err
 			failure += 1
@@ -48,18 +49,18 @@ func TestHttp3ViaIP(t *testing.T) {
 		defer resp.Body.Close()
 		// 读取并打印响应体内容
 		body, _ := io.ReadAll(resp.Body)
-		fmt.Println("Response:", string(body))
+		log.Println("Response:", string(body))
 		success += 1
 		continue
 	}
 
 	if failure > 0 {
-		fmt.Println("Error:", "have failure test")
+		log.Println("Error:", "have failure test")
 		// t.Errorf("No successful test")
 	}
 	if success == 0 {
-		fmt.Println("Error:", "No successful test")
+		log.Println("Error:", "No successful test")
 		t.Errorf("No successful test")
 	}
-	fmt.Println("http3 Success:", success)
+	log.Println("http3 Success:", success)
 }

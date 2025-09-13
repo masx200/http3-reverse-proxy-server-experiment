@@ -1,7 +1,7 @@
 package h3
 
 import (
-	"fmt"
+	"log"
 	"testing"
 )
 
@@ -20,7 +20,7 @@ func TestCheckHttp3ViaDNS(t *testing.T) {
 	if !supportsH3 {
 		t.Errorf("expected H3 support, but got false")
 	}
-	fmt.Println("H3 support:", supportsH3, domain, port)
+	log.Println("H3 support:", supportsH3, domain, port)
 }
 func TestCheckHttp3ViaHttp2(t *testing.T) {
 	port := "443"
@@ -34,5 +34,5 @@ func TestCheckHttp3ViaHttp2(t *testing.T) {
 	if !supportsH3 {
 		t.Errorf("expected H3 support, but got false")
 	}
-	fmt.Println("H3 support:", supportsH3, domain, port)
+	log.Println("H3 support:", supportsH3, domain, port)
 }

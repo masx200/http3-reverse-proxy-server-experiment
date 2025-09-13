@@ -3,7 +3,6 @@ package dns
 import (
 	// "context"
 	"errors"
-	"fmt"
 	"log"
 	"testing"
 
@@ -27,10 +26,10 @@ func TestDOQ(t *testing.T) {
 		qA.SetQuestion(domain+".", dns.TypeA)
 		respA, err := DoQClient(&qA, doqServer) //client.Send(context.Background(), &qA)
 		if err != nil {
-			fmt.Println("Error querying A record:", err)
+			log.Println("Error querying A record:", err)
 			t.Fatal(err)
 		} else {
-			fmt.Println("A Record Response:", respA.String())
+			log.Println("A Record Response:", respA.String())
 		}
 		if respA.Rcode != dns.RcodeSuccess {
 			log.Println(dns.RcodeToString[respA.Rcode])
@@ -50,10 +49,10 @@ func TestDOQ(t *testing.T) {
 			qAAAA.SetQuestion(domain+".", dns.TypeAAAA)
 			respAAAA, err := DoQClient(&qAAAA, doqServer) //client.Send(context.Background(), &qAAAA)
 			if err != nil {
-				fmt.Println("Error querying AAAA record:", err)
+				log.Println("Error querying AAAA record:", err)
 				t.Fatal(err)
 			} else {
-				fmt.Println("AAAA Record Response:", respAAAA.String())
+				log.Println("AAAA Record Response:", respAAAA.String())
 			}
 			if respAAAA.Rcode != dns.RcodeSuccess {
 				log.Println(dns.RcodeToString[qAAAA.Rcode])
@@ -74,10 +73,10 @@ func TestDOQ(t *testing.T) {
 			qHTTPS.SetQuestion(domain+".", dns.TypeHTTPS)
 			respHTTPS, err := DoQClient(&qHTTPS, doqServer) //client.Send(context.Background(), &qHTTPS)
 			if err != nil {
-				fmt.Println("Error querying HTTPS record:", err)
+				log.Println("Error querying HTTPS record:", err)
 				t.Fatal(err)
 			} else {
-				fmt.Println("HTTPS Record Response:", respHTTPS.String())
+				log.Println("HTTPS Record Response:", respHTTPS.String())
 			}
 			if respHTTPS.Rcode != dns.RcodeSuccess {
 				log.Println(dns.RcodeToString[respHTTPS.Rcode])
@@ -115,10 +114,10 @@ func TestDOQ2(t *testing.T) {
 		qA.SetQuestion(domain+".", dns.TypeA)
 		respA, err := DoQClient(&qA, doqServer) //client.Send(context.Background(), &qA)
 		if err != nil {
-			fmt.Println("Error querying A record:", err)
+			log.Println("Error querying A record:", err)
 			t.Fatal(err)
 		} else {
-			fmt.Println("A Record Response:", respA.String())
+			log.Println("A Record Response:", respA.String())
 		}
 		if respA.Rcode != dns.RcodeSuccess {
 			log.Println(dns.RcodeToString[respA.Rcode])
@@ -138,10 +137,10 @@ func TestDOQ2(t *testing.T) {
 			qAAAA.SetQuestion(domain+".", dns.TypeAAAA)
 			respAAAA, err := DoQClient(&qAAAA, doqServer) //client.Send(context.Background(), &qAAAA)
 			if err != nil {
-				fmt.Println("Error querying AAAA record:", err)
+				log.Println("Error querying AAAA record:", err)
 				t.Fatal(err)
 			} else {
-				fmt.Println("AAAA Record Response:", respAAAA.String())
+				log.Println("AAAA Record Response:", respAAAA.String())
 			}
 			if respAAAA.Rcode != dns.RcodeSuccess {
 				log.Println(dns.RcodeToString[qAAAA.Rcode])
@@ -162,10 +161,10 @@ func TestDOQ2(t *testing.T) {
 			qHTTPS.SetQuestion(domain+".", dns.TypeHTTPS)
 			respHTTPS, err := DoQClient(&qHTTPS, doqServer) //client.Send(context.Background(), &qHTTPS)
 			if err != nil {
-				fmt.Println("Error querying HTTPS record:", err)
+				log.Println("Error querying HTTPS record:", err)
 				t.Fatal(err)
 			} else {
-				fmt.Println("HTTPS Record Response:", respHTTPS.String())
+				log.Println("HTTPS Record Response:", respHTTPS.String())
 			}
 			if respHTTPS.Rcode != dns.RcodeSuccess {
 				log.Println(dns.RcodeToString[respHTTPS.Rcode])

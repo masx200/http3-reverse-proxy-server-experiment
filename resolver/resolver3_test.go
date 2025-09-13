@@ -1,7 +1,7 @@
 package resolver
 
 import (
-	"fmt"
+	"log"
 	"testing"
 
 	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
@@ -16,13 +16,13 @@ func TestResolver7(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }
 func TestResolver27(t *testing.T) {
@@ -32,13 +32,13 @@ func TestResolver27(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }
 func TestResolver73(t *testing.T) {
@@ -48,13 +48,13 @@ func TestResolver73(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }
 func GetQueryCallbacks7() generic.MapInterface[string, func(m *dns.Msg) (r *dns.Msg, err error)] {
@@ -76,13 +76,13 @@ func TestResolver47(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }
 func TestResolverMultipleServers7(t *testing.T) {
@@ -92,12 +92,12 @@ func TestResolverMultipleServers7(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }

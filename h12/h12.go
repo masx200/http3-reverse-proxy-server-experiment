@@ -3,7 +3,7 @@ package h12
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"time"
@@ -50,7 +50,7 @@ func CreateHTTP12TransportWithIP(ip string) http.RoundTripper {
 				return nil, err
 			}
 			// 打印连接成功信息
-			fmt.Println("连接成功http1", host, port, conn.LocalAddr(), conn.RemoteAddr())
+			log.Println("连接成功http1", host, port, conn.LocalAddr(), conn.RemoteAddr())
 			return conn, err
 		},
 		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -64,7 +64,7 @@ func CreateHTTP12TransportWithIP(ip string) http.RoundTripper {
 				return nil, err
 			}
 			// 打印TLS连接成功信息
-			fmt.Println("连接成功http2", host, port, conn.LocalAddr(), conn.RemoteAddr())
+			log.Println("连接成功http2", host, port, conn.LocalAddr(), conn.RemoteAddr())
 			// 返回配置好的TLS连接
 			return tls.Client(conn, &tls.Config{
 				ServerName: host, // 使用原始域名，而不是IP地址，这对于证书匹配很重要
@@ -99,11 +99,11 @@ func CreateHTTP12TransportWithIPGetter(getter func() string) adapter.HTTPRoundTr
 			var ip = getter()
 			conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
 			if err != nil {
-				fmt.Println("连接失败http2", host, port)
+				log.Println("连接失败http2", host, port)
 				return nil, err
 			}
 			// 打印TLS连接成功信息
-			fmt.Println("连接成功http2", host, port, conn.LocalAddr(), conn.RemoteAddr())
+			log.Println("连接成功http2", host, port, conn.LocalAddr(), conn.RemoteAddr())
 			// 返回配置好的TLS连接
 			return tls.Client(conn, cfg), /* &tls.Config{
 					ServerName: host, // 使用原始域名，而不是IP地址，这对于证书匹配很重要
@@ -119,11 +119,11 @@ func CreateHTTP12TransportWithIPGetter(getter func() string) adapter.HTTPRoundTr
 			// 使用指定的IP地址拨号连接
 			conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
 			if err != nil {
-				fmt.Println("连接失败http1", host, port)
+				log.Println("连接失败http1", host, port)
 				return nil, err
 			}
 			// 打印连接成功信息
-			fmt.Println("连接成功http1", host, port, conn.LocalAddr(), conn.RemoteAddr())
+			log.Println("连接成功http1", host, port, conn.LocalAddr(), conn.RemoteAddr())
 			return conn, err
 		},
 	}
@@ -166,11 +166,11 @@ func CreateHTTP2TransportWithIPGetter(getter func() string) http.RoundTripper {
 			var ip = getter()
 			conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
 			if err != nil {
-				fmt.Println("连接失败http2", host, port)
+				log.Println("连接失败http2", host, port)
 				return nil, err
 			}
 			// 打印TLS连接成功信息
-			fmt.Println("连接成功http2", host, port, conn.LocalAddr(), conn.RemoteAddr())
+			log.Println("连接成功http2", host, port, conn.LocalAddr(), conn.RemoteAddr())
 			// 返回配置好的TLS连接
 			return tls.Client(conn, cfg), /* &tls.Config{
 					ServerName: host, // 使用原始域名，而不是IP地址，这对于证书匹配很重要

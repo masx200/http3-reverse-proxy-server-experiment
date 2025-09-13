@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"log"
 	"strings"
 	"sync"
 
@@ -24,7 +24,7 @@ func main() {
 
 	// 必需参数检查
 	if *domain == "" || *dohurl == "" {
-		fmt.Println("错误：必须提供-domain和-dohurl参数")
+		log.Println("错误：必须提供-domain和-dohurl参数")
 		flag.Usage()
 		return
 	}
@@ -36,25 +36,25 @@ func main() {
 }
 
 func doh3nslookup(domain string, dnstype string, dohurl string, dohip ...string) {
-	fmt.Println("domain:", domain, "dnstype:", dnstype, "dohurl:", dohurl)
+	log.Println("domain:", domain, "dnstype:", dnstype, "dohurl:", dohurl)
 	var wg sync.WaitGroup
 	for _, d := range strings.Split(domain, ",") {
 		for _, t := range strings.Split(dnstype, ",") {
 			wg.Add(1)
 			go func(d string, t string) {
 				defer wg.Done()
-				fmt.Println("domain:", d, "dnstype:", t, "dohurl:", dohurl)
+				log.Println("domain:", d, "dnstype:", t, "dohurl:", dohurl)
 				var msg = &dns.Msg{}
 				msg.SetQuestion(d+".", dns.StringToType[t])
-				fmt.Println(msg.String())
+				log.Println(msg.String())
 
 				res, err := h3_experiment.DoHTTP3Client(msg, dohurl, dohip...)
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
 					return
 
 				}
-				fmt.Println(res.String())
+				log.Println(res.String())
 			}(d, t)
 
 		}

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net"
 	"time"
+
 	// "crypto/tls"
 	// "fmt"
 	// "io"
@@ -65,7 +66,7 @@ func DNSQueryHTTPS(domain string, port string, DOHServer string) ([]dns.SVCB, er
 	for _, answer := range resp.Answer {
 		log.Println(answer)
 		if a, ok := answer.(*dns.HTTPS); ok {
-			fmt.Printf(DOHServer+"-https record for %s: \n", domain)
+			log.Printf(DOHServer+"-https record for %s: \n", domain)
 			result = append(result, a.SVCB)
 
 		}
@@ -222,10 +223,10 @@ func PrintResponse(resp *http.Response) {
 // 返回一个包含DNS应答信息的dns.Msg结构体指针和一个错误信息。
 // 如果成功，错误信息为nil；如果发生错误，则返回相应的错误信息。
 func DoQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
-	fmt.Println("doQServerURL", doQServerURL)
+	log.Println("doQServerURL", doQServerURL)
 	urlWithPort, err := setPortIfMissing(doQServerURL)
 	if err != nil {
-		fmt.Println(doQServerURL, "Error:", err)
+		log.Println(doQServerURL, "Error:", err)
 		return nil, err
 	}
 	doQServerURL = urlWithPort
@@ -240,9 +241,9 @@ func DoQClient(msg *dns.Msg, doQServerURL string) (qA *dns.Msg, err error) {
 		return nil, err                // 如果有错误，返回nil和错误信息
 	}
 	var addr = fmt.Sprintf("%s:%s", serverName, port) // 格式化服务器地址
-	fmt.Println("addr", addr)
+	log.Println("addr", addr)
 	// 创建一个DOQ客户端
-	client := doq.NewClient(addr, )
+	client := doq.NewClient(addr)
 	// 发送DNS查询并获取应答
 	respA, err := client.Send(context.Background(), msg)
 	if err != nil {
@@ -276,10 +277,10 @@ func ExtractDOQServerDetails(doqServer string) (string, string, error) {
 // 返回值 qA: 发送查询后收到的应答消息，为dns.Msg对象。
 // 返回值 err: 如果在进行DNS查询过程中遇到错误，则返回错误信息。
 func DoTClient(msg *dns.Msg, doTServerURL string) (qA *dns.Msg, err error) {
-	fmt.Println("doTServerURL", doTServerURL)
+	log.Println("doTServerURL", doTServerURL)
 	urlWithPort, err := setPortIfMissing(doTServerURL)
 	if err != nil {
-		fmt.Println(doTServerURL, "Error:", err)
+		log.Println(doTServerURL, "Error:", err)
 		return nil, err
 	}
 	doTServerURL = urlWithPort
@@ -294,7 +295,7 @@ func DoTClient(msg *dns.Msg, doTServerURL string) (qA *dns.Msg, err error) {
 		return nil, err                // 如果解析出错，则返回nil和错误信息
 	}
 	var addr = fmt.Sprintf("%s:%s", serverName, port) // 拼接服务器的地址信息
-	fmt.Println("addr", addr)
+	log.Println("addr", addr)
 	// 创建一个支持TCP-TLS的DOQ客户端实例。
 	client := new(dns.Client)
 	client.Net = "tcp-tls"

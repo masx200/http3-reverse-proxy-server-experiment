@@ -1,7 +1,7 @@
 package resolver
 
 import (
-	"fmt"
+	"log"
 	"testing"
 
 	dns_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/dns"
@@ -16,13 +16,13 @@ func TestResolver9(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }
 func TestResolver28(t *testing.T) {
@@ -32,13 +32,13 @@ func TestResolver28(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }
 func TestResolver37(t *testing.T) {
@@ -48,13 +48,13 @@ func TestResolver37(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }
 func GetQueryCallbacks14() generic.MapInterface[string, func(m *dns.Msg) (r *dns.Msg, err error)] {
@@ -91,13 +91,13 @@ func TestResolver42(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }
 func TestResolverMultipleServers2(t *testing.T) {
@@ -107,13 +107,13 @@ func TestResolverMultipleServers2(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }
 func TestResolver424(t *testing.T) {
@@ -123,13 +123,13 @@ func TestResolver424(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }
 func TestResolverMultipleServers24(t *testing.T) {
@@ -139,13 +139,13 @@ func TestResolverMultipleServers24(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }
 func TestResolverMultipleServers234(t *testing.T) {
@@ -155,12 +155,12 @@ func TestResolverMultipleServers234(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		t.Error(err)
 		return
 	}
 
 	for _, result := range results {
-		fmt.Println(x, result)
+		log.Println(x, result)
 	}
 }

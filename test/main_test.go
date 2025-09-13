@@ -67,9 +67,9 @@ func TestMain(t *testing.T) {
 	// // 定义上游服务器地址
 	// var upstreamServers = []string{"https://quic.nginx.org/", "https://production.hello-word-worker.masx200.workers.dev/"}
 	//打印上游
-	// fmt.Println("Upstream servers:")
+	// log.Println("Upstream servers:")
 	// for _, server := range upstreamServers {
-	// 	fmt.Println(server)
+	// 	log.Println(server)
 	// }
 
 	// var expires = int64(0)
@@ -237,11 +237,11 @@ func TestMain(t *testing.T) {
 // 	}
 
 // 	// 打印状态码信息
-// 	fmt.Printf("health check Status code: %d\n", statusCode)
+// 	log.Printf("health check Status code: %d\n", statusCode)
 
 // 	// 根据状态码判断上游服务的健康状态
 // 	if statusCode < 500 {
-// 		fmt.Println("Status code is less than 500.")
+// 		log.Println("Status code is less than 500.")
 // 		return true, nil
 // 	} else {
 // 		log.Println("ERROR:"+"Status code is 500 or greater.", statusCode)
@@ -529,8 +529,8 @@ func LoopDetect() gin.HandlerFunc {
 
 // 	// 检查当前上游服务器列表是否已过期。
 // 	if getExpires() > time.Now().UnixMilli() {
-// 		fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
-// 		fmt.Println("健康的上游服务器", getHealthyUpstream())
+// 		log.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
+// 		log.Println("健康的上游服务器", getHealthyUpstream())
 // 		return getHealthyUpstream()
 // 	}
 
@@ -540,12 +540,12 @@ func LoopDetect() gin.HandlerFunc {
 // 		mutex2.Lock()
 // 		defer mutex2.Unlock()
 // 		if getExpires() > time.Now().UnixMilli() {
-// 			fmt.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
-// 			fmt.Println("健康的上游服务器", getHealthyUpstream())
+// 			log.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
+// 			log.Println("健康的上游服务器", getHealthyUpstream())
 // 			return
 // 		}
 // 		var healthy = map[string]func(*http.Request) (*http.Response, error){}
-// 		fmt.Println("需要进行健康检查", "已经过期的时间毫秒", -getExpires()+time.Now().UnixMilli())
+// 		log.Println("需要进行健康检查", "已经过期的时间毫秒", -getExpires()+time.Now().UnixMilli())
 // 		//需要并行检查
 // 		// 遍历所有上游服务器进行健康检查。
 // 		var promises = make(chan struct{}, len(transportsUpstream))
@@ -561,7 +561,7 @@ func LoopDetect() gin.HandlerFunc {
 // 				//loop variable roundTrip captured by func literal loop closure
 // 				if ok, err := checkUpstreamHealth(upstreamServer, roundTripi0); ok {
 // 					healthy[keyi0] = roundTripi0
-// 					fmt.Println("健康检查成功", keyi0, upstreamServer)
+// 					log.Println("健康检查成功", keyi0, upstreamServer)
 // 				} else {
 
 // 					log.Println("健康检查失败", keyi0, upstreamServer, err)
@@ -576,10 +576,10 @@ func LoopDetect() gin.HandlerFunc {
 // 		// 根据健康检查结果更新健康上游服务器列表。
 // 		if len(healthy) == 0 {
 // 			setHealthyUpstream(transportsUpstream)
-// 			fmt.Println("没有健康的上游服务器", getHealthyUpstream())
+// 			log.Println("没有健康的上游服务器", getHealthyUpstream())
 // 		} else {
 // 			setHealthyUpstream(healthy)
-// 			fmt.Println("找到健康的上游服务器", getHealthyUpstream())
+// 			log.Println("找到健康的上游服务器", getHealthyUpstream())
 // 		}
 
 // 		// 设置上游服务器列表的新过期时间。
@@ -658,7 +658,7 @@ func LoopDetect() gin.HandlerFunc {
 // - error：如果在发送请求时遇到错误，则返回错误信息；否则为nil。
 // func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Response, error), req *http.Request, upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string]) (*http.Response, error) {
 // 	// 打印传入的运输函数列表
-// 	fmt.Println("接收到的可用上游服务器:", roundTripper)
+// 	log.Println("接收到的可用上游服务器:", roundTripper)
 
 // 	PrintRequest(req)
 // 	var roundTripperArray = mapToArray(roundTripper)

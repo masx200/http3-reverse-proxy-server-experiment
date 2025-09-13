@@ -22,7 +22,7 @@ func main() {
 		Addr:    ":8080",
 		Handler: h2c.NewHandler(handler, h2s),
 	}
-	fmt.Println("http server Listening on :8080")
+	log.Println("http server Listening on :8080")
 	log.Fatal(h1s.ListenAndServe())
 
 }

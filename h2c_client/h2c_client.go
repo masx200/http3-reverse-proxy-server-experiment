@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -36,6 +35,6 @@ func main() {
 		log.Fatalf("读取响应失败: %s", err)
 	}
 
-	fmt.Printf("StatusCode"+"获取响应 %d: \nbody: %s\n", resp.StatusCode, string(body))
-	fmt.Println("headers", resp.Header)
+	log.Printf("StatusCode"+"获取响应 %d: \nbody: %s\n", resp.StatusCode, string(body))
+	log.Println("headers", resp.Header)
 }

@@ -78,7 +78,7 @@ func DnsResolverMultipleServers(domain string, queryCallbacks generic.MapInterfa
 				return result, nil
 			}, domain, options.HttpsPort, options)
 			if err != nil {
-				fmt.Printf("Error resolving domain %s: %v\n", domain, err)
+				log.Printf("Error resolving domain %s: %v\n", domain, err)
 				return
 			}
 			resultsMutex.Lock()
@@ -145,7 +145,7 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 			resultsMutex.Lock()
 			defer resultsMutex.Unlock()
 			if err != nil {
-				fmt.Printf("Error querying A record for %s: %v\n", domain, err)
+				log.Printf("Error querying A record for %s: %v\n", domain, err)
 				errs = append(errs, err)
 				return
 			}
@@ -159,7 +159,7 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 			defer resultsMutex.Unlock()
 			if err != nil {
 				errs = append(errs, err)
-				fmt.Printf("Error querying AAAA record for %s: %v\n", domain, err)
+				log.Printf("Error querying AAAA record for %s: %v\n", domain, err)
 				return
 			}
 
@@ -174,7 +174,7 @@ func DnsResolver(queryCallback func(m *dns.Msg) (r *dns.Msg, err error), domain 
 			defer resultsMutex.Unlock()
 			if err != nil {
 				errs = append(errs, err)
-				fmt.Printf("Error querying HTTPS record for %s: %v\n", domain, err)
+				log.Printf("Error querying HTTPS record for %s: %v\n", domain, err)
 				return
 			}
 
@@ -208,7 +208,7 @@ func resolve(recordType uint16, QueryCallback func(m *dns.Msg) (r *dns.Msg, err 
 		m.SetQuestion(dns.Fqdn(domain), recordType)
 	}
 
-	fmt.Println(m)
+	log.Println(m)
 	resp, err := QueryCallback(m)
 	if err != nil {
 		return nil, err
@@ -223,7 +223,7 @@ func resolve(recordType uint16, QueryCallback func(m *dns.Msg) (r *dns.Msg, err 
 			"dns server  response error No  records found:" + m.Question[0].String(),
 		)
 	}
-	fmt.Println(resp)
+	log.Println(resp)
 	var results []string
 	for _, answer := range resp.Answer {
 		switch record := answer.(type) {

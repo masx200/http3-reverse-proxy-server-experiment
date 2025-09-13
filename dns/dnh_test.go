@@ -2,7 +2,6 @@ package dns
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"testing"
 
@@ -48,7 +47,7 @@ func TestDOH(t *testing.T) {
 				for _, answer := range resp.Answer {
 					log.Println(answer)
 					if a, ok := answer.(*dns.AAAA); ok {
-						fmt.Printf(dohServer+"-Aaaa record for %s: %s\n", domain, a.AAAA)
+						log.Printf(dohServer+"-Aaaa record for %s: %s\n", domain, a.AAAA)
 					}
 				}
 				return nil
@@ -76,7 +75,7 @@ func TestDOH(t *testing.T) {
 				for _, answer := range resp.Answer {
 					log.Println(answer)
 					if a, ok := answer.(*dns.A); ok {
-						fmt.Printf(dohServer+"-A record for %s: %s\n", domain, a.A)
+						log.Printf(dohServer+"-A record for %s: %s\n", domain, a.A)
 					}
 				}
 				return nil
@@ -103,12 +102,12 @@ func TestDOH(t *testing.T) {
 				for _, answer := range resp.Answer {
 					log.Println(answer)
 					if a, ok := answer.(*dns.HTTPS); ok {
-						fmt.Printf(dohServer+"-https record for %s: \n", domain)
+						log.Printf(dohServer+"-https record for %s: \n", domain)
 
 						for _, v := range a.SVCB.Value {
 
-							fmt.Printf("%s", v.Key().String()+"="+v.String())
-							fmt.Println()
+							log.Printf("%s", v.Key().String()+"="+v.String())
+							log.Println()
 						}
 					}
 				}

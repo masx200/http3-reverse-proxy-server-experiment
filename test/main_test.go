@@ -1,3 +1,27 @@
+// Package main - HTTP3/HTTP2 反向代理服务器测试
+//
+// 这个文件实现了一个完整的HTTP3/HTTP2反向代理服务器测试套件，主要功能包括：
+//   - 支持HTTP/3和HTTP/2协议的反向代理
+//   - 实现了基于单主机的负载均衡策略
+//   - 提供主动和被动的健康检查机制
+//   - 包含请求转发循环检测中间件
+//   - 支持HTTPS和HTTP协议自动切换
+//   - 集成了请求/响应日志打印功能
+//   - 使用Gin框架作为HTTP服务器引擎
+//
+// 测试场景：
+//   - 测试反向代理的基本功能
+//   - 验证负载均衡策略
+//   - 检测请求转发循环
+//   - 测试健康检查机制
+//   - 验证协议协商和头部处理
+//
+// 配置说明：
+//   - 上游服务器：https://quic.nginx.org/
+//   - HTTPS端口：18443
+//   - 启用主动和被动健康检查
+//
+// 注意：此文件为测试文件，包含一些被注释的代码用于演示和测试目的。
 package main
 
 import (
@@ -8,15 +32,6 @@ import (
 	// "crypto/tls"
 	"fmt"
 	"log"
-
-	"github.com/gin-gonic/gin"
-	// "github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
-	// "github.com/masx200/http3-reverse-proxy-server-experiment/generic"
-	"github.com/masx200/http3-reverse-proxy-server-experiment/load_balance"
-	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
-
-	// "github.com/quic-go/quic-go"
-	// "github.com/quic-go/quic-go/http3"
 
 	// "math/rand"
 	// "net"
@@ -29,6 +44,14 @@ import (
 	"strings"
 	// "sync"
 	// "time"
+
+	"github.com/gin-gonic/gin"
+	// "github.com/masx200/http3-reverse-proxy-server-experiment/adapter"
+	// "github.com/masx200/http3-reverse-proxy-server-experiment/generic"
+	"github.com/masx200/http3-reverse-proxy-server-experiment/load_balance"
+	print_experiment "github.com/masx200/http3-reverse-proxy-server-experiment/print"
+	// "github.com/quic-go/quic-go"
+	// "github.com/quic-go/quic-go/http3"
 )
 
 // 主程序入口
@@ -222,59 +245,6 @@ func TestMain(t *testing.T) {
 	// // log.Fatal(errx)
 }
 
-// checkUpstreamHealth 检查上游服务的健康状态
-// url: 要检查的服务的URL地址
-// RoundTrip: 用于发送HTTP请求的函数，模拟HTTP客户端的行为
-// 返回值: 返回一个布尔值，表示上游服务的健康状态，true为健康，false为不健康
-
-// func checkUpstreamHealth(url string, RoundTrip func(*http.Request) (*http.Response, error)) (bool, error) {
-
-// 	// 发送HEAD请求并检查返回的状态码
-// 	statusCode, err := sendHeadRequestAndCheckStatus(url, RoundTrip)
-// 	if err != nil {
-// 		log.Printf("Error: %v\n", err)
-// 		return false, err
-// 	}
-
-// 	// 打印状态码信息
-// 	log.Printf("health check Status code: %d\n", statusCode)
-
-// 	// 根据状态码判断上游服务的健康状态
-// 	if statusCode < 500 {
-// 		log.Println("Status code is less than 500.")
-// 		return true, nil
-// 	} else {
-// 		log.Println("ERROR:"+"Status code is 500 or greater.", statusCode)
-
-// 	}
-// 	return false,  errors.New("ERROR:Status code is 500 or greater" + fmt.Sprint(statusCode))
-// }
-
-// sendHeadRequestAndCheckStatus 发送一个HEAD请求并检查状态码。
-// url: 请求的目标URL。
-// RoundTrip: 自定义的HTTP.RoundTripper函数，用于发送请求。
-// 返回值: 请求的状态码和可能出现的错误。
-// func sendHeadRequestAndCheckStatus(url string, RoundTrip func(*http.Request) (*http.Response, error)) (int, error) {
-// 	client := &http.Client{}
-
-// 	client.Transport = adapter.RoundTripTransport(RoundTrip)
-// 	req, err := http.NewRequest("HEAD", url, nil)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	PrintRequest(req)
-// 	resp, err := client.Do(req)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	defer resp.Body.Close()
-// 	PrintResponse(resp)
-// 	return resp.StatusCode, nil
-// }
-
-// refreshHealthyUpStreams加锁操作
-// var mutex sync.Mutex
-
 // Forwarded 创建并返回一个 gin.HandlerFunc，用于在 HTTP 请求的 Header 中添加 "Forwarded" 信息。
 // 这个信息包含了客户端的 IP 地址、代理的标识、原始请求的目标主机名以及使用的协议（HTTP 或 HTTPS）。
 // 返回值是一个处理 gin.Context 的函数。
@@ -395,306 +365,6 @@ func LoopDetect() gin.HandlerFunc {
 		c.Next()
 	}
 }
-
-// LoadBalanceHandler 是一个用于负载均衡处理的结构体。
-
-// ServeHTTP 是一个实现http.Handler接口的方法，用于处理HTTP请求。
-// 参数w是用于向客户端发送响应的http.ResponseWriter，
-// 参数req是客户端发来的HTTP请求。
-// ChangeURLScheme 用于更改给定URL的协议。
-//
-// 参数：
-// originalURLStr: 原始URL字符串，需要被更改协议的URL。
-// newScheme: 新的协议名称，例如："https"。
-//
-// 返回值：
-// 返回更改协议后的URL字符串和一个error。
-// 如果解析原始URL或生成新URL时发生错误，将返回一个非空的error。
-
-// func ChangeURLScheme(originalURLStr string, newScheme string) (string, error) {
-// 	// Parse the original URL
-// 	originalURL, err := url.Parse(originalURLStr)
-// 	if err != nil {
-// 		return "",  errors.New("failed to parse the original URL: %v", err)
-// 	}
-
-// 	// Modify the scheme
-// 	originalURL.Scheme = newScheme
-
-// 	// Return the string representation of the modified URL
-// 	return originalURL.String(), nil
-// }
-
-// createReverseProxy 创建一个反向代理，根据上游服务器的健康状况动态选择HTTP/3或HTTP/2进行通信。
-//
-// 参数:
-// upstreamServer - 上游服务器的URL字符串。
-//
-// 返回值:
-// *httputil.ReverseProxy - 配置好的反向代理实例。
-// error - 创建过程中遇到的任何错误。
-// func createReverseProxy(upstreamServer string, maxAge int64) (*httputil.ReverseProxy, error) {
-// 	// 解析上游服务器URL，确保其路径为根路径或为空
-// 	upstreamURL, err := url.Parse(upstreamServer)
-// 	if err != nil {
-// 		log.Printf("Failed to parse upstream server URL: %v", err)
-// 		return nil, err
-// 	}
-// 	if upstreamURL.Path != "/" && upstreamURL.Path != "" {
-// 		log.Printf("upstreamServer Path must be / or empty")
-// 		return nil, err
-// 	}
-
-// 	// 初始化HTTP/3客户端
-// 	http3Client := &http.Client{
-// 		Transport: &http3.RoundTripper{
-// 			TLSClientConfig: &tls.Config{},
-// 			QuicConfig:      &quic.Config{},
-// 		},
-// 	}
-// 	// 初始化HTTP/2客户端，使用默认传输
-// 	http2Client := &http.Client{
-// 		Transport: http.DefaultTransport,
-// 	}
-// 	http3url, err := ChangeURLScheme(upstreamServer, "http3")
-// 	if err != nil {
-// 		return nil,  errors.New("failed to parse upstream server URL: %v", err)
-// 	}
-// 	var http12url string
-// 	if upstreamURL.Scheme == "http" {
-// 		http12urlll, err := ChangeURLScheme(upstreamServer, "http1")
-// 		if err != nil {
-// 			return nil,  errors.New("failed to parse upstream server URL: %v", err)
-// 		}
-// 		http12url = http12urlll
-// 	} else {
-// 		http12urlll, err := ChangeURLScheme(upstreamServer, "http2")
-// 		if err != nil {
-// 			return nil,  errors.New("failed to parse upstream server URL: %v", err)
-// 		}
-// 		http12url = http12urlll
-// 	}
-
-// 	// 定义上游服务器的传输方式，包括HTTP/3和HTTP/2
-// 	var transportsUpstream = map[string]func(*http.Request) (*http.Response, error){
-// 		http3url: func(req *http.Request) (*http.Response, error) { return http3Client.Transport.RoundTrip(req) },
-
-// 		http12url: func(req *http.Request) (*http.Response, error) { return http2Client.Transport.RoundTrip(req) },
-// 	}
-// 	var upstreamServerOfName = map[string]string{}
-
-// 	for k := range transportsUpstream {
-// 		upstreamServerOfName[k] = upstreamServer
-// 	}
-// 	// 设置健康检查的超时时间毫秒
-
-// 	var expires = int64(0)
-// 	var healthyUpstream = transportsUpstream
-// 	var mutex2 sync.Mutex
-// 	// 自定义负载均衡的传输器，根据上游服务器的健康状况选择传输方式
-// 	customTransport := &customRoundTripperLoadBalancer{
-// 		upstreamURL: upstreamURL,
-// 		getTransportHealthy: func() map[string]func(*http.Request) (*http.Response, error) {
-// 			// 对上游服务器进行健康检查，选择健康的传输方式
-// 			return refreshHealthyUpStreams(func() int64 { return expires }, func() map[string]func(*http.Request) (*http.Response, error) { return healthyUpstream }, transportsUpstream, upstreamServerOfName, maxAge, func(i int64) { expires = i }, func(transportsUpstream map[string]func(*http.Request) (*http.Response, error)) {
-// 				healthyUpstream = transportsUpstream
-// 			}, &mutex2)
-// 		},
-// 	}
-
-// 	// 初始化反向代理
-// 	proxy := httputil.NewSingleHostReverseProxy(upstreamURL)
-
-// 	// 设置反向代理的传输器为自定义的负载均衡传输器
-// 	proxy.Transport = customTransport
-// 	return proxy, err
-// }
-
-// refreshHealthyUpStreams 刷新健康状态的上游服务器。
-// 此函数会根据上游服务器的当前健康状态和过期时间来更新健康的上游服务器列表。
-//
-// 参数:
-// - getExpires: 获取当前上游服务器列表的过期时间的函数。
-// - healthyUpstream: 当前已知的健康上游服务器映射。
-// - transportsUpstream: 所有可用的上游服务器传输函数映射。
-// - upstreamServer: 上游服务器地址。
-// - maxAge: 上游服务器列表的有效期（毫秒）。
-// - setExpires: 设置上游服务器列表过期时间的函数。
-//
-// 返回值:
-// - 返回更新后的健康上游服务器映射。
-// func refreshHealthyUpStreams(getExpires func() int64, getHealthyUpstream func() map[string]func(*http.Request) (*http.Response, error), transportsUpstream map[string]func(*http.Request) (*http.Response, error), upstreamServerOfName map[string]string, maxAge int64, setExpires func(int64), setHealthyUpstream func(transportsUpstream map[string]func(*http.Request) (*http.Response, error)), mutex2 *sync.Mutex) map[string]func(*http.Request) (*http.Response, error) {
-// 	// mutex.Lock()
-// 	// defer mutex.Unlock()
-
-// 	// 检查当前上游服务器列表是否已过期。
-// 	if getExpires() > time.Now().UnixMilli() {
-// 		log.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
-// 		log.Println("健康的上游服务器", getHealthyUpstream())
-// 		return getHealthyUpstream()
-// 	}
-
-// 	// 在后台进行健康检查更新。
-// 	go func() {
-
-// 		mutex2.Lock()
-// 		defer mutex2.Unlock()
-// 		if getExpires() > time.Now().UnixMilli() {
-// 			log.Println("不需要进行健康检查", "还剩余的时间毫秒", getExpires()-time.Now().UnixMilli())
-// 			log.Println("健康的上游服务器", getHealthyUpstream())
-// 			return
-// 		}
-// 		var healthy = map[string]func(*http.Request) (*http.Response, error){}
-// 		log.Println("需要进行健康检查", "已经过期的时间毫秒", -getExpires()+time.Now().UnixMilli())
-// 		//需要并行检查
-// 		// 遍历所有上游服务器进行健康检查。
-// 		var promises = make(chan struct{}, len(transportsUpstream))
-// 		for key, roundTrip := range transportsUpstream {
-// 			keyi0 := key
-// 			roundTripi0 := roundTrip
-
-// 			go func() {
-// 				defer func() {
-// 					promises <- struct{}{}
-// 				}()
-// 				var upstreamServer = upstreamServerOfName[keyi0]
-// 				//loop variable roundTrip captured by func literal loop closure
-// 				if ok, err := checkUpstreamHealth(upstreamServer, roundTripi0); ok {
-// 					healthy[keyi0] = roundTripi0
-// 					log.Println("健康检查成功", keyi0, upstreamServer)
-// 				} else {
-
-// 					log.Println("健康检查失败", keyi0, upstreamServer, err)
-// 				}
-
-// 			}()
-
-// 		}
-// 		for range transportsUpstream {
-// 			<-promises
-// 		}
-// 		// 根据健康检查结果更新健康上游服务器列表。
-// 		if len(healthy) == 0 {
-// 			setHealthyUpstream(transportsUpstream)
-// 			log.Println("没有健康的上游服务器", getHealthyUpstream())
-// 		} else {
-// 			setHealthyUpstream(healthy)
-// 			log.Println("找到健康的上游服务器", getHealthyUpstream())
-// 		}
-
-// 		// 设置上游服务器列表的新过期时间。
-// 		var expires = time.Now().UnixMilli() + int64(maxAge)
-// 		setExpires(expires)
-// 	}()
-
-// 	// 返回当前的健康上游服务器列表。
-// 	return getHealthyUpstream()
-// }
-
-// customRoundTripperLoadBalancer 是一个自定义的负载均衡器，
-// 用于在多个上游服务之间进行请求的负载均衡。
-// type customRoundTripperLoadBalancer struct {
-// 	upstreamURL         *url.URL                                                      // upstreamURL 指定了上游服务的URL
-// 	getTransportHealthy func() map[string]func(*http.Request) (*http.Response, error) // getTransportHealthy 函数返回一个健康状态的传输函数列表
-// }
-
-// RoundTrip 是自定义负载均衡器的.RoundTrip方法，实现了http.RoundTripper接口。
-// 它负责将HTTP请求发送到上游服务，并返回响应。
-//
-// 参数:
-// req *http.Request - 需要发送的HTTP请求
-//
-// 返回值:
-// *http.Response - 上游服务返回的HTTP响应
-// error - 如果在发送请求过程中出现错误，则返回错误信息
-// func (c *customRoundTripperLoadBalancer) RoundTrip(req *http.Request) (*http.Response, error) {
-// 	var roundTripper = c.getTransportHealthy()
-// 	var upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string] = map[string]generic.PairInterface[string, string]{}
-// 	for k := range roundTripper {
-// 		upStreamServerSchemeAndHostOfName[k] = generic.NewPairImplement[string, string](c.upstreamURL.Scheme, c.upstreamURL.Host)
-// 	}
-// 	// 设置请求的Host为上游服务的Host
-// 	req.Host = c.upstreamURL.Host
-
-// 	PrintRequest(req) // 打印请求信息
-
-// 	// 使用随机负载均衡策略选择一个健康状态的传输函数，并执行请求
-// 	var rs, err = RandomLoadBalancer(roundTripper, req, upStreamServerSchemeAndHostOfName)
-
-// 	if err != nil {
-// 		log.Println("ERROR:", err) // 打印错误信息
-// 	} else {
-// 		PrintResponse(rs) // 打印响应信息
-// 	}
-// 	return rs, err
-// }
-
-// randomShuffle 函数用于对指定的切片进行随机打乱。
-// [T any] 表示该函数适用于任意类型的切片。
-// arr []T 是输入的切片，函数会对其原地打乱顺序。
-// 返回值 []T 是打乱后的切片。
-// func randomShuffle[T any](arr []T) []T {
-// 	// 使用当前时间的纳秒级种子初始化随机数生成器，以确保每次运行结果都不同。
-// 	return generic.RandomShuffle(arr)
-// } // mapToArray 将一个映射（map）转换为包含键值对（Pair）的切片（slice）。
-// 参数 m 是一个类型为 map[T]Y 的映射，其中 T 是可比较的类型，Y 是任意类型。
-// 返回值是一个类型为 []Pair[T, Y] 的切片，其中 Pair 是一个包含两个字段 First 和 Second 的结构体。
-// 这个函数主要用于将映射的键值对形式转换为切片形式，方便后续处理。
-
-// func mapToArray[T comparable, Y any](m map[T]Y) []generic.PairInterface[T, Y] {
-// 	result := make([]generic.PairInterface[T, Y], 0, len(m))
-// 	for key := range m {
-// 		result = append(result, generic.NewPairImplement[T, Y](key, m[key]))
-// 	}
-// 	return result
-// }
-
-// RandomLoadBalancer 是一个通过随机算法从提供的运输函数列表中选择一个来执行HTTP请求的负载均衡器。
-// 参数：
-// - roundTripper：一个包含多个http.RoundTripper函数的切片，这些函数将被用于发送HTTP请求。
-// - req：指向待发送的HTTP请求的指针。
-// 返回值：
-// - *http.Response：从运输函数中返回的HTTP响应指针，如果所有运输函数都失败，则为nil。
-// - error：如果在发送请求时遇到错误，则返回错误信息；否则为nil。
-// func RandomLoadBalancer(roundTripper map[string]func(*http.Request) (*http.Response, error), req *http.Request, upStreamServerSchemeAndHostOfName map[string]generic.PairInterface[string, string]) (*http.Response, error) {
-// 	// 打印传入的运输函数列表
-// 	log.Println("接收到的可用上游服务器:", roundTripper)
-
-// 	PrintRequest(req)
-// 	var roundTripperArray = mapToArray(roundTripper)
-// 	// 使用随机算法对运输函数列表进行洗牌，以实现随机选择运输函数的效果
-// 	var healthRoundTripper = randomShuffle(roundTripperArray)
-// 	var rer error = nil
-
-// 	// 遍历洗牌后的运输函数列表，尝试发送HTTP请求
-// 	for _, transport := range healthRoundTripper {
-// 		var name = transport.GetFirst()
-// 		var Scheme = upStreamServerSchemeAndHostOfName[name].GetFirst()
-// 		var Host = upStreamServerSchemeAndHostOfName[name].GetSecond()
-// 		req.URL.Scheme = Scheme
-// 		req.Host = Host
-// 		req.URL.Host = Host
-// 		var rs, err = transport.GetSecond()(req) // 执行运输函数
-// 		if err != nil {
-// 			// 如果请求发送失败，打印错误信息，并更新错误变量
-// 			log.Println("ERROR:", err)
-// 			rer = err
-
-// 		} else if rs.StatusCode >= 500 {
-// 			// 如果请求发送成功，打印响应信息，并返回响应和错误
-// 			log.Println("ERROR:", "Status code is 500 or greater.", rs.StatusCode)
-// 			PrintResponse(rs)
-// 			rer =  errors.New("ERROR:Status code is 500 or greater" + fmt.Sprint(rs.StatusCode))
-// 		} else {
-// 			// 如果请求发送成功，打印响应信息，并返回响应和错误
-// 			PrintResponse(rs)
-// 			return rs, err
-// 		}
-
-// 	}
-// 	// 如果所有运输函数尝试都失败，返回nil和错误信息
-// 	return nil, rer
-// }
 
 func PrintRequest(req *http.Request) {
 	print_experiment.PrintRequest(req)

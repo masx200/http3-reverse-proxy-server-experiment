@@ -38,8 +38,8 @@ func CreateHTTP3TransportWithIP(ip string) http.RoundTripper {
 		tr := quic.Transport{Conn: udpConn}
 
 		// 创建HTTP/3传输器，定制了Dial函数以使用指定的IP地址。
-		var transport = &http3.RoundTripper{
-			Dial: func(ctx context.Context, addr string, tlsConf *tls.Config, quicConf *quic.Config) (quic.EarlyConnection, error) {
+		var transport = &http3.Transport{
+			Dial: func(ctx context.Context, addr string, tlsConf *tls.Config, quicConf *quic.Config) (*quic.Conn, error) {
 				// 分解地址并替换为指定的IP地址。
 				host, port, err := net.SplitHostPort(addr)
 				if err != nil {
@@ -82,8 +82,8 @@ func CreateHTTP3TransportWithIPGetter(getter func() (string, error)) adapter.HTT
 	var roundTripper = /*  &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error {
 
 		return http.ErrUseLastResponse
-	}, Transport: */&http3.RoundTripper{
-		Dial: func(ctx context.Context, addr string, tlsConf *tls.Config, quicConf *quic.Config) (quic.EarlyConnection, error) {
+	}, Transport: */&http3.Transport{
+		Dial: func(ctx context.Context, addr string, tlsConf *tls.Config, quicConf *quic.Config) (*quic.Conn, error) {
 
 			mutex.Lock()
 			defer mutex.Unlock()
@@ -181,7 +181,7 @@ func DoHTTP3Client(msg *dns.Msg, dohttp3ServerURL string, dohip ...string) (r *d
 	} else {
 		// 没有指定 IP 地址，使用默认的 HTTP/3 传输
 		client = &http.Client{
-			Transport: &http3.RoundTripper{},
+			Transport: &http3.Transport{},
 		}
 	}
 

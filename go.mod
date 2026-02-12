@@ -46,7 +46,7 @@ require (
 )
 
 require (
-	github.com/fanjindong/go-cache v0.0.5
+	github.com/fanjindong/go-cache v0.0.6
 	github.com/gin-gonic/gin v1.10.0
 	github.com/miekg/dns v1.1.62
 	github.com/quic-go/qpack v0.5.1 // indirect

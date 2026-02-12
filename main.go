@@ -273,7 +273,7 @@ func main() {
 	go func() {
 		defer group.Done()
 		if *tlsboolArg {
-			log.Printf("Starting https reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
+			log.Println("Starting https reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
 			server := &http.Server{
 				Addr: hostname + ":" + strconv.Itoa(httpsPort),
 				Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

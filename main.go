@@ -257,7 +257,7 @@ func main() {
 					// Tracer: qlog.DefaultTracer,
 				},
 			}
-			log.Printf("Starting http3 reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
+			log.Println("Starting http3 reverse proxy server on " + hostname + ":" + strconv.Itoa(httpsPort))
 
 			var err = server.ListenAndServeTLS(certFile, keyFile)
 			// var err = http3.ListenAndServe(bCap, certFile, keyFile, &

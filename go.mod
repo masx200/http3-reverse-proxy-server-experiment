@@ -20,7 +20,7 @@ require (
 	golang.org/x/sync v0.18.0 // indirect
 )
 
-require github.com/moznion/go-optional v0.12.0
+require github.com/moznion/go-optional v0.13.0
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect

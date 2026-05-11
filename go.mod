@@ -1,8 +1,6 @@
 module github.com/masx200/http3-reverse-proxy-server-experiment
 
-go 1.24.0
-
-toolchain go1.24.1
+go 1.25.0
 
 replace github.com/quic-go/quic-go => github.com/quic-go/quic-go v0.55.0
 
@@ -17,7 +15,7 @@ require (
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
 )
 
 require github.com/moznion/go-optional v0.12.0
@@ -50,10 +48,10 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/miekg/dns v1.1.62
 	github.com/quic-go/qpack v0.5.1 // indirect
-	golang.org/x/crypto v0.45.0 // indirect
-	golang.org/x/mod v0.29.0 // indirect
-	golang.org/x/net v0.47.0
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
-	golang.org/x/tools v0.38.0 // indirect
+	golang.org/x/crypto v0.51.0 // indirect
+	golang.org/x/mod v0.35.0 // indirect
+	golang.org/x/net v0.54.0
+	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
+	golang.org/x/tools v0.44.0 // indirect
 )
